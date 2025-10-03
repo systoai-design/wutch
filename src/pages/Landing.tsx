@@ -1,66 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useThemeStore } from '@/store/themeStore';
 
 const Landing = () => {
-  const { isDark, toggleTheme } = useThemeStore();
-  const [stats, setStats] = useState({
-    totalRewards: 0,
-    activeWatchers: 0,
-    liveStreams: 0
-  });
-
-  useEffect(() => {
-    document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
-    
-    const fetchStats = async () => {
-      try {
-        // Fetch total rewards from donations
-        const { data: donationsData } = await supabase
-          .from('donations')
-          .select('amount')
-          .eq('status', 'confirmed');
-        
-        const totalRewards = donationsData?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
-
-        // Fetch active watchers
-        const { count: activeWatchersCount } = await supabase
-          .from('viewing_sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_active', true);
-
-        // Fetch live streams
-        const { count: liveStreamsCount } = await supabase
-          .from('livestreams')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_live', true);
-
-        setStats({
-          totalRewards: totalRewards,
-          activeWatchers: activeWatchersCount || 0,
-          liveStreams: liveStreamsCount || 0
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
-    }
-    return `$${amount.toFixed(0)}`;
-  };
-
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
       <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -70,19 +15,9 @@ const Landing = () => {
             </div>
             <span className="text-2xl font-bold">Wutch</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="rounded-full"
-            >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <Button asChild size="lg">
-              <Link to="/auth">Launch App</Link>
-            </Button>
-          </div>
+          <Button asChild size="lg">
+            <Link to="/auth">Launch App</Link>
+          </Button>
         </div>
       </header>
 
@@ -115,15 +50,15 @@ const Landing = () => {
 
           <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{formatCurrency(stats.totalRewards)}</div>
+              <div className="text-3xl font-bold text-primary">$50K+</div>
               <div className="text-sm text-muted-foreground mt-1">Total Rewards Paid</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{stats.activeWatchers}</div>
+              <div className="text-3xl font-bold text-primary">10K+</div>
               <div className="text-sm text-muted-foreground mt-1">Active Watchers</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{stats.liveStreams}</div>
+              <div className="text-3xl font-bold text-primary">500+</div>
               <div className="text-sm text-muted-foreground mt-1">Live Streams</div>
             </div>
           </div>
