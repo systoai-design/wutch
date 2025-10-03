@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const Submit = () => {
+  useEffect(() => {
+    document.title = 'Submit Your Stream | Wutch';
+  }, []);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();

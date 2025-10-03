@@ -1,13 +1,18 @@
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Eye, Coins, TrendingUp, Users, Zap, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Landing = () => {
+  useEffect(() => {
+    document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
+      <header className="border-b border-gray-200 sticky top-0 z-50 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
@@ -22,7 +27,7 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 lg:py-32">
+      <section className="container mx-auto px-4 py-12 md:py-20 lg:py-32">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
             <Zap className="h-4 w-4" />
@@ -66,7 +71,7 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-muted/30">
+      <section id="how-it-works" className="py-16 md:py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">How It Works</h2>
@@ -110,7 +115,7 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section className="py-20">
+      <section className="py-16 md:py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Why Choose Wutch?</h2>
@@ -184,7 +189,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary/5">
+      <section className="py-16 md:py-20 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto space-y-8">
             <h2 className="text-4xl lg:text-5xl font-bold">
@@ -201,7 +206,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 py-8">
+      <footer className="border-t border-gray-200 py-8 bg-white">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <p>&copy; 2025 Wutch. All rights reserved.</p>
         </div>
