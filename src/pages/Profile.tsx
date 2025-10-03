@@ -184,12 +184,15 @@ const ProfilePage = () => {
 
           <TabsContent value="about" className="mt-6">
             <Card className="p-6 space-y-4">
-              {profile.wallet_address && (
+              {isOwnProfile && profile.wallet_address && (
                 <div>
                   <h3 className="font-semibold mb-2">Wallet Address</h3>
                   <div className="p-3 bg-muted rounded-lg text-sm font-mono break-all">
                     {profile.wallet_address}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Only visible to you
+                  </p>
                 </div>
               )}
 
