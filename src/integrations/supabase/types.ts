@@ -346,7 +346,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_user_donations: {
+        Args: { donation_amount: number; user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       content_type: "livestream" | "shortvideo"

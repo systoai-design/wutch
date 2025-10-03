@@ -1,14 +1,26 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, Moon, Sun, User } from 'lucide-react';
+import { Search, Menu, Moon, Sun, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 
 const Navigation = () => {
   const location = useLocation();
   const { isDark, toggleTheme } = useThemeStore();
+  const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background">
@@ -53,9 +65,23 @@ const Navigation = () => {
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
