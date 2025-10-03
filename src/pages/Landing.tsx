@@ -1,28 +1,45 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useThemeStore } from '@/store/themeStore';
 
 const Landing = () => {
+  const { isDark, toggleTheme } = useThemeStore();
+
   useEffect(() => {
     document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-gray-200 sticky top-0 z-50 bg-white shadow-sm">
+      <header className="border-b border-border sticky top-0 z-50 bg-background shadow-sm backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-xl">W</span>
             </div>
-            <span className="text-2xl font-bold">Wutch</span>
+            <span className="text-2xl font-bold text-foreground">Wutch</span>
           </div>
-          <Button asChild size="lg">
-            <Link to="/auth">Launch App</Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {isDark ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+            <Button asChild size="lg">
+              <Link to="/auth">Launch App</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -34,7 +51,7 @@ const Landing = () => {
             Watch & Earn Crypto Rewards
           </div>
           
-          <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
+          <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-foreground">
             Get Paid to Watch
             <span className="block text-primary mt-2">Pump.fun Streams</span>
           </h1>
@@ -71,41 +88,41 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-16 md:py-20 bg-gray-50">
+      <section id="how-it-works" className="py-16 md:py-20 bg-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-4xl font-bold mb-4 text-foreground">How It Works</h2>
             <p className="text-xl text-muted-foreground">
               Three simple steps to start earning crypto rewards
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="p-8 text-center space-y-4 border-primary/20">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <Eye className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold">1. Watch Streams</h3>
+              <h3 className="text-2xl font-bold text-foreground">1. Watch Streams</h3>
               <p className="text-muted-foreground">
                 Browse live streams from Pump.fun creators. Keep the page open and your watch time is tracked automatically.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <TrendingUp className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold">2. Meet Requirements</h3>
+              <h3 className="text-2xl font-bold text-foreground">2. Meet Requirements</h3>
               <p className="text-muted-foreground">
                 Accumulate watch time (minimum 5 minutes) to qualify for bounty rewards. The longer you watch, the more you can earn.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold">3. Claim Rewards</h3>
+              <h3 className="text-2xl font-bold text-foreground">3. Claim Rewards</h3>
               <p className="text-muted-foreground">
                 Submit secret words shared by streamers and claim your crypto rewards directly to your Solana wallet.
               </p>
@@ -115,71 +132,71 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section className="py-16 md:py-20 bg-white">
+      <section className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose Wutch?</h2>
+            <h2 className="text-4xl font-bold mb-4 text-foreground">Why Choose Wutch?</h2>
             <p className="text-xl text-muted-foreground">
               The most rewarding way to watch live streams
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Coins className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Real Crypto Rewards</h3>
+              <h3 className="text-xl font-bold text-foreground">Real Crypto Rewards</h3>
               <p className="text-muted-foreground">
                 Earn actual crypto (SOL/USDC) paid directly to your wallet. No points, no gimmicks.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Eye className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Verified Watch Time</h3>
+              <h3 className="text-xl font-bold text-foreground">Verified Watch Time</h3>
               <p className="text-muted-foreground">
                 Fair tracking system that only counts active viewing time when the page is in focus.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Stream Bounties</h3>
+              <h3 className="text-xl font-bold text-foreground">Stream Bounties</h3>
               <p className="text-muted-foreground">
                 Creators set bounties with secret words. Be among the first to claim and earn more.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Share & Earn</h3>
+              <h3 className="text-xl font-bold text-foreground">Share & Earn</h3>
               <p className="text-muted-foreground">
                 Share streams on social media and earn additional rewards through referral campaigns.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Secure & Transparent</h3>
+              <h3 className="text-xl font-bold text-foreground">Secure & Transparent</h3>
               <p className="text-muted-foreground">
                 Built on Solana blockchain with transparent reward distribution and secure wallet integration.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3">
+            <Card className="p-6 space-y-3 bg-card">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Zap className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">Instant Payouts</h3>
+              <h3 className="text-xl font-bold text-foreground">Instant Payouts</h3>
               <p className="text-muted-foreground">
                 Claim your rewards and receive instant payouts through on-chain transactions.
               </p>
@@ -189,10 +206,10 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-gray-50">
+      <section className="py-16 md:py-20 bg-muted/50">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto space-y-8">
-            <h2 className="text-4xl lg:text-5xl font-bold">
+            <h2 className="text-4xl lg:text-5xl font-bold text-foreground">
               Ready to Start Earning?
             </h2>
             <p className="text-xl text-muted-foreground">
@@ -206,7 +223,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 bg-white">
+      <footer className="border-t border-border py-8 bg-background">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <p>&copy; 2025 Wutch. All rights reserved.</p>
         </div>
