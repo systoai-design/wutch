@@ -64,7 +64,7 @@ const Auth = () => {
         description: 'You have successfully logged in.',
       });
 
-      navigate('/');
+      navigate('/app');
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
@@ -110,7 +110,7 @@ const Auth = () => {
         description: 'Welcome to Wutch!',
       });
 
-      navigate('/');
+      navigate('/app');
     } catch (error: any) {
       console.error('Signup error:', error);
       toast({

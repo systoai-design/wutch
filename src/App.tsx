@@ -8,6 +8,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import Sidebar from '@/components/Sidebar';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import StreamDetail from './pages/StreamDetail';
 import Shorts from './pages/Shorts';
@@ -55,8 +56,9 @@ function AppContent() {
         {user && <Sidebar />}
         <main className="flex-1">
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/stream/:id" element={<ProtectedRoute><StreamDetail /></ProtectedRoute>} />
             <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
             <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
