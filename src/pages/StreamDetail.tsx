@@ -1,32 +1,91 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Heart, Wallet } from 'lucide-react';
-import { mockStreams, mockStreamers } from '@/data/mockData';
+import { Eye, Heart, Share2 } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
-import DonationModal from '@/components/DonationModal';
-import { ShareAndEarn } from '@/components/ShareAndEarn';
-import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type Livestream = Database['public']['Tables']['livestreams']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const StreamDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-  const stream = mockStreams.find((s) => s.id === id);
-  const streamer = stream ? mockStreamers[stream.streamerName] : null;
-  const relatedStreams = mockStreams.filter((s) => s.id !== id).slice(0, 4);
+  const [stream, setStream] = useState<Livestream | null>(null);
+  const [streamer, setStreamer] = useState<Profile | null>(null);
+  const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStreamData = async () => {
+      if (!id) return;
+
+      try {
+        // Fetch stream
+        const { data: streamData, error: streamError } = await supabase
+          .from('livestreams')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (streamError) {
+          console.error('Error fetching stream:', streamError);
+          setIsLoading(false);
+          return;
+        }
+
+        setStream(streamData);
+
+        // Fetch streamer profile
+        const { data: streamerData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', streamData.user_id)
+          .single();
+
+        if (streamerData) {
+          setStreamer(streamerData);
+        }
+
+        // Fetch related streams
+        const { data: relatedData } = await supabase
+          .from('livestreams')
+          .select('*')
+          .neq('id', id)
+          .eq('is_live', true)
+          .limit(4);
+
+        setRelatedStreams(relatedData || []);
+      } catch (error) {
+        console.error('Error fetching stream data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStreamData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!stream || !streamer) {
     return <div className="p-8 text-center">Stream not found</div>;
   }
 
-  // Check if current user is the stream owner (in real app, check stream.user_id === user.id)
-  const isOwner = user && streamer.username === 'creator1'; // Mock check
+  const isOwner = user && stream.user_id === user.id;
+  const socialLinks = (streamer.social_links as { twitter?: string; discord?: string; website?: string }) || {};
 
   return (
     <div className="min-h-screen">
@@ -36,14 +95,14 @@ const StreamDetail = () => {
           <div className="aspect-video bg-muted rounded-lg overflow-hidden">
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
               <div className="text-center space-y-4">
-                {stream.isLive && (
+                {stream.is_live && (
                   <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
                     <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
                     LIVE
                   </Badge>
                 )}
                 <p className="text-muted-foreground">Pump.fun stream player will load here</p>
-                <p className="text-xs text-muted-foreground font-mono">{stream.streamUrl}</p>
+                <p className="text-xs text-muted-foreground font-mono">{stream.pump_fun_url}</p>
               </div>
             </div>
           </div>
@@ -55,23 +114,25 @@ const StreamDetail = () => {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
-                  {stream.viewerCount.toLocaleString()} viewers
+                  {(stream.viewer_count || 0).toLocaleString()} viewers
                 </span>
                 <span>•</span>
-                <span>{new Date(stream.createdAt).toLocaleDateString()}</span>
+                <span>{new Date(stream.created_at || '').toLocaleDateString()}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <Link to={`/profile/${streamer.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={streamer.avatar} />
-                  <AvatarFallback>{streamer.displayName[0]}</AvatarFallback>
+                  <AvatarImage src={streamer.avatar_url || '/placeholder.svg'} />
+                  <AvatarFallback>
+                    {(streamer.display_name || streamer.username)[0].toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{streamer.displayName}</p>
+                  <p className="font-semibold">{streamer.display_name || streamer.username}</p>
                   <p className="text-sm text-muted-foreground">
-                    {streamer.followerCount.toLocaleString()} followers
+                    {(streamer.follower_count || 0).toLocaleString()} followers
                   </p>
                 </div>
               </Link>
@@ -81,24 +142,9 @@ const StreamDetail = () => {
                   <Heart className="h-5 w-5" />
                 </Button>
                 
-                {/* Show ShareAndEarn for non-owners, CreateSharingCampaign for owners */}
-                {isOwner ? (
-                  <CreateSharingCampaign livestreamId={id!} />
-                ) : (
-                  <ShareAndEarn 
-                    livestreamId={id!}
-                    streamTitle={stream.title}
-                    streamUrl={window.location.href}
-                  />
-                )}
-                
-                <Button
-                  variant="donation"
-                  onClick={() => setIsDonationModalOpen(true)}
-                  className="gap-2"
-                >
-                  <Wallet className="h-4 w-4" />
-                  Donate
+                <Button variant="outline" className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share
                 </Button>
               </div>
             </div>
@@ -111,13 +157,15 @@ const StreamDetail = () => {
                 </TabsList>
                 <TabsContent value="description" className="mt-4 space-y-4">
                   <p className="text-foreground">{stream.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {stream.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  {stream.tags && stream.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {stream.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="chat" className="mt-4">
                   <p className="text-muted-foreground text-center py-8">
@@ -133,19 +181,16 @@ const StreamDetail = () => {
         <div className="space-y-4">
           <h2 className="font-semibold text-lg">Related Streams</h2>
           <div className="space-y-4">
-            {relatedStreams.map((stream) => (
-              <StreamCard key={stream.id} stream={stream} />
-            ))}
+            {relatedStreams.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No related streams</p>
+            ) : (
+              relatedStreams.map((relatedStream) => (
+                <StreamCard key={relatedStream.id} stream={relatedStream} />
+              ))
+            )}
           </div>
         </div>
       </div>
-
-      <DonationModal
-        isOpen={isDonationModalOpen}
-        onClose={() => setIsDonationModalOpen(false)}
-        streamerName={streamer.displayName}
-        walletAddress={streamer.walletAddress}
-      />
     </div>
   );
 };
