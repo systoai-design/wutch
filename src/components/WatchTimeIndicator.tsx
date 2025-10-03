@@ -7,6 +7,7 @@ interface WatchTimeIndicatorProps {
   watchTime: number;
   formattedWatchTime: string;
   isTabVisible: boolean;
+  isPumpFunOpen: boolean;
   meetsMinimumWatchTime: boolean;
   minimumRequired?: number; // in seconds, default 300 (5 minutes)
 }
@@ -14,12 +15,14 @@ interface WatchTimeIndicatorProps {
 const WatchTimeIndicator = ({ 
   watchTime, 
   formattedWatchTime, 
-  isTabVisible, 
+  isTabVisible,
+  isPumpFunOpen, 
   meetsMinimumWatchTime,
   minimumRequired = 300 
 }: WatchTimeIndicatorProps) => {
   const progressPercentage = Math.min((watchTime / minimumRequired) * 100, 100);
   const minutesRequired = Math.floor(minimumRequired / 60);
+  const isTracking = isTabVisible && isPumpFunOpen;
 
   return (
     <Card className="p-4 space-y-3">
@@ -29,13 +32,18 @@ const WatchTimeIndicator = ({
           <span className="font-semibold">Watch Time Tracker</span>
         </div>
         <Badge 
-          variant={isTabVisible ? "default" : "secondary"}
+          variant={isTracking ? "default" : "secondary"}
           className="gap-1"
         >
-          {isTabVisible ? (
+          {isTracking ? (
             <>
               <Eye className="h-3 w-3" />
-              Watching
+              Tracking
+            </>
+          ) : !isPumpFunOpen ? (
+            <>
+              <EyeOff className="h-3 w-3" />
+              Stream Closed
             </>
           ) : (
             <>
@@ -67,8 +75,9 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep this page in focus to earn watch time.
-            {!isTabVisible && " (Timer paused - page not active)"}
+            Keep this page in focus AND Pump.fun open to earn watch time.
+            {!isPumpFunOpen && " (Timer paused - stream window closed)"}
+            {isPumpFunOpen && !isTabVisible && " (Timer paused - page not active)"}
           </p>
         )}
       </div>

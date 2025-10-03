@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, Heart, Share2, Timer, AlertCircle } from 'lucide-react';
+import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
@@ -28,6 +28,8 @@ const StreamDetail = () => {
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
+  const [isPumpFunOpen, setIsPumpFunOpen] = useState(false);
+  const pumpFunWindowRef = useRef<Window | null>(null);
 
   // Track viewing session
   const { 
@@ -39,13 +41,34 @@ const StreamDetail = () => {
   } = useViewingSession({ 
     livestreamId: id || '',
     shouldStart: hasStartedWatching,
+    externalWindow: pumpFunWindowRef.current,
     onTimerStart: () => {
       toast.success('Timer Started!', {
-        description: 'Keep this page open and in focus while watching to earn rewards.',
+        description: 'Keep both this page and Pump.fun open to earn rewards.',
         duration: 5000,
       });
     }
   });
+
+  // Poll Pump.fun window to check if it's still open
+  useEffect(() => {
+    if (!pumpFunWindowRef.current) return;
+
+    setIsPumpFunOpen(true);
+
+    const checkInterval = setInterval(() => {
+      if (pumpFunWindowRef.current?.closed) {
+        setIsPumpFunOpen(false);
+        toast.warning('Pump.fun Window Closed', {
+          description: 'Watch time tracking has stopped. Reopen Pump.fun to continue.',
+          duration: 5000,
+        });
+        pumpFunWindowRef.current = null;
+      }
+    }, 2000);
+
+    return () => clearInterval(checkInterval);
+  }, [pumpFunWindowRef.current]);
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -148,10 +171,14 @@ const StreamDetail = () => {
                       if (!isOwner && user) {
                         setHasStartedWatching(true);
                       }
-                      window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                      const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                      if (newWindow && !isOwner && user) {
+                        pumpFunWindowRef.current = newWindow;
+                        setIsPumpFunOpen(true);
+                      }
                     }}
                   >
-                    <Eye className="h-5 w-5" />
+                    <ExternalLink className="h-5 w-5" />
                     Watch Stream on Pump.fun
                   </Button>
                   
@@ -224,14 +251,23 @@ const StreamDetail = () => {
                     <Alert className="border-primary/20 bg-primary/5">
                       <Timer className="h-4 w-4" />
                       <AlertDescription>
-                        <strong>Important:</strong> Keep this page in focus and visible while watching on Pump.fun. 
-                        The timer only counts when this page is actively focused - switching tabs or minimizing will pause it.
+                        <strong>Important:</strong> Keep this page in focus AND the Pump.fun window open. 
+                        Watch time only counts when both are active - closing Pump.fun or switching tabs will pause tracking.
                       </AlertDescription>
                     </Alert>
+                    {!isPumpFunOpen && hasStartedWatching && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Stream window closed!</strong> Reopen Pump.fun to resume watch time tracking.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <WatchTimeIndicator
                       watchTime={watchTime}
                       formattedWatchTime={formattedWatchTime}
                       isTabVisible={isTabVisible}
+                      isPumpFunOpen={isPumpFunOpen}
                       meetsMinimumWatchTime={meetsMinimumWatchTime}
                     />
                   </>
