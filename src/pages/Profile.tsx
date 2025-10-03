@@ -21,6 +21,7 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [streams, setStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [ownWalletAddress, setOwnWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = username ? `@${username} - Profile | Wutch` : 'Profile | Wutch';

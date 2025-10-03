@@ -38,7 +38,6 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
   const [formData, setFormData] = useState({
     display_name: profile.display_name || '',
     bio: profile.bio || '',
-    wallet_address: profile.wallet_address || '',
     twitter: socialLinks.twitter || '',
     discord: socialLinks.discord || '',
     website: socialLinks.website || '',
@@ -115,7 +114,6 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           bio: formData.bio || null,
           avatar_url: avatarUrl,
           banner_url: bannerUrl,
-          wallet_address: formData.wallet_address || null,
           social_links: {
             twitter: formData.twitter || undefined,
             discord: formData.discord || undefined,
@@ -267,16 +265,6 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="wallet_address">Solana Wallet Address</Label>
-              <Input
-                id="wallet_address"
-                value={formData.wallet_address}
-                onChange={(e) => setFormData({ ...formData, wallet_address: e.target.value })}
-                placeholder="Your Solana wallet address"
-                className="font-mono text-sm"
-              />
-            </div>
 
             <div className="pt-4 border-t">
               <h3 className="font-semibold mb-4">Social Links</h3>

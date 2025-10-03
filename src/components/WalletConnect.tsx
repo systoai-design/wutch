@@ -17,13 +17,15 @@ export const WalletConnect = () => {
       if (!user) return;
       
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profile_wallets')
         .select('wallet_address')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (!error && data?.wallet_address) {
         setWalletAddress(data.wallet_address);
+      } else {
+        setWalletAddress(null);
       }
     };
 
@@ -54,9 +56,8 @@ export const WalletConnect = () => {
       // Save wallet address to profile
       if (user) {
         const { error } = await supabase
-          .from('profiles')
-          .update({ wallet_address: address })
-          .eq('id', user.id);
+          .from('profile_wallets')
+          .upsert({ user_id: user.id, wallet_address: address });
 
         if (error) throw error;
       }
@@ -85,9 +86,9 @@ export const WalletConnect = () => {
 
       if (user) {
         await supabase
-          .from('profiles')
-          .update({ wallet_address: null })
-          .eq('id', user.id);
+          .from('profile_wallets')
+          .delete()
+          .eq('user_id', user.id);
       }
 
       setWalletAddress(null);

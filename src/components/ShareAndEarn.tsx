@@ -48,9 +48,9 @@ export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndE
     // Check if user has wallet
     const checkWallet = async () => {
       const { data } = await supabase
-        .from('profiles')
+        .from('profile_wallets')
         .select('wallet_address')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       setHasWallet(!!data?.wallet_address);

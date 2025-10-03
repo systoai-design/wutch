@@ -74,13 +74,13 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
     if (!user || !bounty) return;
 
     // Check wallet connection
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: walletRow } = await supabase
+      .from('profile_wallets')
       .select('wallet_address')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single();
 
-    if (!profile?.wallet_address) {
+    if (!walletRow?.wallet_address) {
       toast({
         title: 'Wallet Not Connected',
         description: 'Please connect your Solana wallet first.',
@@ -106,7 +106,7 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
         .insert({
           bounty_id: bounty.id,
           user_id: user.id,
-          wallet_address: profile.wallet_address,
+          wallet_address: walletRow.wallet_address,
           submitted_word: secretWord.trim(),
         })
         .select()
