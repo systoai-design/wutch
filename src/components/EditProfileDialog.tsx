@@ -60,9 +60,9 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
     }
   };
 
-  const uploadFile = async (file: File, bucket: string, folder: string): Promise<string | null> => {
+  const uploadFile = async (file: File, bucket: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${folder}/${profile.id}/${Date.now()}.${fileExt}`;
+    const fileName = `${profile.id}/${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
@@ -90,7 +90,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
       // Upload avatar if selected
       if (avatarFile) {
-        const uploadedUrl = await uploadFile(avatarFile, 'avatars', 'avatars');
+        const uploadedUrl = await uploadFile(avatarFile, 'avatars');
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;
         } else {
@@ -100,7 +100,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
       // Upload banner if selected
       if (bannerFile) {
-        const uploadedUrl = await uploadFile(bannerFile, 'banners', 'banners');
+        const uploadedUrl = await uploadFile(bannerFile, 'banners');
         if (uploadedUrl) {
           bannerUrl = uploadedUrl;
         } else {
