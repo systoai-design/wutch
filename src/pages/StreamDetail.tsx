@@ -106,37 +106,38 @@ const StreamDetail = () => {
         <div className="lg:col-span-2 space-y-4">
           {/* Video Player */}
           <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-            {stream.pump_fun_url ? (
-              <iframe
-                src={stream.pump_fun_url}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={stream.title}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
-                <div className="text-center space-y-4">
-                  {stream.is_live && (
-                    <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
-                      <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
-                      LIVE
-                    </Badge>
-                  )}
-                  <p className="text-muted-foreground">No stream URL provided</p>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
+              <div className="text-center space-y-6 p-8">
+                {stream.is_live && (
+                  <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
+                    <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
+                    LIVE
+                  </Badge>
+                )}
+                
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold">Watch on Pump.fun</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                    This stream is hosted on Pump.fun. Click the button below to watch.
+                  </p>
                 </div>
+
+                <Button 
+                  size="lg" 
+                  className="gap-2"
+                  asChild
+                >
+                  <a href={stream.pump_fun_url} target="_blank" rel="noopener noreferrer">
+                    <Eye className="h-5 w-5" />
+                    Watch Stream on Pump.fun
+                  </a>
+                </Button>
+
+                <p className="text-xs text-muted-foreground font-mono opacity-50">
+                  {stream.pump_fun_url}
+                </p>
               </div>
-            )}
-            
-            {/* Live badge overlay */}
-            {stream.is_live && stream.pump_fun_url && (
-              <div className="absolute top-4 left-4">
-                <Badge variant="destructive" className="bg-live text-live-foreground">
-                  <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
-                  LIVE
-                </Badge>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Stream Info */}
