@@ -2,15 +2,25 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuth } from '@/hooks/useAuth';
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
   }, []);
+
+  // Redirect authenticated users to the app
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/app');
+    }
+  }, [user, isLoading, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

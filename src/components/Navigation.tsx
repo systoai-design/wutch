@@ -30,7 +30,7 @@ const Navigation = () => {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/app" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">W</span>
             </div>
