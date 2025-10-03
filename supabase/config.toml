@@ -1,1 +1,20 @@
 project_id = "vsjldzfoneoofvntjjcl"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+
+[functions.verify-donation]
+verify_jwt = false
+
+[functions.livestreams]
+verify_jwt = true
+
+[functions.search]
+verify_jwt = false
