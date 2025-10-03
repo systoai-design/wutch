@@ -11,13 +11,14 @@ import { z } from 'zod';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(100);
+const usernameOrEmailSchema = z.string().min(1, 'Email or username is required').max(255);
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginData, setLoginData] = useState({ emailOrUsername: '', password: '' });
   const [signupData, setSignupData] = useState({
     email: '',
     password: '',
@@ -30,11 +31,29 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      emailSchema.parse(loginData.email);
+      usernameOrEmailSchema.parse(loginData.emailOrUsername);
       passwordSchema.parse(loginData.password);
 
+      let emailToLogin = loginData.emailOrUsername;
+
+      // Check if input is an email or username
+      const isEmail = emailSchema.safeParse(loginData.emailOrUsername).success;
+      
+      if (!isEmail) {
+        // It's a username, so we need to look up the email using edge function
+        const { data, error } = await supabase.functions.invoke('get-email-by-username', {
+          body: { username: loginData.emailOrUsername }
+        });
+
+        if (error || !data?.email) {
+          throw new Error('Username not found');
+        }
+
+        emailToLogin = data.email;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
+        email: emailToLogin,
         password: loginData.password,
       });
 
@@ -50,7 +69,7 @@ const Auth = () => {
       console.error('Login error:', error);
       toast({
         title: 'Login Failed',
-        description: error.message || 'Invalid email or password',
+        description: error.message || 'Invalid email, username, or password',
         variant: 'destructive',
       });
     } finally {
@@ -124,13 +143,13 @@ const Auth = () => {
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
+                <Label htmlFor="login-email">Email or Username</Label>
                 <Input
                   id="login-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  type="text"
+                  placeholder="you@example.com or username"
+                  value={loginData.emailOrUsername}
+                  onChange={(e) => setLoginData({ ...loginData, emailOrUsername: e.target.value })}
                   required
                 />
               </div>
