@@ -32,44 +32,46 @@ const StreamCard = ({ stream }: StreamCardProps) => {
   }, [stream.user_id]);
 
   return (
-    <Link to={`/stream/${stream.id}`} className="group">
+    <Link to={`/stream/${stream.id}`} className="group block">
       <div className="space-y-3">
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+        <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-300">
           <img
             src={stream.thumbnail_url || '/placeholder.svg'}
             alt={stream.title}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {stream.is_live && (
             <div className="absolute top-2 left-2">
-              <Badge variant="destructive" className="bg-live text-live-foreground font-semibold flex items-center gap-1">
+              <Badge variant="destructive" className="bg-live text-live-foreground font-bold flex items-center gap-1 shadow-lg px-2.5 py-1">
                 <Circle className="h-2 w-2 fill-current animate-pulse" />
                 LIVE
               </Badge>
             </div>
           )}
-          <div className="absolute bottom-2 right-2 bg-background/90 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-            <Eye className="h-3 w-3" />
+          <div className="absolute bottom-2 right-2 bg-background/95 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 shadow-md">
+            <Eye className="h-3.5 w-3.5" />
             {(stream.viewer_count || 0).toLocaleString()}
           </div>
+          {/* Gradient overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
         <div className="flex gap-3">
           <img
             src={streamer?.avatar_url || '/placeholder.svg'}
             alt={streamer?.username || 'Streamer'}
-            className="w-10 h-10 rounded-full flex-shrink-0"
+            className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-background"
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors mb-1">
               {stream.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground font-medium">
               {streamer?.display_name || streamer?.username || 'Loading...'}
             </p>
             {stream.category && (
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
+              <div className="flex items-center gap-2 mt-1.5">
+                <Badge variant="secondary" className="text-xs font-semibold rounded-full px-2 py-0">
                   {stream.category}
                 </Badge>
               </div>
