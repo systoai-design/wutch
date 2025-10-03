@@ -10,6 +10,7 @@ import { Eye, Heart, Share2, Timer, AlertCircle } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
+import { EditStreamDialog } from '@/components/EditStreamDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useViewingSession } from '@/hooks/useViewingSession';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,8 +38,7 @@ const StreamDetail = () => {
     livestreamId: id || '' 
   });
 
-  useEffect(() => {
-    const fetchStreamData = async () => {
+  const fetchStreamData = async () => {
       if (!id) return;
 
       try {
@@ -84,6 +84,7 @@ const StreamDetail = () => {
       }
     };
 
+  useEffect(() => {
     fetchStreamData();
   }, [id]);
 
@@ -124,28 +125,34 @@ const StreamDetail = () => {
                   </p>
                 </div>
 
-                <Button 
-                  size="lg" 
-                  className="gap-2"
-                  asChild
-                >
-                  <a 
-                    href={stream.pump_fun_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      if (!isOwner && user) {
-                        toast.info('Keep this tab open!', {
-                          description: 'Your watch time is being tracked on this page. Keep it open while watching to qualify for rewards.',
-                          duration: 6000,
-                        });
-                      }
-                    }}
+                <div className="flex gap-2">
+                  <Button 
+                    size="lg" 
+                    className="gap-2"
+                    asChild
                   >
-                    <Eye className="h-5 w-5" />
-                    Watch Stream on Pump.fun
-                  </a>
-                </Button>
+                    <a 
+                      href={stream.pump_fun_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        if (!isOwner && user) {
+                          toast.info('Keep this tab open!', {
+                            description: 'Your watch time is being tracked on this page. Keep it open while watching to qualify for rewards.',
+                            duration: 6000,
+                          });
+                        }
+                      }}
+                    >
+                      <Eye className="h-5 w-5" />
+                      Watch Stream on Pump.fun
+                    </a>
+                  </Button>
+                  
+                  {isOwner && (
+                    <EditStreamDialog stream={stream} onUpdate={fetchStreamData} />
+                  )}
+                </div>
 
                 <p className="text-xs text-muted-foreground font-mono opacity-50">
                   {stream.pump_fun_url}
