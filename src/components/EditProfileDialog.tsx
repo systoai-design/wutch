@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings } from 'lucide-react';
+import { Settings, Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
@@ -27,6 +27,10 @@ interface EditProfileDialogProps {
 export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>(profile.avatar_url || '');
+  const [bannerPreview, setBannerPreview] = useState<string>(profile.banner_url || '');
   const { toast } = useToast();
 
   const socialLinks = (profile.social_links as { twitter?: string; discord?: string; website?: string }) || {};
@@ -34,26 +38,83 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
   const [formData, setFormData] = useState({
     display_name: profile.display_name || '',
     bio: profile.bio || '',
-    avatar_url: profile.avatar_url || '',
-    banner_url: profile.banner_url || '',
     wallet_address: profile.wallet_address || '',
     twitter: socialLinks.twitter || '',
     discord: socialLinks.discord || '',
     website: socialLinks.website || '',
   });
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      setBannerPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadFile = async (file: File, bucket: string, folder: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${folder}/${profile.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      let avatarUrl = profile.avatar_url;
+      let bannerUrl = profile.banner_url;
+
+      // Upload avatar if selected
+      if (avatarFile) {
+        const uploadedUrl = await uploadFile(avatarFile, 'avatars', 'avatars');
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        } else {
+          throw new Error('Failed to upload avatar');
+        }
+      }
+
+      // Upload banner if selected
+      if (bannerFile) {
+        const uploadedUrl = await uploadFile(bannerFile, 'banners', 'banners');
+        if (uploadedUrl) {
+          bannerUrl = uploadedUrl;
+        } else {
+          throw new Error('Failed to upload banner');
+        }
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .update({
           display_name: formData.display_name || null,
           bio: formData.bio || null,
-          avatar_url: formData.avatar_url || null,
-          banner_url: formData.banner_url || null,
+          avatar_url: avatarUrl,
+          banner_url: bannerUrl,
           wallet_address: formData.wallet_address || null,
           social_links: {
             twitter: formData.twitter || undefined,
@@ -127,25 +188,83 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
 
             <div>
-              <Label htmlFor="avatar_url">Avatar URL</Label>
-              <Input
-                id="avatar_url"
-                type="url"
-                value={formData.avatar_url}
-                onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                placeholder="https://example.com/avatar.jpg"
-              />
+              <Label htmlFor="avatar">Avatar Image</Label>
+              <div className="space-y-2">
+                {avatarPreview && (
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border">
+                    <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => {
+                        setAvatarFile(null);
+                        setAvatarPreview('');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <Label htmlFor="avatar" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Avatar
+                      </span>
+                    </Button>
+                  </Label>
+                </div>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="banner_url">Banner URL</Label>
-              <Input
-                id="banner_url"
-                type="url"
-                value={formData.banner_url}
-                onChange={(e) => setFormData({ ...formData, banner_url: e.target.value })}
-                placeholder="https://example.com/banner.jpg"
-              />
+              <Label htmlFor="banner">Banner Image</Label>
+              <div className="space-y-2">
+                {bannerPreview && (
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                    <img src={bannerPreview} alt="Banner preview" className="w-full h-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={() => {
+                        setBannerFile(null);
+                        setBannerPreview('');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="banner"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerChange}
+                    className="hidden"
+                  />
+                  <Label htmlFor="banner" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Banner
+                      </span>
+                    </Button>
+                  </Label>
+                </div>
+              </div>
             </div>
 
             <div>
