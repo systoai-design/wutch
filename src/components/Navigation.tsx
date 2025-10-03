@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
+import { WalletConnect } from '@/components/WalletConnect';
 import { useState } from 'react';
 
 const Navigation = () => {
@@ -31,9 +32,9 @@ const Navigation = () => {
           </Button>
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">SH</span>
+              <span className="text-primary-foreground font-bold text-lg">W</span>
             </div>
-            <span className="font-bold text-xl hidden sm:inline">StreamHub</span>
+            <span className="font-bold text-xl hidden sm:inline">Wutch</span>
           </Link>
         </div>
 
@@ -57,6 +58,8 @@ const Navigation = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <WalletConnect />
+          
           <Button
             variant="ghost"
             size="icon"

@@ -5,13 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Heart, Share2, Circle, Wallet } from 'lucide-react';
+import { Eye, Heart, Wallet } from 'lucide-react';
 import { mockStreams, mockStreamers } from '@/data/mockData';
 import StreamCard from '@/components/StreamCard';
 import DonationModal from '@/components/DonationModal';
+import { ShareAndEarn } from '@/components/ShareAndEarn';
+import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
+import { useAuth } from '@/hooks/useAuth';
 
 const StreamDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const stream = mockStreams.find((s) => s.id === id);
   const streamer = stream ? mockStreamers[stream.streamerName] : null;
@@ -20,6 +24,9 @@ const StreamDetail = () => {
   if (!stream || !streamer) {
     return <div className="p-8 text-center">Stream not found</div>;
   }
+
+  // Check if current user is the stream owner (in real app, check stream.user_id === user.id)
+  const isOwner = user && streamer.username === 'creator1'; // Mock check
 
   return (
     <div className="min-h-screen">
@@ -31,7 +38,7 @@ const StreamDetail = () => {
               <div className="text-center space-y-4">
                 {stream.isLive && (
                   <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
-                    <Circle className="h-4 w-4 mr-2 fill-current animate-pulse" />
+                    <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
                     LIVE
                   </Badge>
                 )}
@@ -69,13 +76,22 @@ const StreamDetail = () => {
                 </div>
               </Link>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="icon">
                   <Heart className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="icon">
-                  <Share2 className="h-5 w-5" />
-                </Button>
+                
+                {/* Show ShareAndEarn for non-owners, CreateSharingCampaign for owners */}
+                {isOwner ? (
+                  <CreateSharingCampaign livestreamId={id!} />
+                ) : (
+                  <ShareAndEarn 
+                    livestreamId={id!}
+                    streamTitle={stream.title}
+                    streamUrl={window.location.href}
+                  />
+                )}
+                
                 <Button
                   variant="donation"
                   onClick={() => setIsDonationModalOpen(true)}

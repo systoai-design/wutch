@@ -255,6 +255,60 @@ export type Database = {
         }
         Relationships: []
       }
+      sharing_campaigns: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          is_active: boolean
+          livestream_id: string
+          max_shares_per_user: number | null
+          reward_per_share: number
+          spent_budget: number
+          total_budget: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          is_active?: boolean
+          livestream_id: string
+          max_shares_per_user?: number | null
+          reward_per_share?: number
+          spent_budget?: number
+          total_budget: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          is_active?: boolean
+          livestream_id?: string
+          max_shares_per_user?: number | null
+          reward_per_share?: number
+          spent_budget?: number
+          total_budget?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sharing_campaigns_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sharing_campaigns_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       short_video_likes: {
         Row: {
           created_at: string | null
@@ -334,6 +388,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "short_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_shares: {
+        Row: {
+          campaign_id: string
+          id: string
+          paid_at: string | null
+          reward_amount: number
+          share_platform: string
+          share_url: string
+          shared_at: string
+          status: string
+          transaction_signature: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          paid_at?: string | null
+          reward_amount: number
+          share_platform?: string
+          share_url: string
+          shared_at?: string
+          status?: string
+          transaction_signature?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          paid_at?: string | null
+          reward_amount?: number
+          share_platform?: string
+          share_url?: string
+          shared_at?: string
+          status?: string
+          transaction_signature?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_shares_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sharing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

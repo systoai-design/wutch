@@ -88,7 +88,7 @@ const Auth = () => {
 
       toast({
         title: 'Account Created!',
-        description: 'Welcome to StreamHub!',
+        description: 'Welcome to Wutch!',
       });
 
       navigate('/');
@@ -109,10 +109,10 @@ const Auth = () => {
       <Card className="w-full max-w-md p-6">
         <div className="mb-6 text-center">
           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">SH</span>
+            <span className="text-primary-foreground font-bold text-2xl">W</span>
           </div>
-          <h1 className="text-2xl font-bold">Welcome to StreamHub</h1>
-          <p className="text-muted-foreground mt-2">Join the crypto livestream community</p>
+          <h1 className="text-2xl font-bold">Welcome to Wutch</h1>
+          <p className="text-muted-foreground mt-2">Share streams, earn crypto rewards</p>
         </div>
 
         <Tabs defaultValue="login">
