@@ -67,8 +67,8 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep watching to become eligible for bounty rewards. 
-            {!isTabVisible && " (Timer paused - tab not visible)"}
+            Keep this page in focus to earn watch time.
+            {!isTabVisible && " (Timer paused - page not active)"}
           </p>
         )}
       </div>

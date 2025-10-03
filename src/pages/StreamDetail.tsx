@@ -202,8 +202,8 @@ const StreamDetail = () => {
                 <Alert className="border-primary/20 bg-primary/5">
                   <Timer className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Important:</strong> Keep this page open while watching the stream on Pump.fun. 
-                    Your watch time is automatically tracked here to qualify for bounty rewards.
+                    <strong>Important:</strong> Keep this page in focus and visible while watching on Pump.fun. 
+                    The timer only counts when this page is actively focused - switching tabs or minimizing will pause it.
                   </AlertDescription>
                 </Alert>
                 <WatchTimeIndicator

@@ -11,11 +11,12 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [hasWindowFocus, setHasWindowFocus] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const accumulatedTimeRef = useRef<number>(0);
 
-  // Handle visibility changes
+  // Handle visibility and focus changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       const visible = !document.hidden;
@@ -31,10 +32,27 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
       }
     };
 
+    const handleFocus = () => {
+      setHasWindowFocus(true);
+      // Window regained focus - reset start time
+      startTimeRef.current = Date.now();
+    };
+
+    const handleBlur = () => {
+      setHasWindowFocus(false);
+      // Window lost focus - accumulate current session time
+      const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      accumulatedTimeRef.current += currentSessionTime;
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
@@ -98,8 +116,9 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
 
     const sendHeartbeat = async () => {
       try {
-        // Only count time if tab is visible
-        const currentSessionTime = isTabVisible 
+        // Only count time if tab is visible AND window has focus
+        const isActivelyWatching = isTabVisible && hasWindowFocus;
+        const currentSessionTime = isActivelyWatching 
           ? Math.floor((Date.now() - startTimeRef.current) / 1000)
           : 0;
         
@@ -110,14 +129,14 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
           .update({
             last_active_at: new Date().toISOString(),
             total_watch_time: totalTime,
-            tab_visible: isTabVisible,
+            tab_visible: isActivelyWatching,
           })
           .eq('id', sessionId);
 
         setWatchTime(totalTime);
 
         // Reset start time after successful update
-        if (isTabVisible) {
+        if (isActivelyWatching) {
           accumulatedTimeRef.current = totalTime;
           startTimeRef.current = Date.now();
         }
@@ -137,15 +156,16 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [sessionId, user, isTabVisible]);
+  }, [sessionId, user, isTabVisible, hasWindowFocus]);
 
   // Mark session as inactive on unmount
   useEffect(() => {
     return () => {
       if (sessionId) {
         // Send final update
+        const isActivelyWatching = isTabVisible && hasWindowFocus;
         const finalTime = accumulatedTimeRef.current + 
-          (isTabVisible ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
+          (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
         
         supabase
           .from('viewing_sessions')
@@ -160,11 +180,12 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
           });
       }
     };
-  }, [sessionId, isTabVisible]);
+  }, [sessionId, isTabVisible, hasWindowFocus]);
 
   // Update watch time display every second (local only)
   useEffect(() => {
-    if (!isTabVisible) return;
+    const isActivelyWatching = isTabVisible && hasWindowFocus;
+    if (!isActivelyWatching) return;
 
     const displayInterval = setInterval(() => {
       const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -172,7 +193,7 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
     }, 1000);
 
     return () => clearInterval(displayInterval);
-  }, [isTabVisible]);
+  }, [isTabVisible, hasWindowFocus]);
 
   const formatWatchTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
