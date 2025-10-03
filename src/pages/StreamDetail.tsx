@@ -7,7 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Heart, Share2 } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
+import WatchTimeIndicator from '@/components/WatchTimeIndicator';
+import ClaimBounty from '@/components/ClaimBounty';
 import { useAuth } from '@/hooks/useAuth';
+import { useViewingSession } from '@/hooks/useViewingSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -21,6 +24,16 @@ const StreamDetail = () => {
   const [streamer, setStreamer] = useState<Profile | null>(null);
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Track viewing session
+  const { 
+    watchTime, 
+    formattedWatchTime, 
+    isTabVisible, 
+    meetsMinimumWatchTime 
+  } = useViewingSession({ 
+    livestreamId: id || '' 
+  });
 
   useEffect(() => {
     const fetchStreamData = async () => {
@@ -148,6 +161,25 @@ const StreamDetail = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Watch Time Tracker - Only show for non-owners */}
+            {!isOwner && user && (
+              <WatchTimeIndicator
+                watchTime={watchTime}
+                formattedWatchTime={formattedWatchTime}
+                isTabVisible={isTabVisible}
+                meetsMinimumWatchTime={meetsMinimumWatchTime}
+              />
+            )}
+
+            {/* Bounty Claim - Only show for non-owners */}
+            {!isOwner && user && (
+              <ClaimBounty
+                livestreamId={id!}
+                watchTime={watchTime}
+                meetsMinimumWatchTime={meetsMinimumWatchTime}
+              />
+            )}
 
             <Card className="p-4">
               <Tabs defaultValue="description">

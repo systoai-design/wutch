@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      bounty_claims: {
+        Row: {
+          bounty_id: string
+          claimed_at: string
+          id: string
+          is_correct: boolean
+          meets_watch_requirement: boolean | null
+          reward_amount: number | null
+          submitted_word: string
+          transaction_signature: string | null
+          user_id: string
+          wallet_address: string
+          watch_time_seconds: number | null
+        }
+        Insert: {
+          bounty_id: string
+          claimed_at?: string
+          id?: string
+          is_correct?: boolean
+          meets_watch_requirement?: boolean | null
+          reward_amount?: number | null
+          submitted_word: string
+          transaction_signature?: string | null
+          user_id: string
+          wallet_address: string
+          watch_time_seconds?: number | null
+        }
+        Update: {
+          bounty_id?: string
+          claimed_at?: string
+          id?: string
+          is_correct?: boolean
+          meets_watch_requirement?: boolean | null
+          reward_amount?: number | null
+          submitted_word?: string
+          transaction_signature?: string | null
+          user_id?: string
+          wallet_address?: string
+          watch_time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_claims_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content_id: string
@@ -395,6 +452,66 @@ export type Database = {
           },
         ]
       }
+      stream_bounties: {
+        Row: {
+          claimed_count: number
+          created_at: string
+          creator_id: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          livestream_id: string
+          participant_limit: number
+          reward_per_participant: number
+          secret_word: string
+          total_deposit: number
+          updated_at: string
+        }
+        Insert: {
+          claimed_count?: number
+          created_at?: string
+          creator_id: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          livestream_id: string
+          participant_limit: number
+          reward_per_participant: number
+          secret_word: string
+          total_deposit: number
+          updated_at?: string
+        }
+        Update: {
+          claimed_count?: number
+          created_at?: string
+          creator_id?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          livestream_id?: string
+          participant_limit?: number
+          reward_per_participant?: number
+          secret_word?: string
+          total_deposit?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_bounties_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_shares: {
         Row: {
           campaign_id: string
@@ -449,11 +566,63 @@ export type Database = {
           },
         ]
       }
+      viewing_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_active_at: string
+          livestream_id: string
+          started_at: string
+          tab_visible: boolean
+          total_watch_time: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_active_at?: string
+          livestream_id: string
+          started_at?: string
+          tab_visible?: boolean
+          total_watch_time?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_active_at?: string
+          livestream_id?: string
+          started_at?: string
+          tab_visible?: boolean
+          total_watch_time?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viewing_sessions_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      deactivate_stale_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_user_watch_time: {
+        Args: { p_livestream_id: string; p_user_id: string }
+        Returns: number
+      }
       increment_user_donations: {
         Args: { donation_amount: number; user_id: string }
         Returns: undefined
