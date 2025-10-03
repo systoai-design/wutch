@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useThemeStore } from '@/store/themeStore';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
@@ -39,7 +39,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const { isDark } = useThemeStore();
-  const { user } = useAuth();
 
   useEffect(() => {
     if (isDark) {
@@ -50,23 +49,35 @@ function AppContent() {
   }, [isDark]);
 
   return (
+    <Routes>
+      {/* Public routes without app layout */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/auth" element={<Auth />} />
+      
+      {/* App routes with Navigation and Sidebar */}
+      <Route element={<AppLayout />}>
+        <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/stream/:id" element={<ProtectedRoute><StreamDetail /></ProtectedRoute>} />
+        <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
+        <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
+        <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/trending" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/recent" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      </Route>
+      
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
+function AppLayout() {
+  return (
     <div className="min-h-screen bg-background">
-      {user && <Navigation />}
+      <Navigation />
       <div className="flex w-full">
-        {user && <Sidebar />}
+        <Sidebar />
         <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/stream/:id" element={<ProtectedRoute><StreamDetail /></ProtectedRoute>} />
-            <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
-            <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
-            <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/trending" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/recent" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
     </div>
