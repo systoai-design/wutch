@@ -7,6 +7,9 @@ import { Database } from '@/integrations/supabase/types';
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
 const Home = () => {
+  useEffect(() => {
+    document.title = 'Home - Watch Live Streams | Wutch';
+  }, []);
   const [streams, setStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
