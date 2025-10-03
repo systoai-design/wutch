@@ -23,10 +23,6 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.title = username ? `@${username} - Profile | Wutch` : 'Profile | Wutch';
-  }, [username]);
-
-  useEffect(() => {
     const fetchProfileData = async () => {
       try {
         // If no username in URL, redirect to current user's profile

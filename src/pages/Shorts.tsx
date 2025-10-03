@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, MessageCircle, Share2, Wallet } from 'lucide-react';
@@ -31,10 +31,6 @@ const Shorts = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const currentShort = mockShorts[currentIndex];
-
-  useEffect(() => {
-    document.title = 'Shorts - Quick Videos | Wutch';
-  }, []);
 
   return (
     <div className="h-[calc(100vh-4rem)] bg-background overflow-hidden">
