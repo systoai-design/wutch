@@ -4,14 +4,17 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface UseViewingSessionProps {
   livestreamId: string;
+  shouldStart?: boolean;
+  onTimerStart?: () => void;
 }
 
-export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
+export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerStart }: UseViewingSessionProps) => {
   const { user } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
   const [isTabVisible, setIsTabVisible] = useState(true);
   const [hasWindowFocus, setHasWindowFocus] = useState(true);
+  const [isSessionStarted, setIsSessionStarted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const accumulatedTimeRef = useRef<number>(0);
@@ -58,7 +61,8 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
 
   // Create or resume viewing session
   useEffect(() => {
-    if (!user || !livestreamId) return;
+    if (!user || !livestreamId || !shouldStart) return;
+    if (isSessionStarted) return; // Prevent duplicate initialization
 
     const initSession = async () => {
       try {
@@ -102,17 +106,19 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
         }
 
         startTimeRef.current = Date.now();
+        setIsSessionStarted(true);
+        onTimerStart?.();
       } catch (error) {
         console.error('Error initializing viewing session:', error);
       }
     };
 
     initSession();
-  }, [user, livestreamId]);
+  }, [user, livestreamId, shouldStart, isSessionStarted]);
 
   // Send heartbeat updates every 30 seconds
   useEffect(() => {
-    if (!sessionId || !user) return;
+    if (!sessionId || !user || !isSessionStarted) return;
 
     const sendHeartbeat = async () => {
       try {
@@ -206,5 +212,6 @@ export const useViewingSession = ({ livestreamId }: UseViewingSessionProps) => {
     formattedWatchTime: formatWatchTime(watchTime),
     isTabVisible,
     meetsMinimumWatchTime: watchTime >= 300, // 5 minutes
+    isSessionStarted,
   };
 };

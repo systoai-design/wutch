@@ -24,6 +24,8 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
   const [secretWord, setSecretWord] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasClaimed, setHasClaimed] = useState(false);
+  const [hasClaimedWork, setHasClaimedWork] = useState(false);
+  const [workClaimExpiresAt, setWorkClaimExpiresAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -70,8 +72,34 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
     fetchBounty();
   }, [livestreamId, user]);
 
-  const handleClaim = async () => {
-    if (!user || !bounty) return;
+  const handleClaimWork = () => {
+    if (!meetsMinimumWatchTime) return;
+    
+    const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutes from now
+    setHasClaimedWork(true);
+    setWorkClaimExpiresAt(expiresAt);
+    
+    toast({
+      title: 'Work Claimed! ✓',
+      description: 'You have 5 minutes to claim your reward before it expires.',
+      duration: 5000,
+    });
+  };
+
+  const handleClaimReward = async () => {
+    if (!user || !bounty || !hasClaimedWork) return;
+
+    // Check if work claim has expired
+    if (workClaimExpiresAt && Date.now() > workClaimExpiresAt) {
+      toast({
+        title: 'Claim Expired',
+        description: 'Your work claim has expired. You need to watch again.',
+        variant: 'destructive',
+      });
+      setHasClaimedWork(false);
+      setWorkClaimExpiresAt(null);
+      return;
+    }
 
     // Check wallet connection
     const { data: walletRow } = await supabase
@@ -101,19 +129,18 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase
-        .from('bounty_claims')
-        .insert({
+      // Call edge function to process payment
+      const { data, error } = await supabase.functions.invoke('process-bounty-reward', {
+        body: {
           bounty_id: bounty.id,
           user_id: user.id,
           wallet_address: walletRow.wallet_address,
           submitted_word: secretWord.trim(),
-        })
-        .select()
-        .single();
+          watch_time_seconds: watchTime,
+        },
+      });
 
       if (error) {
-        // Error message from trigger
         toast({
           title: 'Claim Failed',
           description: error.message || 'Failed to claim bounty. Please try again.',
@@ -122,22 +149,29 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
         return;
       }
 
-      if (data.is_correct) {
+      if (data.success && data.is_correct) {
         setHasClaimed(true);
         toast({
-          title: 'Bounty Claimed! 🎉',
-          description: `You've earned ${data.reward_amount} SOL! Check your wallet.`,
+          title: 'Reward Sent! 🎉',
+          description: `${data.reward_amount} SOL has been sent to your wallet!`,
+          duration: 6000,
         });
         setSecretWord('');
-      } else {
+      } else if (!data.is_correct) {
         toast({
           title: 'Incorrect Word',
           description: 'The secret word you entered is incorrect. Try again!',
           variant: 'destructive',
         });
+      } else {
+        toast({
+          title: 'Claim Failed',
+          description: data.message || 'Failed to process reward. Please try again.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
-      console.error('Error claiming bounty:', error);
+      console.error('Error claiming reward:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
@@ -166,6 +200,10 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
   const spotsRemaining = bounty.participant_limit - bounty.claimed_count;
   const minutesRequired = 5;
   const minutesWatched = Math.floor(watchTime / 60);
+  
+  const timeUntilExpiration = workClaimExpiresAt ? Math.max(0, Math.floor((workClaimExpiresAt - Date.now()) / 1000)) : 0;
+  const expirationMinutes = Math.floor(timeUntilExpiration / 60);
+  const expirationSeconds = timeUntilExpiration % 60;
 
   return (
     <Card className="p-6 space-y-4 bg-gradient-to-br from-primary/5 to-background">
@@ -199,7 +237,50 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
       {hasClaimed ? (
         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
           <p className="text-green-600 dark:text-green-400 font-medium text-center">
-            ✓ You've already claimed this bounty!
+            ✓ You've already claimed this bounty and received your reward!
+          </p>
+        </div>
+      ) : hasClaimedWork ? (
+        <div className="space-y-3">
+          <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="font-medium text-primary text-center mb-2">
+              ⏰ Work Claimed! Time Remaining: {expirationMinutes}:{expirationSeconds.toString().padStart(2, '0')}
+            </p>
+            <p className="text-sm text-muted-foreground text-center">
+              Enter the secret word to claim your reward
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="secretWord" className="text-sm font-medium">
+              Enter the secret word from the stream:
+            </label>
+            <Input
+              id="secretWord"
+              type="text"
+              placeholder="Type the secret word here..."
+              value={secretWord}
+              onChange={(e) => setSecretWord(e.target.value)}
+              disabled={isSubmitting}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isSubmitting) {
+                  handleClaimReward();
+                }
+              }}
+            />
+          </div>
+
+          <Button 
+            onClick={handleClaimReward} 
+            disabled={isSubmitting || !secretWord.trim() || timeUntilExpiration === 0}
+            className="w-full"
+            size="lg"
+          >
+            {isSubmitting ? 'Processing...' : `Claim ${bounty.reward_per_participant} SOL Reward`}
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Reward will be automatically sent to your connected wallet
           </p>
         </div>
       ) : (
@@ -218,36 +299,25 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="space-y-2">
-                <label htmlFor="secretWord" className="text-sm font-medium">
-                  Enter the secret word from the stream:
-                </label>
-                <Input
-                  id="secretWord"
-                  type="text"
-                  placeholder="Type the secret word here..."
-                  value={secretWord}
-                  onChange={(e) => setSecretWord(e.target.value)}
-                  disabled={isSubmitting}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isSubmitting) {
-                      handleClaim();
-                    }
-                  }}
-                />
+              <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-green-600 dark:text-green-400 font-medium text-center mb-2">
+                  ✓ Watch Time Complete!
+                </p>
+                <p className="text-sm text-muted-foreground text-center">
+                  Click below to claim your work. You'll have 5 minutes to enter the secret word.
+                </p>
               </div>
 
               <Button 
-                onClick={handleClaim} 
-                disabled={isSubmitting || !secretWord.trim()}
+                onClick={handleClaimWork} 
                 className="w-full"
                 size="lg"
               >
-                {isSubmitting ? 'Claiming...' : `Claim ${bounty.reward_per_participant} SOL`}
+                Claim Work
               </Button>
 
               <p className="text-xs text-muted-foreground text-center">
-                Make sure your Solana wallet is connected to receive the reward
+                After claiming work, you'll have 5 minutes to submit the secret word
               </p>
             </div>
           )}

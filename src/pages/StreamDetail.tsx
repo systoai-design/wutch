@@ -27,15 +27,24 @@ const StreamDetail = () => {
   const [streamer, setStreamer] = useState<Profile | null>(null);
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasStartedWatching, setHasStartedWatching] = useState(false);
 
   // Track viewing session
   const { 
     watchTime, 
     formattedWatchTime, 
     isTabVisible, 
-    meetsMinimumWatchTime 
+    meetsMinimumWatchTime,
+    isSessionStarted 
   } = useViewingSession({ 
-    livestreamId: id || '' 
+    livestreamId: id || '',
+    shouldStart: hasStartedWatching,
+    onTimerStart: () => {
+      toast.success('Timer Started!', {
+        description: 'Keep this page open and in focus while watching to earn rewards.',
+        duration: 5000,
+      });
+    }
   });
 
   const fetchStreamData = async () => {
@@ -135,24 +144,15 @@ const StreamDetail = () => {
                   <Button 
                     size="lg" 
                     className="gap-2"
-                    asChild
+                    onClick={() => {
+                      if (!isOwner && user) {
+                        setHasStartedWatching(true);
+                      }
+                      window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                    }}
                   >
-                    <a 
-                      href={stream.pump_fun_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        if (!isOwner && user) {
-                          toast.info('Keep this tab open!', {
-                            description: 'Your watch time is being tracked on this page. Keep it open while watching to qualify for rewards.',
-                            duration: 6000,
-                          });
-                        }
-                      }}
-                    >
-                      <Eye className="h-5 w-5" />
-                      Watch Stream on Pump.fun
-                    </a>
+                    <Eye className="h-5 w-5" />
+                    Watch Stream on Pump.fun
                   </Button>
                   
                   {isOwner && (
@@ -212,24 +212,35 @@ const StreamDetail = () => {
             {/* Watch Time Tracker - Only show for non-owners */}
             {!isOwner && user && (
               <>
-                <Alert className="border-primary/20 bg-primary/5">
-                  <Timer className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Important:</strong> Keep this page in focus and visible while watching on Pump.fun. 
-                    The timer only counts when this page is actively focused - switching tabs or minimizing will pause it.
-                  </AlertDescription>
-                </Alert>
-                <WatchTimeIndicator
-                  watchTime={watchTime}
-                  formattedWatchTime={formattedWatchTime}
-                  isTabVisible={isTabVisible}
-                  meetsMinimumWatchTime={meetsMinimumWatchTime}
-                />
+                {!isSessionStarted ? (
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Click "Watch Stream on Pump.fun"</strong> above to start tracking your watch time and qualify for rewards.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <Alert className="border-primary/20 bg-primary/5">
+                      <Timer className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Important:</strong> Keep this page in focus and visible while watching on Pump.fun. 
+                        The timer only counts when this page is actively focused - switching tabs or minimizing will pause it.
+                      </AlertDescription>
+                    </Alert>
+                    <WatchTimeIndicator
+                      watchTime={watchTime}
+                      formattedWatchTime={formattedWatchTime}
+                      isTabVisible={isTabVisible}
+                      meetsMinimumWatchTime={meetsMinimumWatchTime}
+                    />
+                  </>
+                )}
               </>
             )}
 
             {/* Bounty Claim - Only show for non-owners */}
-            {!isOwner && user && (
+            {!isOwner && user && isSessionStarted && (
               <ClaimBounty
                 livestreamId={id!}
                 watchTime={watchTime}
