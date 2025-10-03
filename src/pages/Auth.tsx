@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    document.title = 'Login or Sign Up | Wutch';
-  }, []);
 
   const [loginData, setLoginData] = useState({ emailOrUsername: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -128,8 +124,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
-      <Card className="w-full max-w-md p-6 shadow-lg">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md p-6">
         <div className="mb-6 text-center">
           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
             <span className="text-primary-foreground font-bold text-2xl">W</span>

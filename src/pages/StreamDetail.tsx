@@ -85,12 +85,6 @@ const StreamDetail = () => {
     };
 
   useEffect(() => {
-    if (stream) {
-      document.title = `${stream.title} | Wutch`;
-    }
-  }, [stream]);
-
-  useEffect(() => {
     fetchStreamData();
   }, [id]);
 
