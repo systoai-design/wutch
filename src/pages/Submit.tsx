@@ -103,7 +103,8 @@ const Submit = () => {
           description: formData.description,
           category: formData.category,
           tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-          status: 'pending',
+          status: 'live',
+          is_live: true,
         })
         .select()
         .single();

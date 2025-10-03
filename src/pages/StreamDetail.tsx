@@ -105,19 +105,38 @@ const StreamDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 lg:p-6">
         <div className="lg:col-span-2 space-y-4">
           {/* Video Player */}
-          <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
-              <div className="text-center space-y-4">
-                {stream.is_live && (
-                  <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
-                    <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
-                    LIVE
-                  </Badge>
-                )}
-                <p className="text-muted-foreground">Pump.fun stream player will load here</p>
-                <p className="text-xs text-muted-foreground font-mono">{stream.pump_fun_url}</p>
+          <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
+            {stream.pump_fun_url ? (
+              <iframe
+                src={stream.pump_fun_url}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={stream.title}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
+                <div className="text-center space-y-4">
+                  {stream.is_live && (
+                    <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
+                      LIVE
+                    </Badge>
+                  )}
+                  <p className="text-muted-foreground">No stream URL provided</p>
+                </div>
               </div>
-            </div>
+            )}
+            
+            {/* Live badge overlay */}
+            {stream.is_live && stream.pump_fun_url && (
+              <div className="absolute top-4 left-4">
+                <Badge variant="destructive" className="bg-live text-live-foreground">
+                  <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
+                  LIVE
+                </Badge>
+              </div>
+            )}
           </div>
 
           {/* Stream Info */}

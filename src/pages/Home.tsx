@@ -16,8 +16,8 @@ const Home = () => {
         const { data, error } = await supabase
           .from('livestreams')
           .select('*')
-          .eq('is_live', true)
-          .order('viewer_count', { ascending: false });
+          .neq('status', 'ended')
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching streams:', error);
