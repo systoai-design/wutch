@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from 'https://esm.sh/@solana/web3.js@1.87.6'
+import bs58 from 'https://esm.sh/bs58@5.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,8 +109,21 @@ serve(async (req) => {
       throw new Error('Escrow wallet not configured')
     }
 
-    // Parse private key
-    const secretKey = Uint8Array.from(JSON.parse(ESCROW_PRIVATE_KEY))
+    // Parse private key (supports both base58 and JSON array formats)
+    let secretKey: Uint8Array
+    try {
+      if (ESCROW_PRIVATE_KEY.startsWith('[')) {
+        // JSON array format: [1,2,3,...]
+        secretKey = Uint8Array.from(JSON.parse(ESCROW_PRIVATE_KEY))
+      } else {
+        // Base58 format (standard Solana private key format)
+        secretKey = bs58.decode(ESCROW_PRIVATE_KEY)
+      }
+    } catch (error) {
+      console.error('Failed to decode escrow private key:', error)
+      throw new Error('Invalid escrow wallet configuration')
+    }
+    
     const escrowKeypair = Keypair.fromSecretKey(secretKey)
 
     // Connect to Solana (mainnet-beta or devnet)
