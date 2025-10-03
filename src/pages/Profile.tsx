@@ -9,6 +9,7 @@ import StreamCard from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
+import { EditProfileDialog } from '@/components/EditProfileDialog';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
@@ -83,6 +84,7 @@ const ProfilePage = () => {
     return <div className="p-8 text-center">Profile not found</div>;
   }
 
+  const isOwnProfile = user?.id === profile.id;
   const socialLinks = (profile.social_links as { twitter?: string; discord?: string; website?: string }) || {};
 
   return (
@@ -120,8 +122,17 @@ const ProfilePage = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button>Follow</Button>
-                <Button variant="outline">Message</Button>
+                {isOwnProfile ? (
+                  <EditProfileDialog 
+                    profile={profile} 
+                    onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
+                  />
+                ) : (
+                  <>
+                    <Button>Follow</Button>
+                    <Button variant="outline">Message</Button>
+                  </>
+                )}
                 {socialLinks.twitter && (
                   <Button variant="outline" size="icon" asChild>
                     <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
