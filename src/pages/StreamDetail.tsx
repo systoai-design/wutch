@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Heart, Share2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, Heart, Share2, Timer, AlertCircle } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
@@ -13,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useViewingSession } from '@/hooks/useViewingSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -127,7 +129,19 @@ const StreamDetail = () => {
                   className="gap-2"
                   asChild
                 >
-                  <a href={stream.pump_fun_url} target="_blank" rel="noopener noreferrer">
+                  <a 
+                    href={stream.pump_fun_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      if (!isOwner && user) {
+                        toast.info('Keep this tab open!', {
+                          description: 'Your watch time is being tracked on this page. Keep it open while watching to qualify for rewards.',
+                          duration: 6000,
+                        });
+                      }
+                    }}
+                  >
                     <Eye className="h-5 w-5" />
                     Watch Stream on Pump.fun
                   </a>
@@ -184,12 +198,21 @@ const StreamDetail = () => {
 
             {/* Watch Time Tracker - Only show for non-owners */}
             {!isOwner && user && (
-              <WatchTimeIndicator
-                watchTime={watchTime}
-                formattedWatchTime={formattedWatchTime}
-                isTabVisible={isTabVisible}
-                meetsMinimumWatchTime={meetsMinimumWatchTime}
-              />
+              <>
+                <Alert className="border-primary/20 bg-primary/5">
+                  <Timer className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Important:</strong> Keep this page open while watching the stream on Pump.fun. 
+                    Your watch time is automatically tracked here to qualify for bounty rewards.
+                  </AlertDescription>
+                </Alert>
+                <WatchTimeIndicator
+                  watchTime={watchTime}
+                  formattedWatchTime={formattedWatchTime}
+                  isTabVisible={isTabVisible}
+                  meetsMinimumWatchTime={meetsMinimumWatchTime}
+                />
+              </>
             )}
 
             {/* Bounty Claim - Only show for non-owners */}
