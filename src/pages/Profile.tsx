@@ -4,17 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
@@ -57,6 +58,7 @@ const ProfilePage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [streams, setStreams] = useState<Livestream[]>([]);
@@ -67,6 +69,45 @@ const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+
+  const handleDeleteUser = async () => {
+    if (!profile || !isAdmin) return;
+
+    try {
+      // Delete all user's livestreams
+      await supabase
+        .from('livestreams')
+        .delete()
+        .eq('user_id', profile.id);
+
+      // Delete all user's short videos
+      await supabase
+        .from('short_videos')
+        .delete()
+        .eq('user_id', profile.id);
+
+      // Delete user's profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'User deleted',
+        description: 'The user and all their content has been removed.',
+      });
+
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete user',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     document.title = username ? `@${username} - Profile | Wutch` : 'Profile | Wutch';
@@ -289,6 +330,29 @@ const ProfilePage = () => {
                     <Button variant="outline" onClick={() => setShowMessageDialog(true)}>
                       Message
                     </Button>
+                    {isAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon">
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete User</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this user? This will permanently remove their profile and all their content (streams, shorts, comments). This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Delete User
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </>
                 )}
                 {socialLinks.twitter && (

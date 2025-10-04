@@ -116,7 +116,7 @@ export default function Bounties() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {bounties.map((bounty) => (
-              <BountyCard key={bounty.id} bounty={bounty} />
+              <BountyCard key={bounty.id} bounty={bounty} onDelete={fetchBounties} />
             ))}
           </div>
         )}

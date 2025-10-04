@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Share2, Twitter, DollarSign, Wallet } from 'lucide-react';
+import { Share2, Twitter, DollarSign, Wallet, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ShareAndEarnProps {
   livestreamId: string;
@@ -27,6 +39,33 @@ export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndE
   const [hasWallet, setHasWallet] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  const handleDeleteCampaign = async () => {
+    if (!campaign) return;
+
+    try {
+      const { error } = await supabase
+        .from('sharing_campaigns')
+        .delete()
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Campaign deleted',
+        description: 'The sharing campaign has been removed successfully.',
+      });
+
+      setCampaign(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete campaign',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -167,13 +206,14 @@ export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndE
   const remainingShares = Math.floor(remainingBudget / Number(campaign.reward_per_share));
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Share2 className="h-4 w-4" />
-          Share & Earn ${campaign.reward_per_share}
-        </Button>
-      </DialogTrigger>
+    <div className="flex items-center gap-2">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <Share2 className="h-4 w-4" />
+            Share & Earn ${campaign.reward_per_share}
+          </Button>
+        </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Share & Earn Rewards</DialogTitle>
@@ -233,5 +273,30 @@ export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndE
         </Button>
       </DialogContent>
     </Dialog>
+    
+    {isAdmin && (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this sharing campaign? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCampaign} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+  </div>
   );
 };
