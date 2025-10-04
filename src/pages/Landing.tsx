@@ -17,12 +17,59 @@ const Landing = () => {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [isLoadingBounties, setIsLoadingBounties] = useState(true);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+  const [stats, setStats] = useState({
+    totalRewards: 0,
+    activeWatchers: 0,
+    liveStreams: 0
+  });
 
   useEffect(() => {
     document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
     fetchFeaturedBounties();
     fetchLeaderboard();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch total rewards paid
+      const { data: claimsData, error: claimsError } = await supabase
+        .from('bounty_claims')
+        .select('reward_amount')
+        .eq('is_correct', true);
+
+      if (claimsError) throw claimsError;
+
+      const totalRewards = (claimsData || []).reduce(
+        (sum, claim) => sum + parseFloat(claim.reward_amount?.toString() || '0'),
+        0
+      );
+
+      // Fetch active watchers count
+      const { count: activeWatchers, error: watchersError } = await supabase
+        .from('viewing_sessions')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      if (watchersError) throw watchersError;
+
+      // Fetch live streams count
+      const { count: liveStreams, error: streamsError } = await supabase
+        .from('livestreams')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_live', true);
+
+      if (streamsError) throw streamsError;
+
+      setStats({
+        totalRewards,
+        activeWatchers: activeWatchers || 0,
+        liveStreams: liveStreams || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchFeaturedBounties = async () => {
     try {
@@ -176,15 +223,21 @@ const Landing = () => {
 
           <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <div className="text-3xl font-bold text-primary">$50K+</div>
+              <div className="text-3xl font-bold text-primary">
+                ${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </div>
               <div className="text-sm text-muted-foreground mt-1">Total Rewards Paid</div>
             </div>
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="text-3xl font-bold text-primary">10K+</div>
+              <div className="text-3xl font-bold text-primary">
+                {stats.activeWatchers.toLocaleString()}
+              </div>
               <div className="text-sm text-muted-foreground mt-1">Active Watchers</div>
             </div>
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <div className="text-3xl font-bold text-primary">500+</div>
+              <div className="text-3xl font-bold text-primary">
+                {stats.liveStreams.toLocaleString()}
+              </div>
               <div className="text-sm text-muted-foreground mt-1">Live Streams</div>
             </div>
           </div>
