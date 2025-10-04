@@ -96,24 +96,38 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
     const initSession = async () => {
       try {
-        // Check for existing active session
+        // Look for most recent session within last 2 hours (regardless of is_active status)
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        
         const { data: existingSessions } = await supabase
           .from('viewing_sessions')
           .select('*')
           .eq('user_id', user.id)
           .eq('livestream_id', livestreamId)
-          .eq('is_active', true)
+          .gte('created_at', twoHoursAgo)
           .order('created_at', { ascending: false })
           .limit(1);
 
         if (existingSessions && existingSessions.length > 0) {
-          // Resume existing session
+          // Resume and reactivate existing session
           const session = existingSessions[0];
+          
+          // Reactivate the session
+          await supabase
+            .from('viewing_sessions')
+            .update({ 
+              is_active: true, 
+              last_active_at: new Date().toISOString(),
+              tab_visible: true
+            })
+            .eq('id', session.id);
+          
           setSessionId(session.id);
           setWatchTime(session.total_watch_time);
           accumulatedTimeRef.current = session.total_watch_time;
+          console.log('Resumed session with', session.total_watch_time, 'seconds of watch time');
         } else {
-          // Create new session
+          // Create new session only if no recent session exists
           const { data: newSession, error } = await supabase
             .from('viewing_sessions')
             .insert({
@@ -133,6 +147,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
           setSessionId(newSession.id);
           setWatchTime(0);
           accumulatedTimeRef.current = 0;
+          console.log('Created new viewing session');
         }
 
         startTimeRef.current = Date.now();
@@ -194,11 +209,12 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     };
   }, [sessionId, user, isTabVisible, hasWindowFocus, isExternalWindowOpen]);
 
-  // Mark session as inactive on unmount
+  // Send final update on unmount but don't deactivate
+  // Let the backend cron job handle session deactivation after prolonged inactivity
   useEffect(() => {
     return () => {
       if (sessionId) {
-        // Send final update
+        // Send final time update only
         const isActivelyWatching = isTabVisible && hasWindowFocus && isExternalWindowOpen;
         const finalTime = accumulatedTimeRef.current + 
           (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
@@ -206,13 +222,12 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
         supabase
           .from('viewing_sessions')
           .update({
-            is_active: false,
             total_watch_time: finalTime,
             last_active_at: new Date().toISOString(),
           })
           .eq('id', sessionId)
           .then(() => {
-            console.log('Session ended, total watch time:', finalTime, 'seconds');
+            console.log('Session paused, total watch time:', finalTime, 'seconds');
           });
       }
     };
