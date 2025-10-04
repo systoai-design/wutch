@@ -28,7 +28,7 @@ const Shorts = () => {
         .from('short_videos')
         .select(`
           *,
-          profiles(username, display_name, avatar_url, wallet_address)
+          profiles!short_videos_user_id_fkey(username, display_name, avatar_url, wallet_address)
         `)
         .order('created_at', { ascending: false });
 
