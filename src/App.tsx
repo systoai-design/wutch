@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import Sidebar from '@/components/Sidebar';
 import Landing from './pages/Landing';
+import Bounties from './pages/Bounties';
 import Home from './pages/Home';
 import StreamDetail from './pages/StreamDetail';
 import Shorts from './pages/Shorts';
@@ -52,6 +53,7 @@ function AppContent() {
     <Routes>
       {/* Public routes without app layout */}
       <Route path="/" element={<Landing />} />
+      <Route path="/bounties" element={<Bounties />} />
       <Route path="/auth" element={<Auth />} />
       
       {/* App routes with Navigation and Sidebar */}

@@ -1,18 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { BountyCard } from '@/components/BountyCard';
+import { LeaderboardTable } from '@/components/LeaderboardTable';
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [featuredBounties, setFeaturedBounties] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [isLoadingBounties, setIsLoadingBounties] = useState(true);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
 
   useEffect(() => {
     document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
+    fetchFeaturedBounties();
+    fetchLeaderboard();
   }, []);
 
   // Redirect authenticated users to the app
@@ -21,6 +30,68 @@ const Landing = () => {
       navigate('/app');
     }
   }, [user, isLoading, navigate]);
+
+  const fetchFeaturedBounties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stream_bounties')
+        .select(`
+          *,
+          livestream:livestreams(title, thumbnail_url),
+          creator:profiles!stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq('is_active', true)
+        .order('reward_per_participant', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setFeaturedBounties(data || []);
+    } catch (error) {
+      console.error('Error fetching bounties:', error);
+    } finally {
+      setIsLoadingBounties(false);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bounty_claims')
+        .select(`
+          user_id,
+          reward_amount,
+          profiles!bounty_claims_user_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq('is_correct', true);
+
+      if (error) throw error;
+
+      // Aggregate by user
+      const userTotals = (data || []).reduce((acc: any, claim: any) => {
+        if (!acc[claim.user_id]) {
+          acc[claim.user_id] = {
+            user_id: claim.user_id,
+            total_earned: 0,
+            claims_count: 0,
+            profile: claim.profiles
+          };
+        }
+        acc[claim.user_id].total_earned += parseFloat(claim.reward_amount || 0);
+        acc[claim.user_id].claims_count += 1;
+        return acc;
+      }, {});
+
+      const leaderboardData = Object.values(userTotals)
+        .sort((a: any, b: any) => b.total_earned - a.total_earned)
+        .slice(0, 10);
+
+      setLeaderboard(leaderboardData);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,6 +208,65 @@ const Landing = () => {
                 Submit secret words shared by streamers and claim your crypto rewards directly to your Solana wallet.
               </p>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Available Bounties */}
+      <section className="py-16 md:py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-4xl font-bold mb-2 text-foreground">Available Bounties</h2>
+              <p className="text-xl text-muted-foreground">
+                Watch streams and claim crypto rewards
+              </p>
+            </div>
+            <Button 
+              size="lg"
+              onClick={() => navigate('/bounties')}
+              className="flex items-center gap-2"
+            >
+              Browse All Jobs
+            </Button>
+          </div>
+
+          {isLoadingBounties ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-64 bg-accent/20 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : featuredBounties.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {featuredBounties.map((bounty) => (
+                <BountyCard key={bounty.id} bounty={bounty} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              No active bounties at the moment. Check back soon!
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Leaderboard */}
+      <section className="py-16 md:py-20 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4 text-foreground">Top Earners</h2>
+              <p className="text-xl text-muted-foreground">
+                See who's earning the most on Wutch
+              </p>
+            </div>
+
+            {isLoadingLeaderboard ? (
+              <div className="h-96 bg-accent/20 rounded-lg animate-pulse" />
+            ) : (
+              <LeaderboardTable entries={leaderboard} />
+            )}
           </div>
         </div>
       </section>
