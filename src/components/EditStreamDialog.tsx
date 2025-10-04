@@ -21,17 +21,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/useAuth";
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
 const streamSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(1000).optional(),
-  thumbnail_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   category: z.string().max(50).optional(),
   tags: z.string().max(200).optional(),
 });
@@ -44,23 +44,88 @@ interface EditStreamDialogProps {
 }
 
 export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>(stream.thumbnail_url || "");
 
   const form = useForm<StreamFormData>({
     resolver: zodResolver(streamSchema),
     defaultValues: {
       title: stream.title,
       description: stream.description || "",
-      thumbnail_url: stream.thumbnail_url || "",
       category: stream.category || "",
       tags: Array.isArray(stream.tags) ? stream.tags.join(", ") : "",
     },
   });
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setThumbnailFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
+
   const onSubmit = async (data: StreamFormData) => {
     setIsLoading(true);
     try {
+      let thumbnailUrl = stream.thumbnail_url;
+
+      // Upload thumbnail if a new file was selected
+      if (thumbnailFile && user) {
+        const fileExt = thumbnailFile.name.split(".").pop();
+        const fileName = `${user.id}/${stream.id}-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from("banners")
+          .upload(fileName, thumbnailFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from("banners")
+          .getPublicUrl(fileName);
+
+        thumbnailUrl = publicUrl;
+      }
+
       const tags = data.tags
         ? data.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
         : [];
@@ -70,7 +135,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
         .update({
           title: data.title,
           description: data.description || null,
-          thumbnail_url: data.thumbnail_url || null,
+          thumbnail_url: thumbnailUrl,
           category: data.category || null,
           tags,
           updated_at: new Date().toISOString(),
@@ -147,22 +212,50 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="thumbnail_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Thumbnail URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com/thumbnail.jpg"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="space-y-2">
+              <FormLabel>Thumbnail</FormLabel>
+              
+              {thumbnailPreview && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveThumbnail}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
-            />
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbnailChange}
+                  className="hidden"
+                  id="thumbnail-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => document.getElementById("thumbnail-upload")?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {thumbnailPreview ? "Change Thumbnail" : "Upload Thumbnail"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Recommended: 16:9 aspect ratio, max 5MB
+              </p>
+            </div>
 
             <FormField
               control={form.control}

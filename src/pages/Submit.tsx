@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, DollarSign, Users, Clock, Key } from 'lucide-react';
+import { Upload, DollarSign, Users, Clock, Key, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
@@ -21,6 +21,8 @@ const Submit = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   
   const [formData, setFormData] = useState({
     streamUrl: '',
@@ -49,6 +51,45 @@ const Submit = () => {
   };
 
   const bountyCalc = calculateTotalBounty();
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setThumbnailFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +139,30 @@ const Submit = () => {
     setIsSubmitting(true);
 
     try {
+      let thumbnailUrl = null;
+
+      // Upload thumbnail if selected
+      if (thumbnailFile && user) {
+        const fileExt = thumbnailFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from("banners")
+          .upload(fileName, thumbnailFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from("banners")
+          .getPublicUrl(fileName);
+
+        thumbnailUrl = publicUrl;
+      }
+
       // Create the livestream
       const { data: livestreamData, error: livestreamError } = await supabase
         .from('livestreams')
@@ -106,6 +171,7 @@ const Submit = () => {
           pump_fun_url: formData.streamUrl,
           title: formData.title,
           description: formData.description,
+          thumbnail_url: thumbnailUrl,
           category: formData.category,
           tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           status: 'live',
@@ -242,13 +308,43 @@ const Submit = () => {
 
             <div className="space-y-2">
               <Label htmlFor="thumbnail">Thumbnail</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+              
+              {thumbnailPreview && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveThumbnail}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              <Input
+                type="file"
+                id="thumbnail-upload"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+                className="hidden"
+              />
+              <div 
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer"
+                onClick={() => document.getElementById("thumbnail-upload")?.click()}
+              >
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Click to upload or drag and drop
+                  {thumbnailPreview ? "Click to change thumbnail" : "Click to upload or drag and drop"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  PNG, JPG up to 10MB
+                  PNG, JPG up to 5MB (16:9 recommended)
                 </p>
               </div>
             </div>
