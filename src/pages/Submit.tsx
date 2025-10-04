@@ -148,10 +148,10 @@ const Submit = () => {
       const reward = parseFloat(formData.rewardPerPerson);
       const participants = parseInt(formData.participantLimit);
       
-      if (reward <= 0 || participants <= 0) {
+      if (reward < 0 || participants <= 0) {
         toast({
           title: 'Invalid Bounty Values',
-          description: 'Reward and participant limit must be greater than 0',
+          description: 'Reward must be 0 or greater and participant limit must be greater than 0',
           variant: 'destructive',
         });
         return;
@@ -161,51 +161,10 @@ const Submit = () => {
     setIsSubmitting(true);
 
     try {
-      let thumbnailUrl = null;
-
-      // Upload thumbnail if selected
-      if (thumbnailFile && user) {
-        const fileExt = thumbnailFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from("banners")
-          .upload(fileName, thumbnailFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from("banners")
-          .getPublicUrl(fileName);
-
-        thumbnailUrl = publicUrl;
-      }
-
-      // Create the livestream
-      const { data: livestreamData, error: livestreamError } = await supabase
-        .from('livestreams')
-        .insert({
-          user_id: user.id,
-          pump_fun_url: formData.streamUrl,
-          title: formData.title,
-          description: formData.description,
-          thumbnail_url: thumbnailUrl,
-          category: formData.category,
-          tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-          status: 'live',
-          is_live: true,
-        })
-        .select()
-        .single();
-
-      if (livestreamError) throw livestreamError;
-
-      // Create bounty if requested
-      if (formData.createBounty && livestreamData) {
+      // Process bounty payment FIRST if bounty is enabled
+      let bountyTransactionSignature = null;
+      
+      if (formData.createBounty) {
         // Fetch user's wallet address
         const { data: walletData, error: walletError } = await supabase
           .from('profile_wallets')
@@ -264,26 +223,71 @@ const Submit = () => {
           await connection.confirmTransaction(signature, 'confirmed');
 
           console.log('Bounty payment successful:', signature);
-
-          // Create the bounty record after successful payment
-          const { error: bountyError } = await supabase
-            .from('stream_bounties')
-            .insert({
-              livestream_id: livestreamData.id,
-              creator_id: user.id,
-              total_deposit: bountyCalc.total,
-              reward_per_participant: parseFloat(formData.rewardPerPerson),
-              participant_limit: parseInt(formData.participantLimit),
-              secret_word: formData.secretWord,
-              is_active: true,
-            });
-
-          if (bountyError) throw bountyError;
+          bountyTransactionSignature = signature;
 
         } catch (walletError) {
           console.error('Wallet transaction error:', walletError);
           throw new Error('Payment was cancelled or failed. Please try again.');
         }
+      }
+
+      // Upload thumbnail if selected
+      let thumbnailUrl = null;
+      if (thumbnailFile && user) {
+        const fileExt = thumbnailFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from("banners")
+          .upload(fileName, thumbnailFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from("banners")
+          .getPublicUrl(fileName);
+
+        thumbnailUrl = publicUrl;
+      }
+
+      // Create the livestream AFTER successful payment
+      const { data: livestreamData, error: livestreamError } = await supabase
+        .from('livestreams')
+        .insert({
+          user_id: user.id,
+          pump_fun_url: formData.streamUrl,
+          title: formData.title,
+          description: formData.description,
+          thumbnail_url: thumbnailUrl,
+          category: formData.category,
+          tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          status: 'live',
+          is_live: true,
+        })
+        .select()
+        .single();
+
+      if (livestreamError) throw livestreamError;
+
+      // Create bounty record if payment was successful
+      if (formData.createBounty && livestreamData && bountyTransactionSignature) {
+        const { error: bountyError } = await supabase
+          .from('stream_bounties')
+          .insert({
+            livestream_id: livestreamData.id,
+            creator_id: user.id,
+            total_deposit: bountyCalc.total,
+            reward_per_participant: parseFloat(formData.rewardPerPerson),
+            participant_limit: parseInt(formData.participantLimit),
+            secret_word: formData.secretWord,
+            is_active: true,
+          });
+
+        if (bountyError) throw bountyError;
       }
 
       toast({
@@ -493,7 +497,7 @@ const Submit = () => {
                         id="rewardPerPerson"
                         type="number"
                         step="0.001"
-                        min="0.001"
+                        min="0"
                         placeholder="0.05"
                         value={formData.rewardPerPerson}
                         onChange={(e) => setFormData({ ...formData, rewardPerPerson: e.target.value })}
