@@ -42,9 +42,9 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
   }, [displayText, isDeleting]);
 
   return (
-    <span className={className}>
-      {displayText}
-      <span className="animate-pulse">|</span>
+    <span className={className} style={{ display: 'inline-block', minWidth: '550px', textAlign: 'center' }}>
+      <span style={{ visibility: displayText ? 'visible' : 'hidden' }}>{displayText}</span>
+      <span className="animate-pulse" style={{ willChange: 'opacity' }}>|</span>
     </span>
   );
 }
