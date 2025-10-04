@@ -24,13 +24,6 @@ const Landing = () => {
     fetchLeaderboard();
   }, []);
 
-  // Redirect authenticated users to the app
-  useEffect(() => {
-    if (!isLoading && user) {
-      navigate('/app');
-    }
-  }, [user, isLoading, navigate]);
-
   const fetchFeaturedBounties = async () => {
     try {
       const { data, error } = await supabase
