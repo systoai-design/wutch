@@ -31,7 +31,7 @@ serve(async (req) => {
     const results: any = {
       livestreams: [],
       shorts: [],
-      users: []
+      profiles: []
     };
 
     // Search livestreams
@@ -80,7 +80,7 @@ serve(async (req) => {
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%,bio.ilike.%${query}%`)
         .limit(10);
 
-      results.users = users || [];
+      results.profiles = users || [];
     }
 
     return new Response(

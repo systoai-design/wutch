@@ -38,7 +38,9 @@ export default function Search() {
 
     setLoading(true);
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search?q=${encodeURIComponent(searchQuery)}`;
+      // Strip @ symbol from search query if present
+      const cleanQuery = searchQuery.replace(/^@+/, '');
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search?q=${encodeURIComponent(cleanQuery)}`;
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
