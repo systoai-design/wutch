@@ -298,8 +298,8 @@ const StreamDetail = () => {
                     <Alert className="border-primary/20 bg-primary/5">
                       <Timer className="h-4 w-4" />
                       <AlertDescription>
-                        <strong>Important:</strong> Keep this page in focus AND the Pump.fun window open. 
-                        Watch time only counts when both are active - closing Pump.fun or switching tabs will pause tracking.
+                        <strong>Watch time tracking active!</strong> Keep this browser tab open to earn rewards. 
+                        You can freely switch between this page and Pump.fun - switching tabs within this browser won't stop the timer.
                       </AlertDescription>
                     </Alert>
                     {!isPumpFunOpen && hasStartedWatching && Date.now() > warningDismissedUntil && (

@@ -14,7 +14,6 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
   const [isTabVisible, setIsTabVisible] = useState(true);
-  const [hasWindowFocus, setHasWindowFocus] = useState(true);
   const [isExternalWindowOpen, setIsExternalWindowOpen] = useState(false);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -54,7 +53,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     return () => clearInterval(checkInterval);
   }, [externalWindow, isExternalWindowOpen]);
 
-  // Handle visibility and focus changes
+  // Handle visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       const visible = !document.hidden;
@@ -70,27 +69,10 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
       }
     };
 
-    const handleFocus = () => {
-      setHasWindowFocus(true);
-      // Window regained focus - reset start time
-      startTimeRef.current = Date.now();
-    };
-
-    const handleBlur = () => {
-      setHasWindowFocus(false);
-      // Window lost focus - accumulate current session time
-      const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      accumulatedTimeRef.current += currentSessionTime;
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
@@ -172,9 +154,9 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
     const sendHeartbeat = async () => {
       try {
-        // Count time if tab is visible AND window has focus
-        // External window is advisory - we track based on user presence on the page
-        const isActivelyWatching = isTabVisible && hasWindowFocus;
+        // Count time if tab is visible (user has this page open)
+        // User can switch between webapp and Pump.fun window freely
+        const isActivelyWatching = isTabVisible;
         const currentSessionTime = isActivelyWatching 
           ? Math.floor((Date.now() - startTimeRef.current) / 1000)
           : 0;
@@ -213,7 +195,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
         clearInterval(intervalRef.current);
       }
     };
-  }, [sessionId, user, isTabVisible, hasWindowFocus, isExternalWindowOpen]);
+  }, [sessionId, user, isTabVisible, isExternalWindowOpen]);
 
   // Send final update on unmount but don't deactivate
   // Let the backend cron job handle session deactivation after prolonged inactivity
@@ -221,8 +203,8 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     return () => {
       if (sessionId) {
         // Send final time update only
-        // Track based on tab visibility and window focus (primary signals)
-        const isActivelyWatching = isTabVisible && hasWindowFocus;
+        // Track based on tab visibility (primary signal)
+        const isActivelyWatching = isTabVisible;
         const finalTime = accumulatedTimeRef.current + 
           (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
         
@@ -238,11 +220,11 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
           });
       }
     };
-  }, [sessionId, isTabVisible, hasWindowFocus, isExternalWindowOpen]);
+  }, [sessionId, isTabVisible, isExternalWindowOpen]);
 
   // Update watch time display every second (local only)
   useEffect(() => {
-    const isActivelyWatching = isTabVisible && hasWindowFocus;
+    const isActivelyWatching = isTabVisible;
     if (!isActivelyWatching) return;
 
     const displayInterval = setInterval(() => {
@@ -251,7 +233,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     }, 1000);
 
     return () => clearInterval(displayInterval);
-  }, [isTabVisible, hasWindowFocus, isExternalWindowOpen]);
+  }, [isTabVisible, isExternalWindowOpen]);
 
   const formatWatchTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
