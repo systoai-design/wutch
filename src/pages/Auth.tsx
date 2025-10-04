@@ -9,16 +9,40 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { MFAVerification } from '@/components/MFAVerification';
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(100);
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(100, 'Password must be less than 100 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 const usernameOrEmailSchema = z.string().min(1, 'Email or username is required').max(255);
+
+const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 2) return { score, label: 'Weak', color: 'bg-destructive' };
+  if (score <= 3) return { score, label: 'Fair', color: 'bg-warning' };
+  if (score <= 4) return { score, label: 'Good', color: 'bg-primary' };
+  return { score, label: 'Strong', color: 'bg-success' };
+};
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' });
 
   useEffect(() => {
     document.title = 'Login or Sign Up | Wutch';
@@ -31,6 +55,14 @@ const Auth = () => {
     username: '',
     displayName: ''
   });
+
+  useEffect(() => {
+    if (signupData.password) {
+      setPasswordStrength(getPasswordStrength(signupData.password));
+    } else {
+      setPasswordStrength({ score: 0, label: '', color: '' });
+    }
+  }, [signupData.password]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +114,18 @@ const Auth = () => {
       navigate('/app');
     } catch (error: any) {
       console.error('Login error:', error);
+      let errorMessage = error.message || 'Invalid email, username, or password';
+      
+      // Handle specific error cases
+      if (error.message?.includes('rate limit')) {
+        errorMessage = 'Too many login attempts. Please try again later.';
+      } else if (error.message?.includes('Invalid login')) {
+        errorMessage = 'Invalid credentials. Please check your email/username and password.';
+      }
+
       toast({
         title: 'Login Failed',
-        description: error.message || 'Invalid email, username, or password',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -98,7 +139,12 @@ const Auth = () => {
 
     try {
       emailSchema.parse(signupData.email);
-      passwordSchema.parse(signupData.password);
+      
+      // Validate password with detailed error messages
+      const passwordValidation = passwordSchema.safeParse(signupData.password);
+      if (!passwordValidation.success) {
+        throw new Error(passwordValidation.error.errors[0].message);
+      }
 
       if (!signupData.username.trim()) {
         throw new Error('Username is required');
@@ -122,15 +168,26 @@ const Auth = () => {
 
       toast({
         title: 'Account Created!',
-        description: 'Welcome to Wutch!',
+        description: 'Please check your email to verify your account.',
       });
 
       navigate('/app');
     } catch (error: any) {
       console.error('Signup error:', error);
+      let errorMessage = error.message || 'Could not create account';
+      
+      // Handle specific error cases
+      if (error.message?.includes('leaked password')) {
+        errorMessage = 'This password has been compromised in a data breach. Please choose a different password.';
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = 'An account with this email already exists. Please log in instead.';
+      } else if (error.message?.includes('Password')) {
+        errorMessage = error.message; // Show specific password requirement errors
+      }
+
       toast({
         title: 'Signup Failed',
-        description: error.message || 'Could not create account',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -192,15 +249,24 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="login-password">Password</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  required
-                  className="transition-all focus:scale-[1.02]"
-                />
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    required
+                    className="transition-all focus:scale-[1.02] pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <Button type="submit" className="w-full transition-all hover:scale-105" disabled={isLoading}>
@@ -248,17 +314,76 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={signupData.password}
-                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Must be at least 6 characters
-                </p>
+                <div className="relative">
+                  <Input
+                    id="signup-password"
+                    type={showSignupPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={signupData.password}
+                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                
+                {signupData.password && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all ${passwordStrength.color}`}
+                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium">{passwordStrength.label}</span>
+                    </div>
+                    <div className="text-xs space-y-1">
+                      <div className="flex items-center gap-1">
+                        {signupData.password.length >= 8 ? 
+                          <CheckCircle2 size={12} className="text-success" /> : 
+                          <AlertCircle size={12} className="text-muted-foreground" />
+                        }
+                        <span className={signupData.password.length >= 8 ? 'text-success' : 'text-muted-foreground'}>
+                          At least 8 characters
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/[A-Z]/.test(signupData.password) && /[a-z]/.test(signupData.password) ? 
+                          <CheckCircle2 size={12} className="text-success" /> : 
+                          <AlertCircle size={12} className="text-muted-foreground" />
+                        }
+                        <span className={/[A-Z]/.test(signupData.password) && /[a-z]/.test(signupData.password) ? 'text-success' : 'text-muted-foreground'}>
+                          Upper & lowercase letters
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/[0-9]/.test(signupData.password) ? 
+                          <CheckCircle2 size={12} className="text-success" /> : 
+                          <AlertCircle size={12} className="text-muted-foreground" />
+                        }
+                        <span className={/[0-9]/.test(signupData.password) ? 'text-success' : 'text-muted-foreground'}>
+                          At least one number
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/[^A-Za-z0-9]/.test(signupData.password) ? 
+                          <CheckCircle2 size={12} className="text-success" /> : 
+                          <AlertCircle size={12} className="text-muted-foreground" />
+                        }
+                        <span className={/[^A-Za-z0-9]/.test(signupData.password) ? 'text-success' : 'text-muted-foreground'}>
+                          At least one special character
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
