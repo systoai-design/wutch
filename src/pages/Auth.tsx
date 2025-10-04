@@ -177,17 +177,23 @@ const Auth = () => {
         throw new Error(error.message || 'Failed to create account');
       }
 
-      // Verify profile was created
+      // Verify profile was created (use maybeSingle to avoid PGRST116 error)
       if (data.user) {
-        const { error: profileError } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
-          console.error('Profile creation may have failed:', profileError);
-          // Don't throw - profile might be created by trigger asynchronously
+          console.error('Profile verification error:', profileError);
+          toast({
+            title: "Warning",
+            description: "Profile verification failed. Please contact support if you experience issues.",
+            variant: "destructive",
+          });
+        } else if (!profile) {
+          console.warn('Profile not found after signup - may be created by trigger');
         }
       }
 

@@ -24,3 +24,9 @@ verify_jwt = true
 
 [functions.charge-bounty-wallet]
 verify_jwt = true
+
+[functions.get-email-by-username]
+verify_jwt = false
+
+[functions.admin-reset]
+verify_jwt = false

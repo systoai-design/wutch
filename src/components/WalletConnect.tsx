@@ -26,74 +26,122 @@ export const WalletConnect = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Load saved wallet address and donation preference
     const loadWalletData = async () => {
-      if (!user) return;
-      
-      const { data: walletData } = await supabase
-        .from('profile_wallets')
-        .select('wallet_address')
-        .eq('user_id', user.id)
-        .single();
-
-      if (walletData?.wallet_address) {
-        setWalletAddress(walletData.wallet_address);
+      if (!user) {
+        // Clear wallet state when user changes
+        setWalletAddress(null);
+        setAcceptDonations(false);
+        
+        // Optionally disconnect Phantom when switching accounts
+        const { solana } = window as any;
+        if (solana?.isConnected) {
+          try {
+            await solana.disconnect();
+          } catch (error) {
+            console.error('Error disconnecting wallet:', error);
+          }
+        }
+        return;
       }
 
-      // Check if user has enabled public donations
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('public_wallet_address')
-        .eq('id', user.id)
-        .single();
+      try {
+        // Load saved wallet address from profile_wallets
+        const { data: walletData, error: walletError } = await supabase
+          .from('profile_wallets')
+          .select('wallet_address')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      setAcceptDonations(!!profileData?.public_wallet_address);
+        if (walletError) throw walletError;
+
+        if (walletData?.wallet_address) {
+          setWalletAddress(walletData.wallet_address);
+        } else {
+          setWalletAddress(null);
+        }
+
+        // Load donation setting from profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('public_wallet_address')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        setAcceptDonations(!!profileData?.public_wallet_address);
+      } catch (error) {
+        console.error('Error loading wallet data:', error);
+      }
     };
 
     loadWalletData();
   }, [user]);
 
   const connectWallet = async () => {
-    setIsConnecting(true);
-
     try {
-      // Check if Phantom wallet is installed
+      setIsConnecting(true);
+      
       const { solana } = window as any;
-
+      
       if (!solana?.isPhantom) {
         toast({
-          title: 'Wallet Not Found',
-          description: 'Please install Phantom wallet to earn rewards!',
-          variant: 'destructive',
+          title: "Phantom Not Found",
+          description: "Please install Phantom wallet extension to continue.",
+          variant: "destructive",
         });
-        window.open('https://phantom.app/', '_blank');
         return;
       }
 
-      // Connect to Phantom
       const response = await solana.connect();
       const address = response.publicKey.toString();
+      
+      // Check if this wallet is already connected to another account
+      const { data: existingWallet, error: checkError } = await supabase
+        .from('profile_wallets')
+        .select('user_id')
+        .eq('wallet_address', address)
+        .maybeSingle();
 
-      // Save wallet address to profile_wallets (private)
-      if (user) {
-        const { error } = await supabase
-          .from('profile_wallets')
-          .upsert({ user_id: user.id, wallet_address: address });
-
-        if (error) throw error;
+      if (checkError) {
+        console.error('Error checking existing wallet:', checkError);
+        throw new Error('Failed to verify wallet availability');
       }
+
+      if (existingWallet && existingWallet.user_id !== user?.id) {
+        toast({
+          title: "Wallet Already Connected",
+          description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
+          variant: "destructive",
+        });
+        // Disconnect the wallet from Phantom
+        await solana.disconnect();
+        return;
+      }
+
+      // Save wallet address to profile_wallets table (upsert by user_id)
+      const { error } = await supabase
+        .from('profile_wallets')
+        .upsert({
+          user_id: user?.id,
+          wallet_address: address,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
 
       setWalletAddress(address);
       toast({
-        title: 'Wallet Connected!',
-        description: 'You can now earn rewards by sharing streams.',
+        title: "Wallet Connected",
+        description: "Your Phantom wallet has been connected successfully.",
       });
     } catch (error: any) {
-      console.error('Wallet connection error:', error);
+      console.error('Error connecting wallet:', error);
       toast({
-        title: 'Connection Failed',
-        description: error.message || 'Could not connect wallet',
-        variant: 'destructive',
+        title: "Connection Failed",
+        description: error.message || "Failed to connect wallet. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsConnecting(false);
