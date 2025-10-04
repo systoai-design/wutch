@@ -51,24 +51,44 @@ const StreamDetail = () => {
   });
 
   // Poll Pump.fun window to check if it's still open
+  // Using optimistic approach - assume window is open until confirmed closed
   useEffect(() => {
     if (!pumpFunWindowRef.current) return;
 
+    // Optimistically set to true immediately
     setIsPumpFunOpen(true);
 
     const checkInterval = setInterval(() => {
-      if (pumpFunWindowRef.current?.closed) {
-        setIsPumpFunOpen(false);
-        toast.warning('Pump.fun Window Closed', {
-          description: 'Watch time tracking has stopped. Reopen Pump.fun to continue.',
-          duration: 5000,
-        });
-        pumpFunWindowRef.current = null;
+      try {
+        // Only mark as closed if we can confirm it
+        if (pumpFunWindowRef.current?.closed) {
+          setIsPumpFunOpen(false);
+          toast.warning('Pump.fun Window May Be Closed', {
+            description: 'Consider reopening Pump.fun to ensure you\'re watching the stream.',
+            duration: 5000,
+            action: {
+              label: 'Reopen',
+              onClick: () => {
+                if (stream?.pump_fun_url) {
+                  const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                  if (newWindow) {
+                    pumpFunWindowRef.current = newWindow;
+                    setIsPumpFunOpen(true);
+                  }
+                }
+              }
+            }
+          });
+          pumpFunWindowRef.current = null;
+        }
+      } catch (error) {
+        // Handle cross-origin restrictions gracefully
+        console.log('Cannot check Pump.fun window status (cross-origin)');
       }
     }, 2000);
 
     return () => clearInterval(checkInterval);
-  }, [pumpFunWindowRef.current]);
+  }, [pumpFunWindowRef.current, stream?.pump_fun_url]);
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -174,6 +194,7 @@ const StreamDetail = () => {
                       const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
                       if (newWindow && !isOwner && user) {
                         pumpFunWindowRef.current = newWindow;
+                        // Optimistically set to true immediately
                         setIsPumpFunOpen(true);
                       }
                     }}
@@ -256,10 +277,25 @@ const StreamDetail = () => {
                       </AlertDescription>
                     </Alert>
                     {!isPumpFunOpen && hasStartedWatching && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
+                      <Alert className="border-warning/50 bg-warning/10">
+                        <AlertCircle className="h-4 w-4 text-warning" />
                         <AlertDescription>
-                          <strong>Stream window closed!</strong> Reopen Pump.fun to resume watch time tracking.
+                          <strong>Pump.fun window may be closed.</strong> We recommend keeping it open while watching. 
+                          <Button
+                            variant="link"
+                            className="h-auto p-0 ml-1 text-warning"
+                            onClick={() => {
+                              if (stream?.pump_fun_url) {
+                                const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                                if (newWindow) {
+                                  pumpFunWindowRef.current = newWindow;
+                                  setIsPumpFunOpen(true);
+                                }
+                              }
+                            }}
+                          >
+                            Reopen Pump.fun →
+                          </Button>
                         </AlertDescription>
                       </Alert>
                     )}

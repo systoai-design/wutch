@@ -22,27 +22,32 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const accumulatedTimeRef = useRef<number>(0);
 
   // Poll external window to check if it's still open
+  // Using optimistic approach - assume window is open until we can confirm it's closed
   useEffect(() => {
     if (!externalWindow) {
       setIsExternalWindowOpen(false);
       return;
     }
 
-    setIsExternalWindowOpen(!externalWindow.closed);
+    // Optimistically set to true immediately when window exists
+    setIsExternalWindowOpen(true);
 
     const checkInterval = setInterval(() => {
-      const isOpen = !externalWindow.closed;
-      if (isExternalWindowOpen !== isOpen) {
-        setIsExternalWindowOpen(isOpen);
+      try {
+        // Only set to false if we can confirm the window is closed
+        // Handle cross-origin restrictions gracefully
+        const isOpen = externalWindow && !externalWindow.closed;
         
-        if (!isOpen) {
+        if (!isOpen && isExternalWindowOpen) {
+          setIsExternalWindowOpen(false);
           // Window closed - accumulate current session time
           const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
           accumulatedTimeRef.current += currentSessionTime;
-        } else {
-          // Window reopened - reset start time
-          startTimeRef.current = Date.now();
         }
+      } catch (error) {
+        // If we can't access the window due to cross-origin restrictions,
+        // assume it's still open (optimistic approach)
+        console.log('Cannot check external window status (cross-origin), assuming open');
       }
     }, 2000);
 
@@ -167,8 +172,9 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
     const sendHeartbeat = async () => {
       try {
-        // Only count time if tab is visible AND window has focus AND external window is open
-        const isActivelyWatching = isTabVisible && hasWindowFocus && isExternalWindowOpen;
+        // Count time if tab is visible AND window has focus
+        // External window is advisory - we track based on user presence on the page
+        const isActivelyWatching = isTabVisible && hasWindowFocus;
         const currentSessionTime = isActivelyWatching 
           ? Math.floor((Date.now() - startTimeRef.current) / 1000)
           : 0;
@@ -215,7 +221,8 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     return () => {
       if (sessionId) {
         // Send final time update only
-        const isActivelyWatching = isTabVisible && hasWindowFocus && isExternalWindowOpen;
+        // Track based on tab visibility and window focus (primary signals)
+        const isActivelyWatching = isTabVisible && hasWindowFocus;
         const finalTime = accumulatedTimeRef.current + 
           (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
         
@@ -235,7 +242,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
   // Update watch time display every second (local only)
   useEffect(() => {
-    const isActivelyWatching = isTabVisible && hasWindowFocus && isExternalWindowOpen;
+    const isActivelyWatching = isTabVisible && hasWindowFocus;
     if (!isActivelyWatching) return;
 
     const displayInterval = setInterval(() => {
