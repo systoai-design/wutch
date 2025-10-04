@@ -25,19 +25,16 @@ const ResetPassword = () => {
       // Validate email
       emailSchema.parse(email);
 
-      // Send password reset email
-      const redirectUrl = `${window.location.origin}/update-password`;
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
+      // Call custom backend function for password reset
+      const { error } = await supabase.functions.invoke('request-password-reset', {
+        body: { email },
       });
 
       if (error) {
-        // Don't reveal if email exists or not for security
         if (error.message.includes('rate limit')) {
           throw new Error('Too many requests. Please try again later.');
         }
-        // Still show success even if email doesn't exist (security best practice)
+        console.error('Password reset error:', error);
       }
 
       setEmailSent(true);
