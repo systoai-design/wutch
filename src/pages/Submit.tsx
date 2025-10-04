@@ -19,6 +19,7 @@ import { Upload, DollarSign, Users, Clock, Key, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
+import * as web3 from '@solana/web3.js';
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -205,19 +206,84 @@ const Submit = () => {
 
       // Create bounty if requested
       if (formData.createBounty && livestreamData) {
-        const { error: bountyError } = await supabase
-          .from('stream_bounties')
-          .insert({
-            livestream_id: livestreamData.id,
-            creator_id: user.id,
-            total_deposit: bountyCalc.total,
-            reward_per_participant: parseFloat(formData.rewardPerPerson),
-            participant_limit: parseInt(formData.participantLimit),
-            secret_word: formData.secretWord,
-            is_active: true,
-          });
+        // Fetch user's wallet address
+        const { data: walletData, error: walletError } = await supabase
+          .from('profile_wallets')
+          .select('wallet_address')
+          .eq('user_id', user.id)
+          .single();
 
-        if (bountyError) throw bountyError;
+        if (walletError || !walletData?.wallet_address) {
+          throw new Error('Please connect your wallet before creating a bounty');
+        }
+
+        // Charge the wallet for bounty + platform fee
+        toast({
+          title: 'Preparing Payment',
+          description: 'Please approve the transaction in your wallet...',
+        });
+
+        const { data: chargeData, error: chargeError } = await supabase.functions.invoke(
+          'charge-bounty-wallet',
+          {
+            body: {
+              amount: bountyCalc.total,
+              fromWalletAddress: walletData.wallet_address,
+              toWalletAddress: formData.bountyWalletAddress,
+            },
+          }
+        );
+
+        if (chargeError || !chargeData?.success) {
+          throw new Error(chargeData?.error || 'Failed to process bounty payment');
+        }
+
+        // Get Phantom wallet to sign the transaction
+        const { solana } = window as any;
+        if (!solana?.isPhantom) {
+          throw new Error('Please install Phantom wallet to create a bounty');
+        }
+
+        try {
+          // Decode and sign the transaction
+          const transactionBuffer = Uint8Array.from(
+            atob(chargeData.transaction),
+            c => c.charCodeAt(0)
+          );
+          const transaction = web3.Transaction.from(transactionBuffer);
+          
+          const signed = await solana.signTransaction(transaction);
+          
+          // Send the signed transaction
+          const connection = new web3.Connection(
+            web3.clusterApiUrl('devnet'),
+            'confirmed'
+          );
+          
+          const signature = await connection.sendRawTransaction(signed.serialize());
+          await connection.confirmTransaction(signature, 'confirmed');
+
+          console.log('Bounty payment successful:', signature);
+
+          // Create the bounty record after successful payment
+          const { error: bountyError } = await supabase
+            .from('stream_bounties')
+            .insert({
+              livestream_id: livestreamData.id,
+              creator_id: user.id,
+              total_deposit: bountyCalc.total,
+              reward_per_participant: parseFloat(formData.rewardPerPerson),
+              participant_limit: parseInt(formData.participantLimit),
+              secret_word: formData.secretWord,
+              is_active: true,
+            });
+
+          if (bountyError) throw bountyError;
+
+        } catch (walletError) {
+          console.error('Wallet transaction error:', walletError);
+          throw new Error('Payment was cancelled or failed. Please try again.');
+        }
       }
 
       toast({

@@ -21,3 +21,6 @@ verify_jwt = false
 
 [functions.process-bounty-reward]
 verify_jwt = true
+
+[functions.charge-bounty-wallet]
+verify_jwt = true

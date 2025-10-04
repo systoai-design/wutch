@@ -1,0 +1,126 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import * as web3 from "https://esm.sh/@solana/web3.js@1.98.4";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { amount, fromWalletAddress, toWalletAddress } = await req.json();
+    
+    console.log('Charging bounty wallet:', { amount, fromWalletAddress, toWalletAddress });
+
+    if (!amount || !fromWalletAddress || !toWalletAddress) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Validate amount is positive
+    if (amount <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'Amount must be greater than 0' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Connect to Solana devnet
+    const connection = new web3.Connection(
+      web3.clusterApiUrl('devnet'),
+      'confirmed'
+    );
+
+    // Validate wallet addresses
+    let fromPubkey: web3.PublicKey;
+    let toPubkey: web3.PublicKey;
+    
+    try {
+      fromPubkey = new web3.PublicKey(fromWalletAddress);
+      toPubkey = new web3.PublicKey(toWalletAddress);
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid wallet address format' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Convert USD to SOL (using a mock rate, in production use an oracle)
+    const SOL_PRICE_USD = 150; // Mock price, replace with real-time oracle
+    const solAmount = amount / SOL_PRICE_USD;
+    const lamports = Math.floor(solAmount * web3.LAMPORTS_PER_SOL);
+
+    console.log(`Converting ${amount} USD to ${solAmount} SOL (${lamports} lamports)`);
+
+    // Check if user has sufficient balance
+    const balance = await connection.getBalance(fromPubkey);
+    console.log(`User balance: ${balance} lamports`);
+
+    if (balance < lamports) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Insufficient balance',
+          required: lamports,
+          available: balance,
+          requiredSOL: solAmount,
+          availableSOL: balance / web3.LAMPORTS_PER_SOL
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // For security, this transaction must be signed by the user on the client side
+    // We return the transaction details for the client to sign
+    const transaction = new web3.Transaction().add(
+      web3.SystemProgram.transfer({
+        fromPubkey,
+        toPubkey,
+        lamports,
+      })
+    );
+
+    // Get recent blockhash
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPubkey;
+
+    // Serialize transaction for client to sign
+    const serializedTransaction = transaction.serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    });
+
+    // Convert to base64 using Deno's btoa
+    const base64Transaction = btoa(
+      String.fromCharCode(...new Uint8Array(serializedTransaction))
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        transaction: base64Transaction,
+        amount: solAmount,
+        lamports,
+        message: 'Transaction prepared. Please sign with your wallet.'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error charging bounty wallet:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to prepare transaction',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+});

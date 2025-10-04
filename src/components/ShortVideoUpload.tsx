@@ -87,6 +87,15 @@ export const ShortVideoUpload = () => {
       return;
     }
 
+    if (!formData.title.trim() || !formData.description.trim()) {
+      toast({
+        title: 'Required Fields',
+        description: 'Please provide both title and description',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -103,14 +112,62 @@ export const ShortVideoUpload = () => {
         .from('short-videos')
         .getPublicUrl(videoPath);
 
-      // Upload thumbnail if provided
+      // Generate thumbnail from video if not provided
       let thumbnailUrl = null;
-      if (thumbnailFile) {
-        const thumbExt = thumbnailFile.name.split('.').pop();
+      let thumbnailToUpload = thumbnailFile;
+      
+      if (!thumbnailToUpload) {
+        // Generate thumbnail from first frame of video
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        thumbnailToUpload = await new Promise<File>((resolve, reject) => {
+          video.onloadeddata = () => {
+            video.currentTime = 1; // Capture at 1 second
+          };
+          
+          video.onseeked = () => {
+            if (ctx) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const file = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
+                  resolve(file);
+                } else {
+                  reject(new Error('Failed to generate thumbnail'));
+                }
+              }, 'image/jpeg', 0.85);
+            } else {
+              reject(new Error('Canvas context not available'));
+            }
+            
+            URL.revokeObjectURL(video.src);
+          };
+          
+          video.onerror = () => {
+            URL.revokeObjectURL(video.src);
+            reject(new Error('Failed to load video for thumbnail'));
+          };
+          
+          video.src = URL.createObjectURL(videoFile);
+        });
+      }
+      
+      // Upload thumbnail
+      if (thumbnailToUpload) {
+        const thumbExt = thumbnailToUpload.name.split('.').pop();
         const thumbPath = `${user.id}/${Date.now()}.${thumbExt}`;
         const { error: thumbError } = await supabase.storage
           .from('short-thumbnails')
-          .upload(thumbPath, thumbnailFile);
+          .upload(thumbPath, thumbnailToUpload);
 
         if (!thumbError) {
           const { data: { publicUrl } } = supabase.storage
@@ -228,11 +285,14 @@ export const ShortVideoUpload = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">
+            Description <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             id="description"
             placeholder="Describe your short video"
             rows={3}
+            required
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
