@@ -29,7 +29,10 @@ const StreamDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
   const [isPumpFunOpen, setIsPumpFunOpen] = useState(false);
+  const [windowOpenedAt, setWindowOpenedAt] = useState<number>(0);
+  const [warningDismissedUntil, setWarningDismissedUntil] = useState<number>(0);
   const pumpFunWindowRef = useRef<Window | null>(null);
+  const crossOriginErrorCountRef = useRef(0);
 
   // Track viewing session
   const { 
@@ -53,16 +56,22 @@ const StreamDetail = () => {
   // Poll Pump.fun window to check if it's still open
   // Using optimistic approach - assume window is open until confirmed closed
   useEffect(() => {
-    if (!pumpFunWindowRef.current) return;
+    if (!windowOpenedAt || !pumpFunWindowRef.current) {
+      return;
+    }
 
-    // Optimistically set to true immediately
-    setIsPumpFunOpen(true);
+    console.log("Starting external window polling...");
+    crossOriginErrorCountRef.current = 0;
 
     const checkInterval = setInterval(() => {
       try {
         // Only mark as closed if we can confirm it
         if (pumpFunWindowRef.current?.closed) {
+          console.log("External Pump.fun window was closed");
           setIsPumpFunOpen(false);
+          pumpFunWindowRef.current = null;
+          crossOriginErrorCountRef.current = 0;
+          
           toast.warning('Pump.fun Window May Be Closed', {
             description: 'Consider reopening Pump.fun to ensure you\'re watching the stream.',
             duration: 5000,
@@ -70,25 +79,41 @@ const StreamDetail = () => {
               label: 'Reopen',
               onClick: () => {
                 if (stream?.pump_fun_url) {
+                  setIsPumpFunOpen(true);
+                  setWindowOpenedAt(Date.now());
                   const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
                   if (newWindow) {
                     pumpFunWindowRef.current = newWindow;
-                    setIsPumpFunOpen(true);
                   }
                 }
               }
             }
           });
-          pumpFunWindowRef.current = null;
+        } else {
+          // Window is still open, reset error counter
+          crossOriginErrorCountRef.current = 0;
+          console.log("External window polling: window is open");
         }
       } catch (error) {
-        // Handle cross-origin restrictions gracefully
-        console.log('Cannot check Pump.fun window status (cross-origin)');
+        // Handle cross-origin restrictions gracefully - be optimistic
+        crossOriginErrorCountRef.current++;
+        console.log(`Cross-origin error (${crossOriginErrorCountRef.current}/3):`, error);
+        
+        // Only mark as closed after 3 consecutive errors
+        if (crossOriginErrorCountRef.current >= 3) {
+          console.log("External window likely closed (3 consecutive errors)");
+          setIsPumpFunOpen(false);
+          pumpFunWindowRef.current = null;
+          crossOriginErrorCountRef.current = 0;
+        }
       }
     }, 2000);
 
-    return () => clearInterval(checkInterval);
-  }, [pumpFunWindowRef.current, stream?.pump_fun_url]);
+    return () => {
+      console.log("Stopping external window polling");
+      clearInterval(checkInterval);
+    };
+  }, [windowOpenedAt, stream?.pump_fun_url]);
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -190,12 +215,13 @@ const StreamDetail = () => {
                     onClick={() => {
                       if (!isOwner && user) {
                         setHasStartedWatching(true);
+                        setIsPumpFunOpen(true);
+                        setWindowOpenedAt(Date.now());
+                        crossOriginErrorCountRef.current = 0;
                       }
                       const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
                       if (newWindow && !isOwner && user) {
                         pumpFunWindowRef.current = newWindow;
-                        // Optimistically set to true immediately
-                        setIsPumpFunOpen(true);
                       }
                     }}
                   >
@@ -276,26 +302,42 @@ const StreamDetail = () => {
                         Watch time only counts when both are active - closing Pump.fun or switching tabs will pause tracking.
                       </AlertDescription>
                     </Alert>
-                    {!isPumpFunOpen && hasStartedWatching && (
+                    {!isPumpFunOpen && hasStartedWatching && Date.now() > warningDismissedUntil && (
                       <Alert className="border-warning/50 bg-warning/10">
                         <AlertCircle className="h-4 w-4 text-warning" />
-                        <AlertDescription>
-                          <strong>Pump.fun window may be closed.</strong> We recommend keeping it open while watching. 
-                          <Button
-                            variant="link"
-                            className="h-auto p-0 ml-1 text-warning"
-                            onClick={() => {
-                              if (stream?.pump_fun_url) {
-                                const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                                if (newWindow) {
-                                  pumpFunWindowRef.current = newWindow;
+                        <AlertDescription className="flex items-center justify-between gap-2">
+                          <span>
+                            <strong>Pump.fun window may be closed.</strong> We recommend keeping it open while watching.
+                          </span>
+                          <div className="flex gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (stream?.pump_fun_url) {
                                   setIsPumpFunOpen(true);
+                                  setWindowOpenedAt(Date.now());
+                                  crossOriginErrorCountRef.current = 0;
+                                  const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                                  if (newWindow) {
+                                    pumpFunWindowRef.current = newWindow;
+                                  }
                                 }
-                              }
-                            }}
-                          >
-                            Reopen Pump.fun →
-                          </Button>
+                              }}
+                            >
+                              Reopen
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setWarningDismissedUntil(Date.now() + 5 * 60 * 1000); // 5 minutes
+                                setIsPumpFunOpen(true);
+                              }}
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
                         </AlertDescription>
                       </Alert>
                     )}
