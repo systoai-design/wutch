@@ -30,10 +30,8 @@ const Navigation = () => {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/app" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">W</span>
-            </div>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/wutch-logo.png" alt="Wutch" className="h-10 w-10" />
             <span className="font-bold text-xl hidden sm:inline">Wutch</span>
           </Link>
         </div>

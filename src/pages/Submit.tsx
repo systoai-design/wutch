@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, DollarSign, Users, Clock, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { ShortVideoUpload } from '@/components/ShortVideoUpload';
 
 const Submit = () => {
   useEffect(() => {
@@ -157,14 +159,21 @@ const Submit = () => {
     <div className="min-h-screen p-4 lg:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Submit Your Stream</h1>
+          <h1 className="text-3xl font-bold mb-2">Submit Content</h1>
           <p className="text-muted-foreground">
-            Share your Pump.fun livestream with the community
+            Share your livestream or short video with the community
           </p>
         </div>
 
-        <Card className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <Tabs defaultValue="livestream" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="livestream">Submit Livestream</TabsTrigger>
+            <TabsTrigger value="short">Upload Short Video</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="livestream">
+            <Card className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="streamUrl">
                 Pump.fun Stream URL <span className="text-destructive">*</span>
@@ -411,6 +420,12 @@ const Submit = () => {
             </div>
           </form>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="short">
+            <ShortVideoUpload />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

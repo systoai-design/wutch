@@ -15,7 +15,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/' },
+    { icon: Home, label: 'Home', path: '/app' },
     { icon: Flame, label: 'Trending', path: '/trending' },
     { icon: Clock, label: 'Recently Ended', path: '/recent' },
     { icon: Video, label: 'Shorts', path: '/shorts' },

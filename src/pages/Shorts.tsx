@@ -1,50 +1,78 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Heart, MessageCircle, Share2, Wallet } from 'lucide-react';
 import DonationModal from '@/components/DonationModal';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-const mockShorts = [
-  {
-    id: '1',
-    videoUrl: 'https://example.com/short1.mp4',
-    title: 'Quick crypto tip! 🚀',
-    creator: 'CryptoKing',
-    creatorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
-    walletAddress: 'CryptoKing1234567890abcdef',
-    likes: 1234,
-    comments: 89,
-  },
-  {
-    id: '2',
-    videoUrl: 'https://example.com/short2.mp4',
-    title: 'NFT alpha drop 👀',
-    creator: 'NFTQueen',
-    creatorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    walletAddress: 'NFTQueen1234567890abcdef',
-    likes: 2341,
-    comments: 156,
-  },
-];
+type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
+  profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
+    'username' | 'display_name' | 'avatar_url' | 'wallet_address'>;
+};
 
 const Shorts = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-  const currentShort = mockShorts[currentIndex];
+  const [shorts, setShorts] = useState<ShortVideo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const currentShort = shorts[currentIndex];
 
   useEffect(() => {
     document.title = 'Shorts - Quick Videos | Wutch';
+    fetchShorts();
   }, []);
+
+  const fetchShorts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('short_videos')
+        .select(`
+          *,
+          profiles(username, display_name, avatar_url, wallet_address)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setShorts(data || []);
+    } catch (error) {
+      console.error('Error fetching shorts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (shorts.length === 0) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-2">No shorts available yet</p>
+          <Button onClick={() => window.location.href = '/submit'}>Upload First Short</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-4rem)] bg-background overflow-hidden">
       <div className="relative h-full max-w-md mx-auto">
         {/* Video Container */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-background flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-muted-foreground mb-2">Short video player</p>
-            <p className="text-xs text-muted-foreground">Swipe/scroll for next</p>
-          </div>
+        <div className="absolute inset-0 bg-black flex items-center justify-center">
+          <video
+            src={currentShort.video_url}
+            className="w-full h-full object-contain"
+            controls
+            autoPlay
+            loop
+            playsInline
+          />
         </div>
 
         {/* Overlay Controls */}
@@ -54,12 +82,16 @@ const Shorts = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-2">{currentShort.title}</h3>
                 <div className="flex items-center gap-2">
-                  <img
-                    src={currentShort.creatorAvatar}
-                    alt={currentShort.creator}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <span className="font-medium">{currentShort.creator}</span>
+                  {currentShort.profiles?.avatar_url && (
+                    <img
+                      src={currentShort.profiles.avatar_url}
+                      alt={currentShort.profiles.username || 'User'}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <span className="font-medium">
+                    {currentShort.profiles?.display_name || currentShort.profiles?.username || 'Anonymous'}
+                  </span>
                 </div>
               </div>
 
@@ -68,13 +100,13 @@ const Shorts = () => {
                   <Heart className="h-6 w-6" />
                   <span className="sr-only">Like</span>
                 </Button>
-                <span className="text-xs text-center">{currentShort.likes}</span>
+                <span className="text-xs text-center">{currentShort.like_count || 0}</span>
 
                 <Button variant="ghost" size="icon" className="rounded-full h-12 w-12">
                   <MessageCircle className="h-6 w-6" />
                   <span className="sr-only">Comment</span>
                 </Button>
-                <span className="text-xs text-center">{currentShort.comments}</span>
+                <span className="text-xs text-center">0</span>
 
                 <Button variant="ghost" size="icon" className="rounded-full h-12 w-12">
                   <Share2 className="h-6 w-6" />
@@ -97,9 +129,10 @@ const Shorts = () => {
 
         {/* Navigation Indicators */}
         <div className="absolute top-4 left-0 right-0 flex justify-center gap-1 px-4">
-          {mockShorts.map((_, index) => (
-            <div
+          {shorts.map((_, index) => (
+            <button
               key={index}
+              onClick={() => setCurrentIndex(index)}
               className={`h-1 flex-1 rounded-full transition-colors ${
                 index === currentIndex ? 'bg-primary' : 'bg-muted'
               }`}
@@ -108,12 +141,14 @@ const Shorts = () => {
         </div>
       </div>
 
-      <DonationModal
-        isOpen={isDonationModalOpen}
-        onClose={() => setIsDonationModalOpen(false)}
-        streamerName={currentShort.creator}
-        walletAddress={currentShort.walletAddress}
-      />
+      {currentShort.profiles?.wallet_address && (
+        <DonationModal
+          isOpen={isDonationModalOpen}
+          onClose={() => setIsDonationModalOpen(false)}
+          streamerName={currentShort.profiles?.display_name || currentShort.profiles?.username || 'Creator'}
+          walletAddress={currentShort.profiles.wallet_address}
+        />
+      )}
     </div>
   );
 };
