@@ -7,11 +7,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, DollarSign, Users, Clock, Key, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
+
+const STREAM_CATEGORIES = [
+  "Gaming",
+  "Trading",
+  "NFTs",
+  "DeFi",
+  "Meme Coins",
+  "Education",
+  "Music",
+  "Art & Design",
+  "Technology",
+  "Just Chatting",
+  "Other",
+] as const;
 
 const Submit = () => {
   useEffect(() => {
@@ -286,13 +307,22 @@ const Submit = () => {
                 <Label htmlFor="category">
                   Category <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="category"
-                  placeholder="e.g., Trading, NFTs, DeFi"
-                  required
+                <Select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                />
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  required
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {STREAM_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

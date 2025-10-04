@@ -21,11 +21,32 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Pencil, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+
+const STREAM_CATEGORIES = [
+  "Gaming",
+  "Trading",
+  "NFTs",
+  "DeFi",
+  "Meme Coins",
+  "Education",
+  "Music",
+  "Art & Design",
+  "Technology",
+  "Just Chatting",
+  "Other",
+] as const;
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -263,9 +284,20 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Gaming, Music, Art" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-popover z-50">
+                      {STREAM_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
