@@ -164,7 +164,32 @@ const Auth = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Signup error:', error);
+        
+        // Handle specific error cases with user-friendly messages
+        if (error.message?.toLowerCase().includes('leaked password')) {
+          throw new Error('This password has been found in a data breach. Please choose a different password.');
+        } else if (error.message?.toLowerCase().includes('user already registered')) {
+          throw new Error('An account with this email already exists. Please sign in instead.');
+        }
+        
+        throw new Error(error.message || 'Failed to create account');
+      }
+
+      // Verify profile was created
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profile creation may have failed:', profileError);
+          // Don't throw - profile might be created by trigger asynchronously
+        }
+      }
 
       toast({
         title: 'Account Created!',

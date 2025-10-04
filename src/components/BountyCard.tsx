@@ -10,7 +10,7 @@ interface BountyCardProps {
   bounty: {
     id: string;
     livestream_id: string;
-    secret_word: string;
+    secret_word?: string; // Optional - only visible to creators
     reward_per_participant: number;
     participant_limit: number;
     claimed_count: number;
