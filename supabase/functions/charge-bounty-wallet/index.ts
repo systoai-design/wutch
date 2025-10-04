@@ -52,12 +52,10 @@ serve(async (req) => {
       );
     }
 
-    // Convert USD to SOL (using a mock rate, in production use an oracle)
-    const SOL_PRICE_USD = 150; // Mock price, replace with real-time oracle
-    const solAmount = amount / SOL_PRICE_USD;
-    const lamports = Math.floor(solAmount * web3.LAMPORTS_PER_SOL);
+    // Amount is in SOL, convert directly to lamports
+    const lamports = Math.floor(amount * web3.LAMPORTS_PER_SOL);
 
-    console.log(`Converting ${amount} USD to ${solAmount} SOL (${lamports} lamports)`);
+    console.log(`Processing ${amount} SOL (${lamports} lamports)`);
 
     // Check if user has sufficient balance
     const balance = await connection.getBalance(fromPubkey);
@@ -69,7 +67,7 @@ serve(async (req) => {
           error: 'Insufficient balance',
           required: lamports,
           available: balance,
-          requiredSOL: solAmount,
+          requiredSOL: amount,
           availableSOL: balance / web3.LAMPORTS_PER_SOL
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -106,7 +104,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         transaction: base64Transaction,
-        amount: solAmount,
+        amount: amount,
         lamports,
         message: 'Transaction prepared. Please sign with your wallet.'
       }),

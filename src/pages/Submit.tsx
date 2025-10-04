@@ -62,6 +62,7 @@ const Submit = () => {
     minWatchTimeMinutes: '10',
   });
 
+  // Calculate bounty summary in SOL
   const calculateTotalBounty = () => {
     const reward = parseFloat(formData.rewardPerPerson) || 0;
     const participants = parseInt(formData.participantLimit) || 0;
@@ -288,7 +289,7 @@ const Submit = () => {
       toast({
         title: 'Stream Submitted!',
         description: formData.createBounty 
-          ? `Your stream and bounty (${bountyCalc.total.toFixed(2)} USD total) have been created.`
+          ? `Your stream and bounty (${bountyCalc.total.toFixed(3)} SOL total) have been created.`
           : 'Your stream has been submitted successfully.',
       });
 
@@ -475,7 +476,7 @@ const Submit = () => {
                     Create Viewer Bounty (Optional)
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Reward viewers who watch your stream for a minimum duration
+                    Reward viewers who watch your stream for a minimum duration in SOL
                   </p>
                 </div>
               </div>
@@ -486,13 +487,13 @@ const Submit = () => {
                     <div className="space-y-2">
                       <Label htmlFor="rewardPerPerson" className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        Reward per Person (USD)
+                        Reward per Person (SOL)
                       </Label>
                       <Input
                         id="rewardPerPerson"
                         type="number"
-                        step="0.01"
-                        min="0.01"
+                        step="0.001"
+                        min="0.001"
                         placeholder="0.05"
                         value={formData.rewardPerPerson}
                         onChange={(e) => setFormData({ ...formData, rewardPerPerson: e.target.value })}
@@ -561,19 +562,19 @@ const Submit = () => {
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Subtotal:</span>
-                          <span>${bountyCalc.subtotal.toFixed(2)} USD</span>
+                          <span>{bountyCalc.subtotal.toFixed(3)} SOL</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Platform Fee (5%):</span>
-                          <span>${bountyCalc.fee.toFixed(2)} USD</span>
+                          <span>{bountyCalc.fee.toFixed(3)} SOL</span>
                         </div>
                         <div className="flex justify-between font-semibold text-base pt-2 border-t">
                           <span>Total Deposit Required:</span>
-                          <span className="text-primary">${bountyCalc.total.toFixed(2)} USD</span>
+                          <span className="text-primary">{bountyCalc.total.toFixed(3)} SOL</span>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {formData.rewardPerPerson} USD × {formData.participantLimit} people + 5% fee
+                        {formData.rewardPerPerson} SOL × {formData.participantLimit} people + 5% fee
                       </p>
                     </div>
                   )}
