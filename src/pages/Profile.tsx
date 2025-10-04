@@ -11,6 +11,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
+import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { useToast } from '@/hooks/use-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -203,9 +204,10 @@ const ProfilePage = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto p-6">
         <Tabs defaultValue="streams">
-          <TabsList>
+          <TabsList className={`${isOwnProfile ? 'grid-cols-4' : 'grid-cols-3'} grid w-full`}>
             <TabsTrigger value="streams">Streams</TabsTrigger>
             <TabsTrigger value="shorts">Shorts</TabsTrigger>
+            {isOwnProfile && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
             <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
 
@@ -224,6 +226,12 @@ const ProfilePage = () => {
           <TabsContent value="shorts" className="mt-6">
             <p className="text-center text-muted-foreground py-8">No shorts yet</p>
           </TabsContent>
+
+          {isOwnProfile && (
+            <TabsContent value="analytics" className="mt-6">
+              <ProfileAnalytics userId={profile.id} />
+            </TabsContent>
+          )}
 
           <TabsContent value="about" className="mt-6">
             <Card className="p-6 space-y-4">

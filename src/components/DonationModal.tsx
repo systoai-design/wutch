@@ -11,22 +11,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DonationModalProps {
   isOpen: boolean;
   onClose: () => void;
   streamerName: string;
   walletAddress: string;
+  contentId: string;
+  contentType: 'livestream' | 'shortvideo';
+  recipientUserId: string;
 }
 
 const presetAmounts = [0.1, 0.5, 1, 5, 10];
 
-const DonationModal = ({ isOpen, onClose, streamerName, walletAddress }: DonationModalProps) => {
+const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId, contentType, recipientUserId }: DonationModalProps) => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleDonate = () => {
+  const handleDonate = async () => {
     const amount = selectedAmount || parseFloat(customAmount);
     if (!amount || amount <= 0) {
       toast({
@@ -37,19 +44,114 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress }: Donatio
       return;
     }
 
-    toast({
-      title: 'Donation Initiated',
-      description: `Sending ${amount} SOL to ${streamerName}. Please approve in your wallet.`,
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to send donations',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    // In a real app, this would trigger the Phantom wallet
-    setTimeout(() => {
+    setIsProcessing(true);
+
+    try {
+      // Check if Phantom wallet is available
+      const solana = (window as any).solana;
+      if (!solana || !solana.isPhantom) {
+        throw new Error('Phantom wallet not found. Please install it from phantom.app');
+      }
+
+      // Connect wallet if not connected
+      if (!solana.isConnected) {
+        await solana.connect();
+      }
+
+      toast({
+        title: 'Processing Donation',
+        description: `Sending ${amount} SOL to ${streamerName}. Please approve in your wallet.`,
+      });
+
+      // Import Solana web3 dynamically
+      const { Transaction, SystemProgram, Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+
+      // Create connection
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+
+      // Create transaction
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(solana.publicKey.toString()),
+          toPubkey: new PublicKey(walletAddress),
+          lamports: amount * LAMPORTS_PER_SOL,
+        })
+      );
+
+      transaction.feePayer = solana.publicKey;
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+
+      // Sign and send transaction
+      const signed = await solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      // Record donation in database
+      const { error: donationError } = await supabase
+        .from('donations')
+        .insert({
+          content_type: contentType,
+          content_id: contentId,
+          recipient_user_id: recipientUserId,
+          amount: amount,
+          donor_wallet_address: solana.publicKey.toString(),
+          transaction_signature: signature,
+          status: 'confirmed',
+          message: null,
+        });
+
+      if (donationError) throw donationError;
+
+      // Update creator's total donations received
+      const { error: updateError } = await supabase.rpc('increment_user_donations', {
+        user_id: recipientUserId,
+        donation_amount: amount,
+      });
+
+      if (updateError) console.error('Error updating user donations:', updateError);
+
+      // Update content's total donations by fetching current value and adding to it
+      const tableName = contentType === 'livestream' ? 'livestreams' : 'short_videos';
+      const { data: contentData } = await supabase
+        .from(tableName)
+        .select('total_donations')
+        .eq('id', contentId)
+        .single();
+
+      if (contentData) {
+        const currentTotal = parseFloat(String(contentData.total_donations || 0));
+        await supabase
+          .from(tableName)
+          .update({ total_donations: currentTotal + amount })
+          .eq('id', contentId);
+      }
+
       toast({
         title: 'Thank You!',
         description: `Your donation of ${amount} SOL was successful!`,
       });
+
       onClose();
-    }, 2000);
+    } catch (error: any) {
+      console.error('Donation error:', error);
+      toast({
+        title: 'Donation Failed',
+        description: error.message || 'Failed to process donation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -112,10 +214,11 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress }: Donatio
           <Button
             variant="donation"
             onClick={handleDonate}
+            disabled={isProcessing}
             className="flex-1 gap-2"
           >
             <Wallet className="h-4 w-4" />
-            Donate with Phantom
+            {isProcessing ? 'Processing...' : 'Donate with Phantom'}
           </Button>
         </div>
       </DialogContent>

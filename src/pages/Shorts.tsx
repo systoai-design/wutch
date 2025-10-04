@@ -297,6 +297,9 @@ const Shorts = () => {
               onClose={() => setIsDonationModalOpen(false)}
               streamerName={short.profiles?.display_name || short.profiles?.username || 'Creator'}
               walletAddress={short.profiles.wallet_address}
+              contentId={short.id}
+              contentType="shortvideo"
+              recipientUserId={short.user_id}
             />
           )}
         </div>

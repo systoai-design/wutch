@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
@@ -154,13 +154,13 @@ const Landing = () => {
           </div>
           
           <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-foreground animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            Get Paid to Watch
-            <span className="block text-primary mt-2">Pump.fun Streams</span>
+            Watch, Create & Earn
+            <span className="block text-primary mt-2">Crypto Rewards</span>
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Join the revolution where your time has value. Watch live streams from Pump.fun creators, 
-            earn crypto rewards, and claim bounties just for watching.
+            Whether you're watching or creating, earn real crypto rewards. Watch Pump.fun livestreams, 
+            upload short videos, receive donations, and claim bounties. Your content has value.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -197,11 +197,11 @@ const Landing = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-foreground">How It Works</h2>
             <p className="text-xl text-muted-foreground">
-              Three simple steps to start earning crypto rewards
+              Multiple ways to earn crypto rewards on Wutch
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
                 <Eye className="h-8 w-8 text-primary" />
@@ -226,9 +226,19 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
                 <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">3. Claim Rewards</h3>
+              <h3 className="text-2xl font-bold text-foreground">3. Claim Bounties</h3>
               <p className="text-muted-foreground">
-                Submit secret words shared by streamers and claim your crypto rewards directly to your Solana wallet.
+                Find secret words in streams and claim bounty rewards. Earn through donations, Share & Earn campaigns, and more.
+              </p>
+            </Card>
+
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                <Video className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground">4. Create & Earn</h3>
+              <p className="text-muted-foreground">
+                Upload short videos and earn through viewer donations. Soon: YouTube-style ad revenue sharing and pay-per-view!
               </p>
             </Card>
           </div>
@@ -315,8 +325,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <Eye className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Verified Watch Time</h3>
@@ -325,8 +335,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Stream Bounties</h3>
@@ -335,8 +345,18 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
+                <Video className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">Creator Monetization</h3>
+              <p className="text-muted-foreground">
+                Multiple revenue streams: bounties, livestream donations, short video tips, and soon YouTube-style ad revenue.
+              </p>
+            </Card>
+
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Share & Earn</h3>
@@ -345,8 +365,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Secure & Transparent</h3>
@@ -355,8 +375,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <Zap className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Instant Payouts</h3>
