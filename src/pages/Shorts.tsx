@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, Eye } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink } from 'lucide-react';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -512,6 +512,19 @@ function ShortVideoItem({
                   onClick={onOpenDonation}
                 >
                   <Wallet className="h-6 w-6" />
+                </Button>
+              )}
+
+              {short.promotional_link && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-12 w-12 bg-accent/90 hover:bg-accent text-white backdrop-blur-sm"
+                  asChild
+                >
+                  <a href={short.promotional_link} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-6 w-6" />
+                  </a>
                 </Button>
               )}
 

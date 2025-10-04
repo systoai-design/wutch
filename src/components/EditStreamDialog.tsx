@@ -28,11 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Upload, X } from "lucide-react";
+import { Pencil, Upload, X, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { validatePromotionalLink, sanitizeUrl } from "@/utils/urlValidation";
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -55,6 +56,7 @@ const streamSchema = z.object({
   description: z.string().max(1000).optional(),
   category: z.string().max(50).optional(),
   tags: z.string().max(200).optional(),
+  promotional_link: z.string().max(500).optional(),
 });
 
 type StreamFormData = z.infer<typeof streamSchema>;
@@ -78,6 +80,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
       description: stream.description || "",
       category: stream.category || "",
       tags: Array.isArray(stream.tags) ? stream.tags.join(", ") : "",
+      promotional_link: stream.promotional_link || "",
     },
   });
 
@@ -121,6 +124,19 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
   };
 
   const onSubmit = async (data: StreamFormData) => {
+    // Validate promotional link
+    if (data.promotional_link) {
+      const promoLinkValidation = validatePromotionalLink(data.promotional_link);
+      if (!promoLinkValidation.isValid) {
+        toast({
+          title: "Invalid Promotional Link",
+          description: promoLinkValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     setIsLoading(true);
     try {
       let thumbnailUrl = stream.thumbnail_url;
@@ -159,6 +175,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
           thumbnail_url: thumbnailUrl,
           category: data.category || null,
           tags,
+          promotional_link: data.promotional_link ? sanitizeUrl(data.promotional_link) : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", stream.id);
@@ -315,6 +332,30 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="promotional_link"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Promotional Link (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://your-affiliate-link.com"
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Add an affiliate or promotional link. Must be HTTPS.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

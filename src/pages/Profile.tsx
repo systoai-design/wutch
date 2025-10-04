@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -366,6 +366,14 @@ const ProfilePage = () => {
                   <Button variant="outline" size="icon" asChild>
                     <a href={socialLinks.website} target="_blank" rel="noopener noreferrer">
                       <Globe className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+                {profile.promotional_link && (
+                  <Button variant="default" className="gap-2" asChild>
+                    <a href={profile.promotional_link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Check this out!
                     </a>
                   </Button>
                 )}

@@ -12,10 +12,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Upload, X } from 'lucide-react';
+import { Settings, Upload, X, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -38,6 +39,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
   const [formData, setFormData] = useState({
     display_name: profile.display_name || '',
     bio: profile.bio || '',
+    promotional_link: profile.promotional_link || '',
     twitter: socialLinks.twitter || '',
     discord: socialLinks.discord || '',
     website: socialLinks.website || '',
@@ -81,6 +83,18 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate promotional link
+    const promoLinkValidation = validatePromotionalLink(formData.promotional_link);
+    if (!promoLinkValidation.isValid) {
+      toast({
+        title: 'Invalid Promotional Link',
+        description: promoLinkValidation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -112,6 +126,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
         .update({
           display_name: formData.display_name || null,
           bio: formData.bio || null,
+          promotional_link: sanitizeUrl(formData.promotional_link) || null,
           avatar_url: avatarUrl,
           banner_url: bannerUrl,
           social_links: {
@@ -183,6 +198,24 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                 rows={3}
                 maxLength={500}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="promotional_link" className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Promotional Link (Optional)
+              </Label>
+              <Input
+                id="promotional_link"
+                type="url"
+                value={formData.promotional_link}
+                onChange={(e) => setFormData({ ...formData, promotional_link: e.target.value })}
+                placeholder="https://your-affiliate-link.com"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Add an affiliate or promotional link (e.g., product, service, etc.). Must be HTTPS.
+              </p>
             </div>
 
             <div>

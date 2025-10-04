@@ -5,10 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Video } from 'lucide-react';
+import { Upload, Video, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 
 export const ShortVideoUpload = () => {
   const { toast } = useToast();
@@ -20,6 +21,7 @@ export const ShortVideoUpload = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    promotional_link: '',
   });
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +96,19 @@ export const ShortVideoUpload = () => {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Validate promotional link if provided
+    if (formData.promotional_link) {
+      const promoLinkValidation = validatePromotionalLink(formData.promotional_link);
+      if (!promoLinkValidation.isValid) {
+        toast({
+          title: 'Invalid Promotional Link',
+          description: promoLinkValidation.error,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setIsUploading(true);
@@ -197,6 +212,7 @@ export const ShortVideoUpload = () => {
           thumbnail_url: thumbnailUrl,
           title: formData.title,
           description: formData.description,
+          promotional_link: formData.promotional_link ? sanitizeUrl(formData.promotional_link) : null,
           duration,
         });
 
@@ -296,6 +312,23 @@ export const ShortVideoUpload = () => {
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="promotional_link" className="flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            Promotional Link (Optional)
+          </Label>
+          <Input
+            id="promotional_link"
+            type="url"
+            placeholder="https://your-affiliate-link.com"
+            value={formData.promotional_link}
+            onChange={(e) => setFormData({ ...formData, promotional_link: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Add an affiliate or promotional link. Must be HTTPS.
+          </p>
         </div>
 
         <div className="flex gap-4">

@@ -451,6 +451,16 @@ const StreamDetail = () => {
                 </TabsList>
                 <TabsContent value="description" className="mt-4 space-y-4">
                   <p className="text-foreground">{stream.description}</p>
+                  
+                  {stream.promotional_link && (
+                    <Button className="gap-2 w-full" size="lg" asChild>
+                      <a href={stream.promotional_link} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-5 w-5" />
+                        Check out this link!
+                      </a>
+                    </Button>
+                  )}
+                  
                   {stream.tags && stream.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {stream.tags.map((tag) => (

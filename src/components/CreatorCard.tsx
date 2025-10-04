@@ -12,6 +12,7 @@ interface CreatorCardProps {
     display_name: string | null;
     avatar_url: string | null;
     banner_url: string | null;
+    bio: string | null;
     follower_count: number;
     is_verified: boolean;
   };
@@ -62,6 +63,13 @@ export function CreatorCard({ profile }: CreatorCardProps) {
               </p>
             </div>
           </div>
+
+          {/* Bio */}
+          {profile.bio && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+              {profile.bio}
+            </p>
+          )}
 
           {/* Follower Count */}
           <div className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">

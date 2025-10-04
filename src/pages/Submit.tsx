@@ -15,10 +15,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, DollarSign, Users, Clock, Key, X } from 'lucide-react';
+import { Upload, DollarSign, Users, Clock, Key, X, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
+import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -51,6 +52,7 @@ const Submit = () => {
     description: '',
     category: '',
     tags: '',
+    promotional_link: '',
     walletAddress: '',
     tosAccepted: false,
     // Bounty fields
@@ -133,6 +135,19 @@ const Submit = () => {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Validate promotional link if provided
+    if (formData.promotional_link) {
+      const promoLinkValidation = validatePromotionalLink(formData.promotional_link);
+      if (!promoLinkValidation.isValid) {
+        toast({
+          title: 'Invalid Promotional Link',
+          description: promoLinkValidation.error,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     if (formData.createBounty) {
@@ -265,6 +280,7 @@ const Submit = () => {
           thumbnail_url: thumbnailUrl,
           category: formData.category,
           tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          promotional_link: formData.promotional_link ? sanitizeUrl(formData.promotional_link) : null,
           status: 'live',
           is_live: true,
         })
@@ -462,6 +478,23 @@ const Submit = () => {
               />
               <p className="text-xs text-muted-foreground">
                 This address will receive donations from viewers
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="promotional_link" className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Promotional Link (Optional)
+              </Label>
+              <Input
+                id="promotional_link"
+                type="url"
+                placeholder="https://your-affiliate-link.com"
+                value={formData.promotional_link}
+                onChange={(e) => setFormData({ ...formData, promotional_link: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Add an affiliate or promotional link for viewers to check out. Must be HTTPS.
               </p>
             </div>
 

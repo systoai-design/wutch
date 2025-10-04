@@ -207,6 +207,7 @@ export type Database = {
           ended_at: string | null
           id: string
           is_live: boolean | null
+          promotional_link: string | null
           pump_fun_url: string
           started_at: string | null
           status: Database["public"]["Enums"]["livestream_status"] | null
@@ -225,6 +226,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          promotional_link?: string | null
           pump_fun_url: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["livestream_status"] | null
@@ -243,6 +245,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          promotional_link?: string | null
           pump_fun_url?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["livestream_status"] | null
@@ -295,6 +298,7 @@ export type Database = {
           follower_count: number | null
           id: string
           is_verified: boolean | null
+          promotional_link: string | null
           public_wallet_address: string | null
           social_links: Json | null
           total_donations_received: number | null
@@ -310,6 +314,7 @@ export type Database = {
           follower_count?: number | null
           id: string
           is_verified?: boolean | null
+          promotional_link?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
@@ -325,6 +330,7 @@ export type Database = {
           follower_count?: number | null
           id?: string
           is_verified?: boolean | null
+          promotional_link?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
@@ -427,6 +433,7 @@ export type Database = {
           duration: number | null
           id: string
           like_count: number | null
+          promotional_link: string | null
           thumbnail_url: string | null
           title: string
           total_donations: number | null
@@ -441,6 +448,7 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          promotional_link?: string | null
           thumbnail_url?: string | null
           title: string
           total_donations?: number | null
@@ -455,6 +463,7 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          promotional_link?: string | null
           thumbnail_url?: string | null
           title?: string
           total_donations?: number | null
