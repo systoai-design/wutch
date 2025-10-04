@@ -22,7 +22,7 @@ const WatchTimeIndicator = ({
 }: WatchTimeIndicatorProps) => {
   const progressPercentage = Math.min((watchTime / minimumRequired) * 100, 100);
   const minutesRequired = Math.floor(minimumRequired / 60);
-  const isTracking = isTabVisible && isPumpFunOpen;
+  const isTracking = isPumpFunOpen || isTabVisible;
 
   return (
     <Card className="p-4 space-y-3">
@@ -75,9 +75,8 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep this page in focus AND Pump.fun open to earn watch time.
-            {!isPumpFunOpen && " (Timer paused - stream window closed)"}
-            {isPumpFunOpen && !isTabVisible && " (Timer paused - page not active)"}
+            Keep either this page OR the Pump.fun window open to earn watch time.
+            {!isPumpFunOpen && !isTabVisible && " (Timer paused - both windows closed)"}
           </p>
         )}
       </div>

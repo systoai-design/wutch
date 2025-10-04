@@ -143,6 +143,15 @@ serve(async (req) => {
       lamports: amountLamports,
     })
 
+    // Check escrow wallet balance before attempting transfer
+    const escrowBalance = await connection.getBalance(escrowKeypair.publicKey)
+    console.log('Escrow wallet balance:', escrowBalance / LAMPORTS_PER_SOL, 'SOL')
+    
+    if (escrowBalance < amountLamports) {
+      const shortfall = (amountLamports - escrowBalance) / LAMPORTS_PER_SOL
+      throw new Error(`Insufficient funds in payout wallet. Need ${bounty.reward_per_participant} SOL but only have ${(escrowBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL. Please top up the wallet with at least ${shortfall.toFixed(4)} SOL and try again.`)
+    }
+
     // Create and send transaction
     const transaction = new Transaction().add(
       SystemProgram.transfer({

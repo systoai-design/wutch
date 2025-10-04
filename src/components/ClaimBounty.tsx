@@ -141,9 +141,20 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
       });
 
       if (error) {
+        console.error('Claim error:', error);
         toast({
           title: 'Claim Failed',
           description: error.message || 'Failed to claim bounty. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check for backend error in response
+      if (data?.error) {
+        toast({
+          title: 'Claim Failed',
+          description: data.error,
           variant: 'destructive',
         });
         return;

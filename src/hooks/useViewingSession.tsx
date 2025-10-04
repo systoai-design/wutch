@@ -154,9 +154,9 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
     const sendHeartbeat = async () => {
       try {
-        // Count time if tab is visible (user has this page open)
-        // User can switch between webapp and Pump.fun window freely
-        const isActivelyWatching = isTabVisible;
+        // Count time if either the Pump.fun window is open OR the webapp tab is visible
+        // This ensures tracking stops only when BOTH are closed/hidden
+        const isActivelyWatching = isExternalWindowOpen || isTabVisible;
         const currentSessionTime = isActivelyWatching 
           ? Math.floor((Date.now() - startTimeRef.current) / 1000)
           : 0;
@@ -203,8 +203,8 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     return () => {
       if (sessionId) {
         // Send final time update only
-        // Track based on tab visibility (primary signal)
-        const isActivelyWatching = isTabVisible;
+        // Track based on either window being open
+        const isActivelyWatching = isExternalWindowOpen || isTabVisible;
         const finalTime = accumulatedTimeRef.current + 
           (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
         
@@ -224,7 +224,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
   // Update watch time display every second (local only)
   useEffect(() => {
-    const isActivelyWatching = isTabVisible;
+    const isActivelyWatching = isExternalWindowOpen || isTabVisible;
     if (!isActivelyWatching) return;
 
     const displayInterval = setInterval(() => {
