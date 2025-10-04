@@ -13,11 +13,14 @@ import ClaimBounty from '@/components/ClaimBounty';
 import CommentsSection from '@/components/CommentsSection';
 import { EditStreamDialog } from '@/components/EditStreamDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useViewingSession } from '@/hooks/useViewingSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { shareStreamToTwitter } from '@/utils/shareUtils';
+import { Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -25,6 +28,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 const StreamDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [stream, setStream] = useState<Livestream | null>(null);
   const [streamer, setStreamer] = useState<Profile | null>(null);
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
@@ -205,7 +209,26 @@ const StreamDetail = () => {
   }
 
   const isOwner = user && stream.user_id === user.id;
+  const canDelete = isOwner || isAdmin;
   const socialLinks = (streamer.social_links as { twitter?: string; discord?: string; website?: string }) || {};
+
+  const handleDeleteStream = async () => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from('livestreams')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Stream deleted successfully');
+      window.location.href = '/';
+    } catch (error: any) {
+      toast.error('Failed to delete stream: ' + error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -314,6 +337,29 @@ const StreamDetail = () => {
                   <Share2 className="h-4 w-4" />
                   Share
                 </Button>
+
+                {canDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="icon">
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Stream</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this stream? This action cannot be undone.
+                          {isAdmin && !isOwner && " (Admin delete)"}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteStream}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
 

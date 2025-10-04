@@ -80,18 +80,28 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
         .eq('user_id', userId)
         .eq('status', 'paid');
 
-      // Fetch view statistics
-      const { data: streamViews } = await supabase
-        .from('viewing_sessions')
-        .select('livestream_id')
+      // Fetch view statistics - count views ON streams created by this user
+      const { data: userStreams } = await supabase
+        .from('livestreams')
+        .select('id')
         .eq('user_id', userId);
+
+      let totalStreamViews = 0;
+      if (userStreams && userStreams.length > 0) {
+        const streamIds = userStreams.map(s => s.id);
+        const { count } = await supabase
+          .from('viewing_sessions')
+          .select('*', { count: 'exact', head: true })
+          .in('livestream_id', streamIds);
+        
+        totalStreamViews = count || 0;
+      }
 
       const { data: shortViews } = await supabase
         .from('short_videos')
         .select('view_count')
         .eq('user_id', userId);
 
-      const totalStreamViews = streamViews?.length || 0;
       const totalShortViews = shortViews?.reduce((sum, video) => sum + (video.view_count || 0), 0) || 0;
 
       // Calculate totals

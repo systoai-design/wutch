@@ -8,8 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useVideoView } from '@/hooks/useVideoView';
+import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { toast } from '@/hooks/use-toast';
+import { Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -17,9 +21,12 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 };
 
 const Shorts = () => {
+  const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
@@ -189,6 +196,43 @@ const Shorts = () => {
     };
   }, [shorts]);
 
+  const handleDeleteShort = async () => {
+    const short = shorts[currentIndex];
+    if (!short) return;
+
+    try {
+      const { error } = await supabase
+        .from('short_videos')
+        .delete()
+        .eq('id', short.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Short video deleted successfully",
+      });
+
+      // Remove from local state and navigate
+      const newShorts = shorts.filter(s => s.id !== short.id);
+      setShorts(newShorts);
+      
+      if (newShorts.length === 0) {
+        window.location.href = '/';
+      } else if (currentIndex >= newShorts.length) {
+        setCurrentIndex(newShorts.length - 1);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to delete short: " + error.message,
+        variant: "destructive",
+      });
+    }
+    
+    setDeleteDialogOpen(false);
+  };
+
   const navigateShort = (direction: number) => {
     if (isScrollingRef.current) return;
     
@@ -238,6 +282,9 @@ const Shorts = () => {
     >
       {shorts.map((short, index) => {
         const isActive = index === currentIndex;
+        const isOwner = user?.id === short.user_id;
+        const canDelete = isOwner || isAdmin;
+        
         return (
           <ShortVideoItem
             key={short.id}
@@ -249,7 +296,9 @@ const Shorts = () => {
             containerRef={containerRef}
             onOpenDonation={() => setIsDonationModalOpen(true)}
             onOpenComments={() => setIsCommentsOpen(true)}
+            onDelete={() => setDeleteDialogOpen(true)}
             commentCount={commentCounts[short.id] || 0}
+            canDelete={canDelete}
           />
         );
       })}
@@ -285,6 +334,23 @@ const Shorts = () => {
           )}
         </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Short Video</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this short? This action cannot be undone.
+              {shorts[currentIndex] && isAdmin && user?.id !== shorts[currentIndex].user_id && " (Admin delete)"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteShort}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -299,7 +365,9 @@ function ShortVideoItem({
   containerRef,
   onOpenDonation,
   onOpenComments,
+  onDelete,
   commentCount,
+  canDelete,
 }: {
   short: any;
   index: number;
@@ -309,7 +377,9 @@ function ShortVideoItem({
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
   onOpenDonation: () => void;
   onOpenComments: () => void;
+  onDelete: () => void;
   commentCount: number;
+  canDelete: boolean;
 }) {
   const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
   
@@ -450,6 +520,17 @@ function ShortVideoItem({
                     : short.view_count}
                 </span>
               </div>
+
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-12 w-12 bg-destructive/90 hover:bg-destructive text-white backdrop-blur-sm"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="h-6 w-6" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
