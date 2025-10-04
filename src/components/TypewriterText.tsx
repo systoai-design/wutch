@@ -8,7 +8,7 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
   const [displayText, setDisplayText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fullText = 'Watch >> Delete >> Earn';
+  const fullText = 'Watch, Create & Earn';
   const typingSpeed = 100;
   const deletingSpeed = 50;
   const pauseAfterComplete = 2000;
