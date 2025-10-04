@@ -640,12 +640,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      decrement_stream_viewers: {
+        Args: { stream_id: string }
+        Returns: undefined
+      }
       get_user_watch_time: {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number
       }
       increment_short_video_views: {
         Args: { video_id: string }
+        Returns: undefined
+      }
+      increment_stream_viewers: {
+        Args: { stream_id: string }
         Returns: undefined
       }
       increment_user_donations: {

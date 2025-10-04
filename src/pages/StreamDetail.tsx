@@ -173,6 +173,25 @@ const StreamDetail = () => {
     fetchStreamData();
   }, [id]);
 
+  // Track viewer count
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const incrementViewer = async () => {
+      await supabase.rpc('increment_stream_viewers', { stream_id: id });
+    };
+
+    const decrementViewer = async () => {
+      await supabase.rpc('decrement_stream_viewers', { stream_id: id });
+    };
+
+    incrementViewer();
+
+    return () => {
+      decrementViewer();
+    };
+  }, [id, user]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

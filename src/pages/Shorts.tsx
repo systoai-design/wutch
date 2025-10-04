@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Eye } from 'lucide-react';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -22,6 +22,7 @@ const Shorts = () => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const isScrollingRef = useRef(false);
@@ -44,6 +45,19 @@ const Shorts = () => {
 
       if (error) throw error;
       setShorts(data || []);
+
+      // Fetch comment counts for all shorts
+      const counts: Record<string, number> = {};
+      for (const short of (data || [])) {
+        const { count } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('content_id', short.id)
+          .eq('content_type', 'shortvideo');
+        
+        counts[short.id] = count || 0;
+      }
+      setCommentCounts(counts);
     } catch (error) {
       console.error('Error fetching shorts:', error);
     } finally {
@@ -141,6 +155,40 @@ const Shorts = () => {
     };
   }, [currentIndex, shorts.length]);
 
+  // Subscribe to comment updates
+  useEffect(() => {
+    if (shorts.length === 0) return;
+
+    const channel = supabase
+      .channel('comment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `content_type=eq.shortvideo`,
+        },
+        async (payload) => {
+          const contentId = (payload.new as any)?.content_id || (payload.old as any)?.content_id;
+          if (contentId) {
+            const { count } = await supabase
+              .from('comments')
+              .select('*', { count: 'exact', head: true })
+              .eq('content_id', contentId)
+              .eq('content_type', 'shortvideo');
+            
+            setCommentCounts(prev => ({ ...prev, [contentId]: count || 0 }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [shorts]);
+
   const navigateShort = (direction: number) => {
     if (isScrollingRef.current) return;
     
@@ -201,6 +249,7 @@ const Shorts = () => {
             containerRef={containerRef}
             onOpenDonation={() => setIsDonationModalOpen(true)}
             onOpenComments={() => setIsCommentsOpen(true)}
+            commentCount={commentCounts[short.id] || 0}
           />
         );
       })}
@@ -250,6 +299,7 @@ function ShortVideoItem({
   containerRef,
   onOpenDonation,
   onOpenComments,
+  commentCount,
 }: {
   short: any;
   index: number;
@@ -259,6 +309,7 @@ function ShortVideoItem({
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
   onOpenDonation: () => void;
   onOpenComments: () => void;
+  commentCount: number;
 }) {
   const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
   
@@ -366,7 +417,7 @@ function ShortVideoItem({
                 >
                   <MessageCircle className="h-6 w-6" />
                 </Button>
-                <span className="text-xs text-white font-medium mt-1">Chat</span>
+                <span className="text-xs text-white font-medium mt-1">{commentCount}</span>
               </div>
 
               <Button 
@@ -388,6 +439,17 @@ function ShortVideoItem({
                   <Wallet className="h-6 w-6" />
                 </Button>
               )}
+
+              <div className="flex flex-col items-center">
+                <div className="rounded-full h-12 w-12 bg-white/10 text-white backdrop-blur-sm flex items-center justify-center">
+                  <Eye className="h-6 w-6" />
+                </div>
+                <span className="text-xs text-white font-medium mt-1">
+                  {short.view_count >= 1000 
+                    ? `${(short.view_count / 1000).toFixed(1)}K` 
+                    : short.view_count}
+                </span>
+              </div>
             </div>
           </div>
         </div>

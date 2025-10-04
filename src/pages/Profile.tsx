@@ -13,6 +13,7 @@ import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
@@ -28,6 +29,9 @@ const ProfilePage = () => {
   const [ownWalletAddress, setOwnWalletAddress] = useState<string | null>(null);
   const [showMFAEnrollment, setShowMFAEnrollment] = useState(false);
   const [hasMFA, setHasMFA] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
 
   useEffect(() => {
     document.title = username ? `@${username} - Profile | Wutch` : 'Profile | Wutch';
@@ -73,6 +77,19 @@ const ProfilePage = () => {
           .order('created_at', { ascending: false });
 
         setStreams(streamsData || []);
+        setFollowerCount(profileData.follower_count || 0);
+
+        // Check if current user is following this profile
+        if (user && user.id !== profileData.id) {
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', user.id)
+            .eq('following_id', profileData.id)
+            .maybeSingle();
+          
+          setIsFollowing(!!followData);
+        }
       } catch (error) {
         console.error('Error fetching profile data:', error);
       } finally {
@@ -115,6 +132,46 @@ const ProfilePage = () => {
       toast({
         title: 'Error',
         description: error.message || 'Could not disable 2FA',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user || !profile) return;
+
+    // Optimistic update
+    setIsFollowing(!isFollowing);
+    setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1);
+
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', profile.id);
+
+        if (error) throw error;
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: profile.id,
+          });
+
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      // Revert on error
+      setIsFollowing(isFollowing);
+      setFollowerCount(followerCount);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update follow status',
         variant: 'destructive',
       });
     }
@@ -173,7 +230,7 @@ const ProfilePage = () => {
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold">{(profile.follower_count || 0).toLocaleString()}</span>
+                  <span className="font-semibold">{followerCount.toLocaleString()}</span>
                   <span className="text-muted-foreground">followers</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -191,8 +248,12 @@ const ProfilePage = () => {
                   />
                 ) : (
                   <>
-                    <Button>Follow</Button>
-                    <Button variant="outline">Message</Button>
+                    <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"}>
+                      {isFollowing ? "Following" : "Follow"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowMessageDialog(true)}>
+                      Message
+                    </Button>
                   </>
                 )}
                 {socialLinks.twitter && (
@@ -344,6 +405,21 @@ const ProfilePage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Message Coming Soon Dialog */}
+      <AlertDialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Messaging Coming Soon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Direct messaging feature is currently under development and will be available soon!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

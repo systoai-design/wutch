@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { Coins, TrendingUp, Video, Users, Gift, DollarSign } from 'lucide-react';
+import { Coins, TrendingUp, Video, Users, Gift, DollarSign, Eye, PlaySquare } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
@@ -13,6 +13,8 @@ interface EarningsData {
   shortDonations: number;
   shareEarnings: number;
   totalEarnings: number;
+  totalStreamViews: number;
+  totalShortViews: number;
   transactions: Array<{
     id: string;
     source: string;
@@ -36,6 +38,8 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
     shortDonations: 0,
     shareEarnings: 0,
     totalEarnings: 0,
+    totalStreamViews: 0,
+    totalShortViews: 0,
     transactions: [],
   });
 
@@ -75,6 +79,20 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
         .select('reward_amount, paid_at, transaction_signature')
         .eq('user_id', userId)
         .eq('status', 'paid');
+
+      // Fetch view statistics
+      const { data: streamViews } = await supabase
+        .from('viewing_sessions')
+        .select('livestream_id')
+        .eq('user_id', userId);
+
+      const { data: shortViews } = await supabase
+        .from('short_videos')
+        .select('view_count')
+        .eq('user_id', userId);
+
+      const totalStreamViews = streamViews?.length || 0;
+      const totalShortViews = shortViews?.reduce((sum, video) => sum + (video.view_count || 0), 0) || 0;
 
       // Calculate totals
       const bountyTotal = (bountyClaims || []).reduce((sum, claim) => sum + parseFloat(String(claim.reward_amount || 0)), 0);
@@ -120,6 +138,8 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
         shortDonations: shortTotal,
         shareEarnings: shareTotal,
         totalEarnings: bountyTotal + livestreamTotal + shortTotal + shareTotal,
+        totalStreamViews,
+        totalShortViews,
         transactions: allTransactions,
       });
     } catch (error) {
@@ -220,6 +240,31 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
             <span className="text-sm font-medium text-muted-foreground">Share & Earn</span>
           </div>
           <div className="text-2xl font-bold">{earningsData.shareEarnings.toFixed(4)} SOL</div>
+        </Card>
+      </div>
+
+      {/* View Statistics */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-chart-5/10">
+              <PlaySquare className="h-5 w-5 text-chart-5" />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">Total Stream Views</span>
+          </div>
+          <div className="text-2xl font-bold">{earningsData.totalStreamViews.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground mt-1">Unique viewing sessions</p>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Eye className="h-5 w-5 text-primary" />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">Total Short Views</span>
+          </div>
+          <div className="text-2xl font-bold">{earningsData.totalShortViews.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground mt-1">Cumulative views across all shorts</p>
         </Card>
       </div>
 
