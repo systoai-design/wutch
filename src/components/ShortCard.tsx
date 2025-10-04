@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Eye } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
@@ -12,31 +13,115 @@ interface ShortCardProps {
 }
 
 const ShortCard = ({ short }: ShortCardProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showThumbnail, setShowThumbnail] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup timeouts on unmount
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isMobile) return; // Disable hover preview on mobile
+    
+    setIsHovering(true);
+    
+    // Start playing after 1.5 second delay
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (videoRef.current) {
+        setShowThumbnail(false);
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().then(() => {
+          setIsPlaying(true);
+          
+          // Auto-stop after 5 seconds
+          playTimeoutRef.current = setTimeout(() => {
+            handleMouseLeave();
+          }, 5000);
+        }).catch(err => {
+          console.log('Video play prevented:', err);
+        });
+      }
+    }, 1500);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setIsPlaying(false);
+    setShowThumbnail(true);
+    
+    // Clear timeouts
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current);
+      playTimeoutRef.current = null;
+    }
+    
+    // Pause and reset video
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
   return (
     <Link 
       to="/shorts" 
       className="group block w-full h-full rounded-lg overflow-hidden hover-scale transition-all"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      aria-label={`Watch ${short.title}`}
     >
       <div className="relative aspect-[9/16] bg-muted rounded-lg overflow-hidden">
+        {/* Video Element (always present but hidden when not playing) */}
+        <video
+          ref={videoRef}
+          src={short.video_url}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            isPlaying && !showThumbnail ? 'opacity-100 z-10' : 'opacity-0 z-0'
+          }`}
+          muted
+          playsInline
+          preload="metadata"
+          loop={false}
+        />
+        
         {/* Thumbnail */}
-        {short.thumbnail_url ? (
-          <img
-            src={short.thumbnail_url}
-            alt={short.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <Play className="h-12 w-12 text-primary" />
+        <div className={`absolute inset-0 transition-opacity duration-300 ${
+          showThumbnail ? 'opacity-100 z-20' : 'opacity-0 z-0'
+        }`}>
+          {short.thumbnail_url ? (
+            <img
+              src={short.thumbnail_url}
+              alt={short.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Play className="h-12 w-12 text-primary" />
+            </div>
+          )}
+        </div>
+        
+        {/* Play Overlay - only show when not playing */}
+        {!isPlaying && (
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
+            <div className="bg-white/90 rounded-full p-3 animate-pulse">
+              <Play className="h-8 w-8 text-primary fill-primary" />
+            </div>
           </div>
         )}
-        
-        {/* Play Overlay */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="bg-white/90 rounded-full p-3">
-            <Play className="h-8 w-8 text-primary fill-primary" />
-          </div>
-        </div>
 
         {/* Duration Badge */}
         {short.duration && (
