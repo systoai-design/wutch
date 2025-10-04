@@ -6,7 +6,8 @@ import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { ChevronRight, DollarSign } from 'lucide-react';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -120,6 +121,18 @@ const Home = () => {
       <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
       
       <main className="p-4 lg:p-6 max-w-[2000px] mx-auto">
+        {/* Earnings Info Banner */}
+        <Card className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-chart-1/10 border-primary/20">
+          <div className="flex items-center gap-3">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                💰 Earn SOL from Views! Livestreams: $2/1K views • Shorts: $1.50/1K views
+              </p>
+            </div>
+          </div>
+        </Card>
+        
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

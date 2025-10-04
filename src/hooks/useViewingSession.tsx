@@ -174,6 +174,31 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
         setWatchTime(totalTime);
 
+        // Credit earnings every 60 seconds of watch time
+        const previousMinutes = Math.floor(accumulatedTimeRef.current / 60);
+        const currentMinutes = Math.floor(totalTime / 60);
+        
+        if (currentMinutes > previousMinutes && isActivelyWatching) {
+          // Fetch livestream owner and credit earnings
+          const { data: streamData } = await supabase
+            .from('livestreams')
+            .select('user_id')
+            .eq('id', livestreamId)
+            .single();
+          
+          if (streamData) {
+            // Credit 1 minute worth of views (non-blocking)
+            supabase.rpc('credit_view_earnings', {
+              p_user_id: streamData.user_id,
+              p_content_type: 'livestream',
+              p_content_id: livestreamId,
+              p_view_count: 60 // 60 seconds = 1 minute
+            }).then(({ error: earningsError }) => {
+              if (earningsError) console.error('Error crediting stream earnings:', earningsError);
+            });
+          }
+        }
+
         // Reset start time after successful update
         if (isActivelyWatching) {
           accumulatedTimeRef.current = totalTime;

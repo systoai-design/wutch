@@ -267,6 +267,71 @@ export type Database = {
           },
         ]
       }
+      payouts: {
+        Row: {
+          amount: number
+          id: string
+          notes: string | null
+          processed_at: string | null
+          requested_at: string
+          status: string
+          transaction_signature: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          transaction_signature?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          transaction_signature?: string | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profile_wallets: {
         Row: {
           created_at: string
@@ -298,10 +363,13 @@ export type Database = {
           follower_count: number | null
           id: string
           is_verified: boolean | null
+          last_payout_at: string | null
+          pending_earnings: number
           promotional_link: string | null
           public_wallet_address: string | null
           social_links: Json | null
           total_donations_received: number | null
+          total_earnings: number
           updated_at: string | null
           username: string
         }
@@ -314,10 +382,13 @@ export type Database = {
           follower_count?: number | null
           id: string
           is_verified?: boolean | null
+          last_payout_at?: string | null
+          pending_earnings?: number
           promotional_link?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
+          total_earnings?: number
           updated_at?: string | null
           username: string
         }
@@ -330,10 +401,13 @@ export type Database = {
           follower_count?: number | null
           id?: string
           is_verified?: boolean | null
+          last_payout_at?: string | null
+          pending_earnings?: number
           promotional_link?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
+          total_earnings?: number
           updated_at?: string | null
           username?: string
         }
@@ -617,6 +691,44 @@ export type Database = {
           },
         ]
       }
+      view_earnings: {
+        Row: {
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          earnings_amount: number
+          id: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          earnings_amount?: number
+          id?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          content_id?: string
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          earnings_amount?: number
+          id?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "view_earnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viewing_sessions: {
         Row: {
           created_at: string
@@ -666,6 +778,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      credit_view_earnings: {
+        Args: {
+          p_content_id: string
+          p_content_type: Database["public"]["Enums"]["content_type"]
+          p_user_id: string
+          p_view_count?: number
+        }
+        Returns: undefined
+      }
       deactivate_stale_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -695,6 +816,10 @@ export type Database = {
       }
       increment_user_donations: {
         Args: { donation_amount: number; user_id: string }
+        Returns: undefined
+      }
+      process_payout: {
+        Args: { p_payout_id: string; p_transaction_signature: string }
         Returns: undefined
       }
     }

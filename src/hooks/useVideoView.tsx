@@ -15,11 +15,30 @@ export function useVideoView(videoId: string, isActive: boolean) {
 
       try {
         // Increment view count
-        const { error } = await supabase.rpc("increment_short_video_views", {
+        const { error: viewError } = await supabase.rpc("increment_short_video_views", {
           video_id: videoId,
         });
 
-        if (error) throw error;
+        if (viewError) throw viewError;
+
+        // Get video owner to credit earnings
+        const { data: videoData, error: videoFetchError } = await supabase
+          .from('short_videos')
+          .select('user_id')
+          .eq('id', videoId)
+          .single();
+
+        if (!videoFetchError && videoData) {
+          // Credit earnings to video owner (non-blocking)
+          supabase.rpc('credit_view_earnings', {
+            p_user_id: videoData.user_id,
+            p_content_type: 'shortvideo',
+            p_content_id: videoId,
+            p_view_count: 1
+          }).then(({ error: earningsError }) => {
+            if (earningsError) console.error('Error crediting earnings:', earningsError);
+          });
+        }
 
         // Mark as viewed in session
         sessionStorage.setItem(viewedKey, "true");

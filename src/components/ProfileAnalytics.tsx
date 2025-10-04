@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Coins, TrendingUp, Video, Users, Gift, DollarSign, Eye, PlaySquare } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { EarningsOverview } from './EarningsOverview';
 
 interface EarningsData {
   bountyEarnings: number;
@@ -199,7 +201,17 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <Tabs defaultValue="earnings" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="earnings">View Earnings</TabsTrigger>
+        <TabsTrigger value="activity">Tips & Bounties</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="earnings" className="space-y-6">
+        <EarningsOverview userId={userId} />
+      </TabsContent>
+
+      <TabsContent value="activity" className="space-y-6 animate-fade-in">
       {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card className="p-6">
@@ -392,6 +404,7 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
           </div>
         </div>
       </Card>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };
