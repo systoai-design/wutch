@@ -57,6 +57,7 @@ const streamSchema = z.object({
   category: z.string().max(50).optional(),
   tags: z.string().max(200).optional(),
   promotional_link: z.string().max(500).optional(),
+  promotional_link_text: z.string().max(50).optional(),
 });
 
 type StreamFormData = z.infer<typeof streamSchema>;
@@ -81,6 +82,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
       category: stream.category || "",
       tags: Array.isArray(stream.tags) ? stream.tags.join(", ") : "",
       promotional_link: stream.promotional_link || "",
+      promotional_link_text: stream.promotional_link_text || "",
     },
   });
 
@@ -176,6 +178,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
           category: data.category || null,
           tags,
           promotional_link: data.promotional_link ? sanitizeUrl(data.promotional_link) : null,
+          promotional_link_text: data.promotional_link_text || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", stream.id);
@@ -355,6 +358,29 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     Add an affiliate or promotional link. Must be HTTPS.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="promotional_link_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Promotional Link Button Text (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Check this out!"
+                      maxLength={50}
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Customize the button text (max 50 characters)
                   </p>
                   <FormMessage />
                 </FormItem>

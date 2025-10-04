@@ -456,7 +456,7 @@ const StreamDetail = () => {
                     <Button className="gap-2 w-full" size="lg" asChild>
                       <a href={stream.promotional_link} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-5 w-5" />
-                        Check out this link!
+                        {stream.promotional_link_text || 'Check this out!'}
                       </a>
                     </Button>
                   )}

@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BountyCard } from '@/components/BountyCard';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
+import { TypewriterText } from '@/components/TypewriterText';
 import wutchLogo from '@/assets/wutch-logo.png';
 
 const Landing = () => {
@@ -25,7 +26,7 @@ const Landing = () => {
   });
 
   useEffect(() => {
-    document.title = 'Wutch - Watch Pump.fun Streams & Earn Crypto Rewards';
+    document.title = 'Wutch - Watch & Create Content, Earn Real Crypto | View-Based Monetization';
     fetchFeaturedBounties();
     fetchLeaderboard();
     fetchStats();
@@ -201,105 +202,105 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-12 md:py-20 lg:py-32">
+      <section className="container mx-auto px-4 py-16 md:py-24 lg:py-36">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
-            <Zap className="h-4 w-4" />
-            Watch & Earn Crypto Rewards
+            <Coins className="h-4 w-4" />
+            Earn Crypto From Every View
           </div>
           
-          <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-foreground animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            Watch, Create & Earn
-            <span className="block text-primary mt-2">Crypto Rewards</span>
+          <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.1s' }}>
+            <TypewriterText className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-primary/70" />
           </h1>
           
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Whether you're watching or creating, earn real crypto rewards. Watch Pump.fun livestreams, 
-            upload short videos, receive donations, and claim bounties. Your content has value.
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.2s' }}>
+            Whether you're watching or creating content, earn real crypto. Get paid per view on your streams and shorts, 
+            receive donations, claim bounties, and build your crypto portfolio simply by being part of the community.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="lg" className="text-lg px-8 transition-all hover:scale-105">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <Button asChild size="lg" className="text-lg px-10 py-6 h-auto hover:scale-105 transition-transform">
               <Link to="/auth">Start Earning Now</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-lg px-8 transition-all hover:scale-105">
+            <Button asChild size="lg" variant="outline" className="text-lg px-10 py-6 h-auto hover:scale-105 transition-transform">
               <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 How It Works
               </button>
             </Button>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <div className="text-3xl font-bold text-primary">
+          {/* Stats with subtle background */}
+          <div className="grid grid-cols-3 gap-6 md:gap-8 pt-16 max-w-3xl mx-auto">
+            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="text-3xl md:text-4xl font-bold text-primary">
                 ${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">Total Rewards Paid</div>
+              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Total Paid Out</div>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="text-3xl font-bold text-primary">
-                {stats.activeWatchers.toLocaleString()}
+            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="text-3xl md:text-4xl font-bold text-primary">
+                {stats.activeWatchers.toLocaleString()}+
               </div>
-              <div className="text-sm text-muted-foreground mt-1">Active Watchers</div>
+              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Active Earners</div>
             </div>
-            <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <div className="text-3xl font-bold text-primary">
+            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <div className="text-3xl md:text-4xl font-bold text-primary">
                 {stats.liveStreams.toLocaleString()}
               </div>
-              <div className="text-sm text-muted-foreground mt-1">Live Streams</div>
+              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Live Now</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-16 md:py-20 bg-muted/50">
+      <section id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-muted/30 to-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-foreground">How It Works</h2>
-            <p className="text-xl text-muted-foreground">
-              Multiple ways to earn crypto rewards on Wutch
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">How It Works</h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              Multiple ways to earn crypto on Wutch - from watching to creating
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                <Eye className="h-8 w-8 text-primary" />
+            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+                <Eye className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">1. Watch Streams</h3>
-              <p className="text-muted-foreground">
-                Browse live streams from Pump.fun creators. Keep the page open and your watch time is tracked automatically.
+              <h3 className="text-2xl font-bold text-foreground">1. Watch & Earn</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Watch livestreams and short videos. Every view earns you crypto automatically through our CPM-based system, just like YouTube creators.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                <TrendingUp className="h-8 w-8 text-primary" />
+            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+                <Video className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">2. Meet Requirements</h3>
-              <p className="text-muted-foreground">
-                Accumulate watch time (minimum 5 minutes) to qualify for bounty rewards. The longer you watch, the more you can earn.
+              <h3 className="text-2xl font-bold text-foreground">2. Create Content</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Upload short videos or go live. Earn from views automatically, plus receive donations and tips from your audience.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                <Coins className="h-8 w-8 text-primary" />
+            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+                <Coins className="h-10 w-10 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">3. Claim Bounties</h3>
-              <p className="text-muted-foreground">
-                Find secret words in streams and claim bounty rewards. Earn through donations, Share & Earn campaigns, and more.
+              <p className="text-muted-foreground leading-relaxed">
+                Watch for secret words in streams and claim bounty rewards. Accumulate watch time (minimum 5 minutes) to qualify.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                <Video className="h-8 w-8 text-primary" />
+            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+                <Zap className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">4. Create & Earn</h3>
-              <p className="text-muted-foreground">
-                Upload short videos and earn through viewer donations. Soon: YouTube-style ad revenue sharing and pay-per-view!
+              <h3 className="text-2xl font-bold text-foreground">4. Cash Out</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.
               </p>
             </Card>
           </div>
@@ -366,83 +367,73 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-16 md:py-20 bg-background scroll-mt-20">
+      <section id="features" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-foreground">Why Choose Wutch?</h2>
-            <p className="text-xl text-muted-foreground">
-              The most rewarding way to watch live streams
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Why Choose Wutch?</h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              The most rewarding platform to watch and create content
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Coins className="h-6 w-6 text-primary" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Real Crypto Rewards</h3>
-              <p className="text-muted-foreground">
-                Earn actual crypto (SOL/USDC) paid directly to your wallet. No points, no gimmicks.
+              <h3 className="text-2xl font-bold text-foreground">Earn From Views</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Get paid per view on your content, just like YouTube. Automatic CPM-based earnings with transparent rates and instant payouts starting at 1 SOL.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Eye className="h-6 w-6 text-primary" />
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Eye className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Verified Watch Time</h3>
-              <p className="text-muted-foreground">
-                Fair tracking system that only counts active viewing time when the page is in focus.
+              <h3 className="text-2xl font-bold text-foreground">Verified Watch Time</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Fair tracking system that only counts active viewing when the page is in focus. No bots, no tricks - just real engagement.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Users className="h-6 w-6 text-primary" />
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Stream Bounties</h3>
-              <p className="text-muted-foreground">
-                Creators set bounties with secret words. Be among the first to claim and earn more.
+              <h3 className="text-2xl font-bold text-foreground">Stream Bounties</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Creators set bounties with secret words. Be among the first to claim and earn more on top of your view earnings.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Video className="h-6 w-6 text-primary" />
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Video className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Creator Monetization</h3>
-              <p className="text-muted-foreground">
-                Multiple revenue streams: bounties, livestream donations, short video tips, and soon YouTube-style ad revenue.
+              <h3 className="text-2xl font-bold text-foreground">Multiple Revenue Streams</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Views, donations, bounties, and share campaigns. Creators have multiple ways to monetize their content and grow income.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <TrendingUp className="h-6 w-6 text-primary" />
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <TrendingUp className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Share & Earn</h3>
-              <p className="text-muted-foreground">
-                Share streams on social media and earn additional rewards through referral campaigns.
+              <h3 className="text-2xl font-bold text-foreground">Share & Earn More</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Share streams on social media and earn additional rewards through creator referral campaigns. More shares = more earnings.
               </p>
             </Card>
 
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Shield className="h-6 w-6 text-primary" />
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Shield className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground">Secure & Transparent</h3>
-              <p className="text-muted-foreground">
-                Built on Solana blockchain with transparent reward distribution and secure wallet integration.
-              </p>
-            </Card>
-
-            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">Instant Payouts</h3>
-              <p className="text-muted-foreground">
-                Claim your rewards and receive instant payouts through on-chain transactions.
+              <h3 className="text-2xl font-bold text-foreground">Secure & Transparent</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Built on Solana blockchain with transparent reward distribution, secure wallet integration, and instant on-chain payouts.
               </p>
             </Card>
           </div>
@@ -450,18 +441,26 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-muted/50">
+      <section className="py-20 md:py-28 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <h2 className="text-4xl lg:text-5xl font-bold text-foreground">
+          <div className="max-w-3xl mx-auto space-y-10">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               Ready to Start Earning?
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Join thousands of users already earning crypto rewards by watching their favorite Pump.fun streams.
+            <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
+              Join thousands of creators and viewers already earning crypto rewards. 
+              Watch streams, create content, and get paid for your time and engagement.
             </p>
-            <Button asChild size="lg" className="text-lg px-12">
-              <Link to="/auth">Launch App Now</Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
+                <Link to="/auth">Launch App Now</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
+                <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                  Back to Top
+                </button>
+              </Button>
+            </div>
           </div>
         </div>
       </section>

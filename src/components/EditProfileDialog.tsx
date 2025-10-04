@@ -40,6 +40,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
     display_name: profile.display_name || '',
     bio: profile.bio || '',
     promotional_link: profile.promotional_link || '',
+    promotional_link_text: profile.promotional_link_text || '',
     twitter: socialLinks.twitter || '',
     discord: socialLinks.discord || '',
     website: socialLinks.website || '',
@@ -127,6 +128,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           display_name: formData.display_name || null,
           bio: formData.bio || null,
           promotional_link: sanitizeUrl(formData.promotional_link) || null,
+          promotional_link_text: formData.promotional_link_text || null,
           avatar_url: avatarUrl,
           banner_url: bannerUrl,
           social_links: {
@@ -215,6 +217,22 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Add an affiliate or promotional link (e.g., product, service, etc.). Must be HTTPS.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="promotional_link_text">
+                Promotional Link Button Text (Optional)
+              </Label>
+              <Input
+                id="promotional_link_text"
+                value={formData.promotional_link_text || ''}
+                onChange={(e) => setFormData({ ...formData, promotional_link_text: e.target.value })}
+                placeholder="Check this out!"
+                maxLength={50}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Customize what viewers see on your promotional link button (max 50 characters)
               </p>
             </div>
 

@@ -22,6 +22,7 @@ export const ShortVideoUpload = () => {
     title: '',
     description: '',
     promotional_link: '',
+    promotional_link_text: '',
   });
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,6 +214,7 @@ export const ShortVideoUpload = () => {
           title: formData.title,
           description: formData.description,
           promotional_link: formData.promotional_link ? sanitizeUrl(formData.promotional_link) : null,
+          promotional_link_text: formData.promotional_link_text || null,
           duration,
         });
 
@@ -328,6 +330,22 @@ export const ShortVideoUpload = () => {
           />
           <p className="text-xs text-muted-foreground">
             Add an affiliate or promotional link. Must be HTTPS.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="promotional_link_text">
+            Promotional Link Button Text (Optional)
+          </Label>
+          <Input
+            id="promotional_link_text"
+            placeholder="Check this out!"
+            maxLength={50}
+            value={formData.promotional_link_text}
+            onChange={(e) => setFormData({ ...formData, promotional_link_text: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Customize the button text (max 50 characters)
           </p>
         </div>
 

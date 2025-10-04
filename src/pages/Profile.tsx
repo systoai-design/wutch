@@ -373,7 +373,7 @@ const ProfilePage = () => {
                   <Button variant="default" className="gap-2" asChild>
                     <a href={profile.promotional_link} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4" />
-                      Check this out!
+                      {profile.promotional_link_text || 'Check this out!'}
                     </a>
                   </Button>
                 )}
