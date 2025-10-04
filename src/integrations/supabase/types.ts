@@ -295,11 +295,11 @@ export type Database = {
           follower_count: number | null
           id: string
           is_verified: boolean | null
+          public_wallet_address: string | null
           social_links: Json | null
           total_donations_received: number | null
           updated_at: string | null
           username: string
-          wallet_address: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -310,11 +310,11 @@ export type Database = {
           follower_count?: number | null
           id: string
           is_verified?: boolean | null
+          public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
           updated_at?: string | null
           username: string
-          wallet_address?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -325,11 +325,11 @@ export type Database = {
           follower_count?: number | null
           id?: string
           is_verified?: boolean | null
+          public_wallet_address?: string | null
           social_links?: Json | null
           total_donations_received?: number | null
           updated_at?: string | null
           username?: string
-          wallet_address?: string | null
         }
         Relationships: []
       }

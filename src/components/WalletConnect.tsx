@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Wallet, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,28 +10,36 @@ import { useAuth } from '@/hooks/useAuth';
 export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [acceptDonations, setAcceptDonations] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-    // Load saved wallet address from profile
-    const loadWalletAddress = async () => {
+    // Load saved wallet address and donation preference
+    const loadWalletData = async () => {
       if (!user) return;
       
-      const { data, error } = await supabase
+      const { data: walletData } = await supabase
         .from('profile_wallets')
         .select('wallet_address')
         .eq('user_id', user.id)
         .single();
 
-      if (!error && data?.wallet_address) {
-        setWalletAddress(data.wallet_address);
-      } else {
-        setWalletAddress(null);
+      if (walletData?.wallet_address) {
+        setWalletAddress(walletData.wallet_address);
       }
+
+      // Check if user has enabled public donations
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('public_wallet_address')
+        .eq('id', user.id)
+        .single();
+
+      setAcceptDonations(!!profileData?.public_wallet_address);
     };
 
-    loadWalletAddress();
+    loadWalletData();
   }, [user]);
 
   const connectWallet = async () => {
@@ -53,7 +63,7 @@ export const WalletConnect = () => {
       const response = await solana.connect();
       const address = response.publicKey.toString();
 
-      // Save wallet address to profile
+      // Save wallet address to profile_wallets (private)
       if (user) {
         const { error } = await supabase
           .from('profile_wallets')
@@ -85,13 +95,21 @@ export const WalletConnect = () => {
       await solana?.disconnect();
 
       if (user) {
+        // Remove from profile_wallets
         await supabase
           .from('profile_wallets')
           .delete()
           .eq('user_id', user.id);
+
+        // Remove public wallet address
+        await supabase
+          .from('profiles')
+          .update({ public_wallet_address: null })
+          .eq('id', user.id);
       }
 
       setWalletAddress(null);
+      setAcceptDonations(false);
       toast({
         title: 'Wallet Disconnected',
         description: 'Your wallet has been disconnected.',
@@ -101,19 +119,71 @@ export const WalletConnect = () => {
     }
   };
 
+  const toggleDonations = async (enabled: boolean) => {
+    if (!user || !walletAddress) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          public_wallet_address: enabled ? walletAddress : null 
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setAcceptDonations(enabled);
+      toast({
+        title: enabled ? 'Donations Enabled' : 'Donations Disabled',
+        description: enabled 
+          ? 'Your wallet is now public and you can receive donations.'
+          : 'Your wallet address is now private.',
+      });
+    } catch (error) {
+      console.error('Error toggling donations:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update donation settings.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (walletAddress) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={disconnectWallet}
-        className="gap-2"
-      >
-        <Wallet className="h-4 w-4" />
-        <span className="hidden sm:inline">
-          {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
-        </span>
-      </Button>
+      <div className="space-y-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={disconnectWallet}
+          className="gap-2 w-full"
+        >
+          <Wallet className="h-4 w-4" />
+          <span>
+            {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+          </span>
+        </Button>
+        
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="accept-donations" className="cursor-pointer text-sm">
+              Accept Donations
+            </Label>
+            <Info className="h-3 w-3 text-muted-foreground" />
+          </div>
+          <Switch
+            id="accept-donations"
+            checked={acceptDonations}
+            onCheckedChange={toggleDonations}
+          />
+        </div>
+        
+        {acceptDonations && (
+          <p className="text-xs text-muted-foreground">
+            Your wallet is public. Viewers can send you tips on your shorts.
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -122,10 +192,10 @@ export const WalletConnect = () => {
       onClick={connectWallet}
       disabled={isConnecting}
       size="sm"
-      className="gap-2"
+      className="gap-2 w-full"
     >
       <Wallet className="h-4 w-4" />
-      <span className="hidden sm:inline">
+      <span>
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </span>
     </Button>

@@ -18,6 +18,40 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
+// Component to display user's private wallet address (only visible to owner)
+function ProfileWalletDisplay({ userId }: { userId: string }) {
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadWallet = async () => {
+      const { data } = await supabase
+        .from('profile_wallets')
+        .select('wallet_address')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data?.wallet_address) {
+        setWalletAddress(data.wallet_address);
+      }
+    };
+    loadWallet();
+  }, [userId]);
+
+  if (!walletAddress) return null;
+
+  return (
+    <div>
+      <h3 className="font-semibold mb-2">Wallet Address</h3>
+      <div className="p-3 bg-muted rounded-lg text-sm font-mono break-all">
+        {walletAddress}
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">
+        Only visible to you
+      </p>
+    </div>
+  );
+}
+
 const ProfilePage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
@@ -350,16 +384,8 @@ const ProfilePage = () => {
                 </div>
               )}
 
-              {isOwnProfile && profile.wallet_address && (
-                <div>
-                  <h3 className="font-semibold mb-2">Wallet Address</h3>
-                  <div className="p-3 bg-muted rounded-lg text-sm font-mono break-all">
-                    {profile.wallet_address}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Only visible to you
-                  </p>
-                </div>
+              {isOwnProfile && (
+                <ProfileWalletDisplay userId={profile.id} />
               )}
 
               {(socialLinks.twitter || socialLinks.discord || socialLinks.website) && (

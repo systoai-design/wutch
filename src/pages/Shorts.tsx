@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
-    'username' | 'display_name' | 'avatar_url' | 'wallet_address'>;
+    'username' | 'display_name' | 'avatar_url' | 'public_wallet_address'>;
 };
 
 const Shorts = () => {
@@ -46,7 +46,7 @@ const Shorts = () => {
         .from('short_videos')
         .select(`
           *,
-          profiles!short_videos_user_id_fkey(username, display_name, avatar_url, wallet_address)
+          profiles!short_videos_user_id_fkey(username, display_name, avatar_url, public_wallet_address)
         `)
         .order('created_at', { ascending: false });
 
@@ -321,12 +321,12 @@ const Shorts = () => {
           </Sheet>
 
           {/* Donation Modal */}
-          {shorts[currentIndex].profiles?.wallet_address && (
+          {shorts[currentIndex].profiles?.public_wallet_address && (
             <DonationModal
               isOpen={isDonationModalOpen}
               onClose={() => setIsDonationModalOpen(false)}
               streamerName={shorts[currentIndex].profiles?.display_name || shorts[currentIndex].profiles?.username || 'Creator'}
-              walletAddress={shorts[currentIndex].profiles.wallet_address}
+              walletAddress={shorts[currentIndex].profiles.public_wallet_address}
               contentId={shorts[currentIndex].id}
               contentType="shortvideo"
               recipientUserId={shorts[currentIndex].user_id}
@@ -499,7 +499,7 @@ function ShortVideoItem({
                 <Share2 className="h-6 w-6" />
               </Button>
 
-              {short.profiles?.wallet_address && (
+              {short.profiles?.public_wallet_address && (
                 <Button
                   variant="ghost"
                   size="icon"
