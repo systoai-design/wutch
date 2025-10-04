@@ -89,20 +89,48 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border sticky top-0 z-50 bg-background shadow-sm backdrop-blur-sm">
+      <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-md transition-all duration-300">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">W</span>
-            </div>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img src="/wutch-logo.png" alt="Wutch" className="h-10 w-10 transition-transform group-hover:scale-110" />
             <span className="text-2xl font-bold text-foreground">Wutch</span>
-          </div>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
+            <button
+              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              How It Works
+            </button>
+            <button
+              onClick={() => document.getElementById('bounties')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Bounties
+            </button>
+            <button
+              onClick={() => document.getElementById('leaderboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Leaderboard
+            </button>
+            <button
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Features
+            </button>
+          </nav>
+
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
+              className="transition-transform hover:scale-110"
             >
               {isDark ? (
                 <Sun className="h-5 w-5" />
@@ -110,7 +138,7 @@ const Landing = () => {
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="transition-all hover:scale-105">
               <Link to="/auth">Launch App</Link>
             </Button>
           </div>
@@ -120,40 +148,42 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-12 md:py-20 lg:py-32">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
             <Zap className="h-4 w-4" />
             Watch & Earn Crypto Rewards
           </div>
           
-          <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-foreground">
+          <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-foreground animate-slide-up" style={{ animationDelay: '0.1s' }}>
             Get Paid to Watch
             <span className="block text-primary mt-2">Pump.fun Streams</span>
           </h1>
           
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Join the revolution where your time has value. Watch live streams from Pump.fun creators, 
             earn crypto rewards, and claim bounties just for watching.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button asChild size="lg" className="text-lg px-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <Button asChild size="lg" className="text-lg px-8 transition-all hover:scale-105">
               <Link to="/auth">Start Earning Now</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-lg px-8">
-              <a href="#how-it-works">How It Works</a>
+            <Button asChild size="lg" variant="outline" className="text-lg px-8 transition-all hover:scale-105">
+              <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                How It Works
+              </button>
             </Button>
           </div>
 
           <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
-            <div className="text-center">
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <div className="text-3xl font-bold text-primary">$50K+</div>
               <div className="text-sm text-muted-foreground mt-1">Total Rewards Paid</div>
             </div>
-            <div className="text-center">
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <div className="text-3xl font-bold text-primary">10K+</div>
               <div className="text-sm text-muted-foreground mt-1">Active Watchers</div>
             </div>
-            <div className="text-center">
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <div className="text-3xl font-bold text-primary">500+</div>
               <div className="text-sm text-muted-foreground mt-1">Live Streams</div>
             </div>
@@ -172,8 +202,8 @@ const Landing = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
                 <Eye className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">1. Watch Streams</h3>
@@ -182,8 +212,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
                 <TrendingUp className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">2. Meet Requirements</h3>
@@ -192,8 +222,8 @@ const Landing = () => {
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Card className="p-8 text-center space-y-4 border-primary/20 bg-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-lg">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
                 <Coins className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">3. Claim Rewards</h3>
@@ -206,7 +236,7 @@ const Landing = () => {
       </section>
 
       {/* Available Bounties */}
-      <section className="py-16 md:py-20 bg-background">
+      <section id="bounties" className="py-16 md:py-20 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -245,7 +275,7 @@ const Landing = () => {
       </section>
 
       {/* Leaderboard */}
-      <section className="py-16 md:py-20 bg-muted/50">
+      <section id="leaderboard" className="py-16 md:py-20 bg-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -265,7 +295,7 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section className="py-16 md:py-20 bg-background">
+      <section id="features" className="py-16 md:py-20 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Why Choose Wutch?</h2>
@@ -275,8 +305,8 @@ const Landing = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <Card className="p-6 space-y-3 bg-card">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Card className="p-6 space-y-3 bg-card transition-all hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform hover:scale-110">
                 <Coins className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground">Real Crypto Rewards</h3>

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { MFAVerification } from '@/components/MFAVerification';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(100);
@@ -17,6 +18,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
 
   useEffect(() => {
     document.title = 'Login or Sign Up | Wutch';
@@ -62,6 +64,15 @@ const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Check if user has MFA enabled
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const hasMFA = factors && factors.totp && factors.totp.length > 0;
+
+      if (hasMFA) {
+        setShowMFAVerification(true);
+        return;
+      }
 
       toast({
         title: 'Welcome back!',
@@ -127,13 +138,33 @@ const Auth = () => {
     }
   };
 
+  if (showMFAVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
+        <div className="w-full max-w-md">
+          <MFAVerification
+            onVerificationComplete={() => {
+              toast({
+                title: 'Welcome back!',
+                description: 'You have successfully logged in.',
+              });
+              navigate('/app');
+            }}
+            onCancel={() => {
+              setShowMFAVerification(false);
+              supabase.auth.signOut();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
-      <Card className="w-full max-w-md p-6 shadow-lg">
+      <Card className="w-full max-w-md p-6 shadow-lg animate-scale-in">
         <div className="mb-6 text-center">
-          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">W</span>
-          </div>
+          <img src="/wutch-logo.png" alt="Wutch" className="h-12 w-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold">Welcome to Wutch</h1>
           <p className="text-muted-foreground mt-2">Share streams, earn crypto rewards</p>
         </div>
@@ -155,6 +186,7 @@ const Auth = () => {
                   value={loginData.emailOrUsername}
                   onChange={(e) => setLoginData({ ...loginData, emailOrUsername: e.target.value })}
                   required
+                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
 
@@ -167,10 +199,11 @@ const Auth = () => {
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   required
+                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full transition-all hover:scale-105" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Log In'}
               </Button>
             </form>

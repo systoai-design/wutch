@@ -24,7 +24,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md transition-all duration-300">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -62,7 +62,7 @@ const Navigation = () => {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="hidden sm:inline-flex"
+            className="hidden sm:inline-flex transition-transform hover:scale-110"
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>

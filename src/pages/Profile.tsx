@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
+import { MFAEnrollment } from '@/components/MFAEnrollment';
+import { useToast } from '@/hooks/use-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
@@ -18,10 +20,13 @@ const ProfilePage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [streams, setStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ownWalletAddress, setOwnWalletAddress] = useState<string | null>(null);
+  const [showMFAEnrollment, setShowMFAEnrollment] = useState(false);
+  const [hasMFA, setHasMFA] = useState(false);
 
   useEffect(() => {
     document.title = username ? `@${username} - Profile | Wutch` : 'Profile | Wutch';
@@ -76,6 +81,43 @@ const ProfilePage = () => {
 
     fetchProfileData();
   }, [username, user, navigate]);
+
+  useEffect(() => {
+    const checkMFAStatus = async () => {
+      if (user) {
+        const { data } = await supabase.auth.mfa.listFactors();
+        setHasMFA(data && data.totp && data.totp.length > 0 || false);
+      }
+    };
+    checkMFAStatus();
+  }, [user]);
+
+  const handleDisableMFA = async () => {
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const totpFactor = factors?.totp?.[0];
+      
+      if (totpFactor) {
+        const { error } = await supabase.auth.mfa.unenroll({
+          factorId: totpFactor.id,
+        });
+
+        if (error) throw error;
+
+        setHasMFA(false);
+        toast({
+          title: 'Success',
+          description: '2FA has been disabled',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Could not disable 2FA',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -185,6 +227,46 @@ const ProfilePage = () => {
 
           <TabsContent value="about" className="mt-6">
             <Card className="p-6 space-y-4">
+              {isOwnProfile && (
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Two-Factor Authentication
+                  </h3>
+                  {showMFAEnrollment ? (
+                    <MFAEnrollment
+                      onEnrollmentComplete={() => {
+                        setShowMFAEnrollment(false);
+                        setHasMFA(true);
+                      }}
+                      onCancel={() => setShowMFAEnrollment(false)}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">
+                          {hasMFA ? '2FA Enabled' : '2FA Disabled'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {hasMFA
+                            ? 'Your account is protected with two-factor authentication'
+                            : 'Add an extra layer of security to your account'}
+                        </p>
+                      </div>
+                      {hasMFA ? (
+                        <Button variant="destructive" onClick={handleDisableMFA}>
+                          Disable
+                        </Button>
+                      ) : (
+                        <Button onClick={() => setShowMFAEnrollment(true)}>
+                          Enable 2FA
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {isOwnProfile && profile.wallet_address && (
                 <div>
                   <h3 className="font-semibold mb-2">Wallet Address</h3>
