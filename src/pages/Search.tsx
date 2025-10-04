@@ -38,11 +38,17 @@ export default function Search() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("search", {
-        body: { q: searchQuery },
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search?q=${encodeURIComponent(searchQuery)}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        }
       });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Search failed');
+      
+      const data = await response.json();
       setResults(data || { livestreams: [], short_videos: [], profiles: [] });
     } catch (error) {
       console.error("Search error:", error);
