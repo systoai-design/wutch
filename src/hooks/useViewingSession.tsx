@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -13,65 +13,88 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const { user } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
-  const [isTabVisible, setIsTabVisible] = useState(true);
   const [isExternalWindowOpen, setIsExternalWindowOpen] = useState(false);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const accumulatedTimeRef = useRef<number>(0);
+  const livestreamOwnerRef = useRef<string | null>(null);
+  const lastCreditedMinuteRef = useRef<number>(0);
+  const closedCheckCountRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastWatchTimeRef = useRef<number>(0);
 
-  // Poll external window to check if it's still open
+  // Optimized: Consolidated window polling and display update using requestAnimationFrame
   useEffect(() => {
     if (!externalWindow) {
       setIsExternalWindowOpen(false);
+      closedCheckCountRef.current = 0;
       return;
     }
 
-    // Set to true immediately when window exists
     setIsExternalWindowOpen(true);
+    closedCheckCountRef.current = 0;
 
-    const checkInterval = setInterval(() => {
-      try {
-        // Check if window is closed - this will be true even across origins
-        if (externalWindow.closed) {
-          setIsExternalWindowOpen(false);
-          // Window closed - accumulate current session time
-          const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-          accumulatedTimeRef.current += currentSessionTime;
-          console.log('External window closed, pausing timer');
+    let lastCheckTime = Date.now();
+    const CHECK_INTERVAL = 1000; // Check every second
+    const DEBOUNCE_CHECKS = 2; // Require 2 consecutive closed checks
+
+    const checkWindowAndUpdateDisplay = () => {
+      const now = Date.now();
+      
+      // Check window status every second
+      if (now - lastCheckTime >= CHECK_INTERVAL) {
+        lastCheckTime = now;
+        
+        try {
+          if (externalWindow.closed) {
+            closedCheckCountRef.current++;
+            
+            // Only update state after consecutive closed checks (debouncing)
+            if (closedCheckCountRef.current >= DEBOUNCE_CHECKS && isExternalWindowOpen) {
+              setIsExternalWindowOpen(false);
+              const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+              accumulatedTimeRef.current += currentSessionTime;
+              console.log('External window closed, pausing timer');
+            }
+          } else {
+            closedCheckCountRef.current = 0;
+            if (!isExternalWindowOpen) {
+              setIsExternalWindowOpen(true);
+              startTimeRef.current = Date.now();
+            }
+          }
+        } catch (error) {
+          closedCheckCountRef.current++;
+          if (closedCheckCountRef.current >= DEBOUNCE_CHECKS && isExternalWindowOpen) {
+            console.log('Error checking window status, assuming closed');
+            setIsExternalWindowOpen(false);
+          }
         }
-      } catch (error) {
-        // If we get an error checking the window, it's likely closed
-        console.log('Error checking window status, assuming closed');
-        setIsExternalWindowOpen(false);
       }
-    }, 1000); // Check every second for more responsive detection
 
-    return () => clearInterval(checkInterval);
-  }, [externalWindow]);
-
-  // Handle visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      const visible = !document.hidden;
-      setIsTabVisible(visible);
-
-      if (!visible) {
-        // Tab hidden - accumulate current session time
+      // Update display if window is open - only if value changed
+      if (isExternalWindowOpen) {
         const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        accumulatedTimeRef.current += currentSessionTime;
-      } else {
-        // Tab visible again - reset start time
-        startTimeRef.current = Date.now();
+        const newWatchTime = accumulatedTimeRef.current + currentSessionTime;
+        
+        if (newWatchTime !== lastWatchTimeRef.current) {
+          lastWatchTimeRef.current = newWatchTime;
+          setWatchTime(newWatchTime);
+        }
       }
+
+      animationFrameRef.current = requestAnimationFrame(checkWindowAndUpdateDisplay);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    animationFrameRef.current = requestAnimationFrame(checkWindowAndUpdateDisplay);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, []);
+  }, [externalWindow, isExternalWindowOpen]);
 
   // Create or resume viewing session
   useEffect(() => {
@@ -145,88 +168,87 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     initSession();
   }, [user, livestreamId, shouldStart, isSessionStarted]);
 
-  // Send heartbeat updates every 30 seconds
+  // Optimized: Cache livestream owner on session start
+  useEffect(() => {
+    if (!livestreamId || livestreamOwnerRef.current) return;
+
+    supabase
+      .from('livestreams')
+      .select('user_id')
+      .eq('id', livestreamId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          livestreamOwnerRef.current = data.user_id;
+        }
+      });
+  }, [livestreamId]);
+
+  // Optimized: Send heartbeat updates every 30 seconds - skip when window closed
+  const sendHeartbeat = useCallback(async () => {
+    if (!sessionId || !isExternalWindowOpen) return; // Skip if window closed
+
+    try {
+      const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      const totalTime = accumulatedTimeRef.current + currentSessionTime;
+      
+      // Batch database update
+      await supabase
+        .from('viewing_sessions')
+        .update({
+          last_active_at: new Date().toISOString(),
+          total_watch_time: totalTime,
+          tab_visible: true,
+        })
+        .eq('id', sessionId);
+
+      // Credit earnings every 60 seconds - use cached owner and flag to prevent duplicates
+      const currentMinutes = Math.floor(totalTime / 60);
+      
+      if (currentMinutes > lastCreditedMinuteRef.current && livestreamOwnerRef.current) {
+        lastCreditedMinuteRef.current = currentMinutes;
+        
+        // Non-blocking earnings credit
+        supabase.rpc('credit_view_earnings', {
+          p_user_id: livestreamOwnerRef.current,
+          p_content_type: 'livestream',
+          p_content_id: livestreamId,
+          p_view_count: 60
+        }).then(({ error: earningsError }) => {
+          if (earningsError) console.error('Error crediting stream earnings:', earningsError);
+        });
+      }
+
+      // Reset start time after successful update
+      accumulatedTimeRef.current = totalTime;
+      startTimeRef.current = Date.now();
+    } catch (error) {
+      console.error('Error sending heartbeat:', error);
+    }
+  }, [sessionId, livestreamId, isExternalWindowOpen]);
+
   useEffect(() => {
     if (!sessionId || !user || !isSessionStarted) return;
-
-    const sendHeartbeat = async () => {
-      try {
-        // Only count time when the external PumpFun window is open
-        const isActivelyWatching = isExternalWindowOpen;
-        const currentSessionTime = isActivelyWatching 
-          ? Math.floor((Date.now() - startTimeRef.current) / 1000)
-          : 0;
-        
-        const totalTime = accumulatedTimeRef.current + currentSessionTime;
-        
-        await supabase
-          .from('viewing_sessions')
-          .update({
-            last_active_at: new Date().toISOString(),
-            total_watch_time: totalTime,
-            tab_visible: isActivelyWatching,
-          })
-          .eq('id', sessionId);
-
-        setWatchTime(totalTime);
-
-        // Credit earnings every 60 seconds of watch time
-        const previousMinutes = Math.floor(accumulatedTimeRef.current / 60);
-        const currentMinutes = Math.floor(totalTime / 60);
-        
-        if (currentMinutes > previousMinutes && isActivelyWatching) {
-          // Fetch livestream owner and credit earnings
-          const { data: streamData } = await supabase
-            .from('livestreams')
-            .select('user_id')
-            .eq('id', livestreamId)
-            .single();
-          
-          if (streamData) {
-            // Credit 1 minute worth of views (non-blocking)
-            supabase.rpc('credit_view_earnings', {
-              p_user_id: streamData.user_id,
-              p_content_type: 'livestream',
-              p_content_id: livestreamId,
-              p_view_count: 60 // 60 seconds = 1 minute
-            }).then(({ error: earningsError }) => {
-              if (earningsError) console.error('Error crediting stream earnings:', earningsError);
-            });
-          }
-        }
-
-        // Reset start time after successful update
-        if (isActivelyWatching) {
-          accumulatedTimeRef.current = totalTime;
-          startTimeRef.current = Date.now();
-        }
-      } catch (error) {
-        console.error('Error sending heartbeat:', error);
-      }
-    };
 
     // Send initial heartbeat
     sendHeartbeat();
 
     // Set up interval for subsequent heartbeats
-    intervalRef.current = setInterval(sendHeartbeat, 30000); // 30 seconds
+    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 30000);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
       }
     };
-  }, [sessionId, user, isTabVisible, isExternalWindowOpen]);
+  }, [sessionId, user, isSessionStarted, sendHeartbeat]);
 
-  // Send final update on unmount but don't deactivate
-  // Let the backend cron job handle session deactivation after prolonged inactivity
+  // Optimized: Send final update on unmount
   useEffect(() => {
     return () => {
-      if (sessionId) {
-        // Send final time update only - only count time if external window is open
-        const isActivelyWatching = isExternalWindowOpen;
+      if (sessionId && isExternalWindowOpen) {
         const finalTime = accumulatedTimeRef.current + 
-          (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
+          Math.floor((Date.now() - startTimeRef.current) / 1000);
         
         supabase
           .from('viewing_sessions')
@@ -242,19 +264,6 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     };
   }, [sessionId, isExternalWindowOpen]);
 
-  // Update watch time display every second (local only)
-  useEffect(() => {
-    // Only track time when external PumpFun window is open
-    if (!isExternalWindowOpen) return;
-
-    const displayInterval = setInterval(() => {
-      const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      setWatchTime(accumulatedTimeRef.current + currentSessionTime);
-    }, 1000);
-
-    return () => clearInterval(displayInterval);
-  }, [isExternalWindowOpen]);
-
   const formatWatchTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -264,7 +273,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   return {
     watchTime,
     formattedWatchTime: formatWatchTime(watchTime),
-    isTabVisible,
+    isTabVisible: isExternalWindowOpen, // Keep for backward compatibility
     meetsMinimumWatchTime: watchTime >= 300, // 5 minutes
     isSessionStarted,
   };
