@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, Loader2 } from "lucide-react";
 import StreamCard from "@/components/StreamCard";
 import ShortCard from "@/components/ShortCard";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { CreatorCard } from "@/components/CreatorCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -132,22 +132,7 @@ export default function Search() {
                         <h2 className="text-xl font-semibold mb-4">Creators</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {results.profiles.map((profile: any) => (
-                            <div
-                              key={profile.id}
-                              className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
-                              onClick={() => navigate(`/profile/${profile.username}`)}
-                            >
-                              <Avatar>
-                                <AvatarImage src={profile.avatar_url} />
-                                <AvatarFallback>{profile.display_name?.[0]}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate">{profile.display_name}</p>
-                                <p className="text-sm text-muted-foreground truncate">
-                                  @{profile.username}
-                                </p>
-                              </div>
-                            </div>
+                            <CreatorCard key={profile.id} profile={profile} />
                           ))}
                         </div>
                       </div>
@@ -217,22 +202,7 @@ export default function Search() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {results.profiles?.map((profile: any) => (
-                      <div
-                        key={profile.id}
-                        className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
-                        onClick={() => navigate(`/profile/${profile.username}`)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={profile.avatar_url} />
-                          <AvatarFallback>{profile.display_name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">{profile.display_name}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            @{profile.username}
-                          </p>
-                        </div>
-                      </div>
+                      <CreatorCard key={profile.id} profile={profile} />
                     ))}
                   </div>
                 )}
