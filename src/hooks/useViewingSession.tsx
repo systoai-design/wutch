@@ -21,37 +21,34 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const accumulatedTimeRef = useRef<number>(0);
 
   // Poll external window to check if it's still open
-  // Using optimistic approach - assume window is open until we can confirm it's closed
   useEffect(() => {
     if (!externalWindow) {
       setIsExternalWindowOpen(false);
       return;
     }
 
-    // Optimistically set to true immediately when window exists
+    // Set to true immediately when window exists
     setIsExternalWindowOpen(true);
 
     const checkInterval = setInterval(() => {
       try {
-        // Only set to false if we can confirm the window is closed
-        // Handle cross-origin restrictions gracefully
-        const isOpen = externalWindow && !externalWindow.closed;
-        
-        if (!isOpen && isExternalWindowOpen) {
+        // Check if window is closed - this will be true even across origins
+        if (externalWindow.closed) {
           setIsExternalWindowOpen(false);
           // Window closed - accumulate current session time
           const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
           accumulatedTimeRef.current += currentSessionTime;
+          console.log('External window closed, pausing timer');
         }
       } catch (error) {
-        // If we can't access the window due to cross-origin restrictions,
-        // assume it's still open (optimistic approach)
-        console.log('Cannot check external window status (cross-origin), assuming open');
+        // If we get an error checking the window, it's likely closed
+        console.log('Error checking window status, assuming closed');
+        setIsExternalWindowOpen(false);
       }
-    }, 2000);
+    }, 1000); // Check every second for more responsive detection
 
     return () => clearInterval(checkInterval);
-  }, [externalWindow, isExternalWindowOpen]);
+  }, [externalWindow]);
 
   // Handle visibility changes
   useEffect(() => {
@@ -154,9 +151,8 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
 
     const sendHeartbeat = async () => {
       try {
-        // Count time if either the Pump.fun window is open OR the webapp tab is visible
-        // This ensures tracking stops only when BOTH are closed/hidden
-        const isActivelyWatching = isExternalWindowOpen || isTabVisible;
+        // Only count time when the external PumpFun window is open
+        const isActivelyWatching = isExternalWindowOpen;
         const currentSessionTime = isActivelyWatching 
           ? Math.floor((Date.now() - startTimeRef.current) / 1000)
           : 0;
@@ -227,9 +223,8 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   useEffect(() => {
     return () => {
       if (sessionId) {
-        // Send final time update only
-        // Track based on either window being open
-        const isActivelyWatching = isExternalWindowOpen || isTabVisible;
+        // Send final time update only - only count time if external window is open
+        const isActivelyWatching = isExternalWindowOpen;
         const finalTime = accumulatedTimeRef.current + 
           (isActivelyWatching ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0);
         
@@ -245,12 +240,12 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
           });
       }
     };
-  }, [sessionId, isTabVisible, isExternalWindowOpen]);
+  }, [sessionId, isExternalWindowOpen]);
 
   // Update watch time display every second (local only)
   useEffect(() => {
-    const isActivelyWatching = isExternalWindowOpen || isTabVisible;
-    if (!isActivelyWatching) return;
+    // Only track time when external PumpFun window is open
+    if (!isExternalWindowOpen) return;
 
     const displayInterval = setInterval(() => {
       const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -258,7 +253,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     }, 1000);
 
     return () => clearInterval(displayInterval);
-  }, [isTabVisible, isExternalWindowOpen]);
+  }, [isExternalWindowOpen]);
 
   const formatWatchTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
