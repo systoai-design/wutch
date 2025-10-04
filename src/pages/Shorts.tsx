@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, Wallet } from 'lucide-react';
 import DonationModal from '@/components/DonationModal';
@@ -15,7 +15,10 @@ const Shorts = () => {
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const currentShort = shorts[currentIndex];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const isScrollingRef = useRef(false);
+  const touchStartRef = useRef(0);
 
   useEffect(() => {
     document.title = 'Shorts - Quick Videos | Wutch';
@@ -41,6 +44,118 @@ const Shorts = () => {
     }
   };
 
+  useEffect(() => {
+    if (shorts.length === 0) return;
+
+    // Play current video, pause others
+    videoRefs.current.forEach((video, index) => {
+      if (video) {
+        if (index === currentIndex) {
+          video.play().catch(e => console.log('Autoplay prevented:', e));
+        } else {
+          video.pause();
+        }
+      }
+    });
+  }, [currentIndex, shorts.length]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      if (isScrollingRef.current) return;
+      
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const scrollTop = container.scrollTop;
+        const windowHeight = window.innerHeight;
+        const newIndex = Math.round(scrollTop / windowHeight);
+        
+        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < shorts.length) {
+          setCurrentIndex(newIndex);
+        }
+      }, 150);
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (isScrollingRef.current) return;
+      
+      e.preventDefault();
+      const direction = e.deltaY > 0 ? 1 : -1;
+      navigateShort(direction);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartRef.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEnd = e.changedTouches[0].clientY;
+      const diff = touchStartRef.current - touchEnd;
+      
+      if (Math.abs(diff) > 50) {
+        const direction = diff > 0 ? 1 : -1;
+        navigateShort(direction);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        navigateShort(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateShort(-1);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        const currentVideo = videoRefs.current[currentIndex];
+        if (currentVideo) {
+          currentVideo.paused ? currentVideo.play() : currentVideo.pause();
+        }
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart);
+    container.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(scrollTimeout);
+    };
+  }, [currentIndex, shorts.length]);
+
+  const navigateShort = (direction: number) => {
+    if (isScrollingRef.current) return;
+    
+    const newIndex = currentIndex + direction;
+    if (newIndex >= 0 && newIndex < shorts.length) {
+      isScrollingRef.current = true;
+      setCurrentIndex(newIndex);
+      
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTo({
+          top: newIndex * window.innerHeight,
+          behavior: 'smooth'
+        });
+      }
+      
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 700);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -61,94 +176,131 @@ const Shorts = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-background overflow-hidden">
-      <div className="relative h-full max-w-md mx-auto">
-        {/* Video Container */}
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
+    <div 
+      ref={containerRef}
+      className="h-[calc(100vh-4rem)] overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+      style={{ scrollBehavior: 'smooth' }}
+    >
+      {shorts.map((short, index) => (
+        <div 
+          key={short.id}
+          className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black"
+        >
+          {/* Video */}
           <video
-            src={currentShort.video_url}
-            className="w-full h-full object-contain"
-            controls
-            autoPlay
+            ref={el => videoRefs.current[index] = el}
+            src={short.video_url}
+            className="w-full h-full object-contain max-w-md mx-auto"
             loop
             playsInline
+            preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
           />
-        </div>
 
-        {/* Overlay Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background to-transparent">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-2">{currentShort.title}</h3>
-                <div className="flex items-center gap-2">
-                  {currentShort.profiles?.avatar_url && (
-                    <img
-                      src={currentShort.profiles.avatar_url}
-                      alt={currentShort.profiles.username || 'User'}
-                      className="w-8 h-8 rounded-full"
-                    />
+          {/* Navigation Indicators - Right Side */}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
+            {shorts.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setCurrentIndex(idx);
+                  containerRef.current?.scrollTo({
+                    top: idx * window.innerHeight,
+                    behavior: 'smooth'
+                  });
+                }}
+                className={`w-1.5 h-8 rounded-full transition-all ${
+                  idx === currentIndex ? 'bg-primary' : 'bg-muted/50'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Bottom Overlay - Info & Actions */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+            <div className="max-w-md mx-auto">
+              <div className="flex items-end justify-between gap-4">
+                {/* Creator Info */}
+                <div className="flex-1 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    {short.profiles?.avatar_url && (
+                      <img
+                        src={short.profiles.avatar_url}
+                        alt={short.profiles.username || 'User'}
+                        className="w-10 h-10 rounded-full border-2 border-white"
+                      />
+                    )}
+                    <div>
+                      <p className="font-semibold">
+                        {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
+                      </p>
+                    </div>
+                  </div>
+                  <h3 className="font-medium text-base mb-1 line-clamp-2">{short.title}</h3>
+                  {short.description && (
+                    <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
                   )}
-                  <span className="font-medium">
-                    {currentShort.profiles?.display_name || currentShort.profiles?.username || 'Anonymous'}
-                  </span>
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-3">
-                <Button variant="ghost" size="icon" className="rounded-full h-12 w-12">
-                  <Heart className="h-6 w-6" />
-                  <span className="sr-only">Like</span>
-                </Button>
-                <span className="text-xs text-center">{currentShort.like_count || 0}</span>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-4 items-center">
+                  <div className="flex flex-col items-center">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                    >
+                      <Heart className="h-6 w-6" />
+                    </Button>
+                    <span className="text-xs text-white font-medium mt-1">
+                      {short.like_count || 0}
+                    </span>
+                  </div>
 
-                <Button variant="ghost" size="icon" className="rounded-full h-12 w-12">
-                  <MessageCircle className="h-6 w-6" />
-                  <span className="sr-only">Comment</span>
-                </Button>
-                <span className="text-xs text-center">0</span>
+                  <div className="flex flex-col items-center">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                    >
+                      <MessageCircle className="h-6 w-6" />
+                    </Button>
+                    <span className="text-xs text-white font-medium mt-1">0</span>
+                  </div>
 
-                <Button variant="ghost" size="icon" className="rounded-full h-12 w-12">
-                  <Share2 className="h-6 w-6" />
-                  <span className="sr-only">Share</span>
-                </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                  >
+                    <Share2 className="h-6 w-6" />
+                  </Button>
 
-                <Button
-                  variant="donation"
-                  size="icon"
-                  className="rounded-full h-12 w-12"
-                  onClick={() => setIsDonationModalOpen(true)}
-                >
-                  <Wallet className="h-6 w-6" />
-                  <span className="sr-only">Donate</span>
-                </Button>
+                  {short.profiles?.wallet_address && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full h-12 w-12 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
+                      onClick={() => setIsDonationModalOpen(true)}
+                    >
+                      <Wallet className="h-6 w-6" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Navigation Indicators */}
-        <div className="absolute top-4 left-0 right-0 flex justify-center gap-1 px-4">
-          {shorts.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                index === currentIndex ? 'bg-primary' : 'bg-muted'
-              }`}
+          {/* Donation Modal */}
+          {index === currentIndex && short.profiles?.wallet_address && (
+            <DonationModal
+              isOpen={isDonationModalOpen}
+              onClose={() => setIsDonationModalOpen(false)}
+              streamerName={short.profiles?.display_name || short.profiles?.username || 'Creator'}
+              walletAddress={short.profiles.wallet_address}
             />
-          ))}
+          )}
         </div>
-      </div>
-
-      {currentShort.profiles?.wallet_address && (
-        <DonationModal
-          isOpen={isDonationModalOpen}
-          onClose={() => setIsDonationModalOpen(false)}
-          streamerName={currentShort.profiles?.display_name || currentShort.profiles?.username || 'Creator'}
-          walletAddress={currentShort.profiles.wallet_address}
-        />
-      )}
+      ))}
     </div>
   );
 };

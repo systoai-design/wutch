@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import StreamCard from '@/components/StreamCard';
+import ShortCard from '@/components/ShortCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -8,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
+type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
+  profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
+    'username' | 'display_name' | 'avatar_url'>;
+};
 
 const Home = () => {
   useEffect(() => {
@@ -17,6 +22,7 @@ const Home = () => {
   const [liveStreams, setLiveStreams] = useState<Livestream[]>([]);
   const [upcomingStreams, setUpcomingStreams] = useState<Livestream[]>([]);
   const [endedStreams, setEndedStreams] = useState<Livestream[]>([]);
+  const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
@@ -48,6 +54,16 @@ const Home = () => {
       liveQuery = buildQuery(liveQuery);
       const { data: liveData } = await liveQuery;
 
+      // Fetch shorts
+      const { data: shortsData } = await supabase
+        .from('short_videos')
+        .select(`
+          *,
+          profiles!short_videos_user_id_fkey(username, display_name, avatar_url)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(15);
+
       // Fetch upcoming streams (pending status)
       let upcomingQuery = supabase
         .from('livestreams')
@@ -68,6 +84,7 @@ const Home = () => {
       const { data: endedData } = await endedQuery;
 
       setLiveStreams(liveData || []);
+      setShorts(shortsData || []);
       setUpcomingStreams(upcomingData || []);
       setEndedStreams(endedData || []);
     } catch (error) {
@@ -143,6 +160,29 @@ const Home = () => {
                     {liveStreams.map((stream) => (
                       <div key={stream.id} className="flex-shrink-0 w-80">
                         <StreamCard stream={stream} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Shorts Section */}
+            {shorts.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold">Shorts</h2>
+                  <Link to="/shorts">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      View All <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                  <div className="flex gap-3 pb-4">
+                    {shorts.map((short) => (
+                      <div key={short.id} className="flex-shrink-0 w-40">
+                        <ShortCard short={short} />
                       </div>
                     ))}
                   </div>
