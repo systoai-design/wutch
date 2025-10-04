@@ -289,11 +289,12 @@ const StreamDetail = () => {
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold mb-2">{stream.title}</h1>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
-                  {(stream.viewer_count || 0).toLocaleString()} viewers
-                </span>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+                  <Eye className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-foreground">{(stream.viewer_count || 0).toLocaleString()}</span>
+                  <span className="text-xs">viewers</span>
+                </div>
                 <span>•</span>
                 <span>{new Date(stream.created_at || '').toLocaleDateString()}</span>
               </div>

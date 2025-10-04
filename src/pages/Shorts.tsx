@@ -455,6 +455,12 @@ function ShortVideoItem({
               {short.description && (
                 <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
               )}
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full">
+                  <Eye className="h-3 w-3" />
+                  <span className="text-xs font-medium">{(short.view_count || 0).toLocaleString()}</span>
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}

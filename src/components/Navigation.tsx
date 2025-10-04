@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
@@ -19,6 +20,7 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut } = useAuth();
+  const { toggle } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
@@ -41,6 +43,14 @@ const Navigation = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md transition-all duration-300">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggle}
+            className="hidden md:inline-flex"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
