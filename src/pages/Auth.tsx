@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { MFAVerification } from '@/components/MFAVerification';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import wutchLogo from '@/assets/wutch-logo.png';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string()
@@ -252,7 +253,14 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
       <Card className="w-full max-w-md p-6 shadow-lg animate-scale-in">
         <div className="mb-6 text-center">
-          <img src="/wutch-logo.png" alt="Wutch" className="h-12 w-12 mx-auto mb-4" />
+          <img 
+            src={wutchLogo} 
+            alt="Wutch" 
+            className="h-12 w-12 mx-auto mb-4"
+            width="48"
+            height="48"
+            loading="eager"
+          />
           <h1 className="text-2xl font-bold">Welcome to Wutch</h1>
           <p className="text-muted-foreground mt-2">Share streams, earn crypto rewards</p>
         </div>

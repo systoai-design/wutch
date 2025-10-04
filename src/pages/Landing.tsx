@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BountyCard } from '@/components/BountyCard';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
+import wutchLogo from '@/assets/wutch-logo.png';
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
@@ -139,7 +140,14 @@ const Landing = () => {
       <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-md transition-all duration-300">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <img src="/wutch-logo.png" alt="Wutch" className="h-10 w-10 transition-transform group-hover:scale-110" />
+            <img 
+              src={wutchLogo} 
+              alt="Wutch" 
+              className="h-10 w-10 transition-transform group-hover:scale-110"
+              width="40"
+              height="40"
+              loading="eager"
+            />
             <span className="text-2xl font-bold text-foreground">Wutch</span>
           </Link>
 

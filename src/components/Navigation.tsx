@@ -12,6 +12,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState } from 'react';
+import wutchLogo from '@/assets/wutch-logo.png';
 
 const Navigation = () => {
   const location = useLocation();
@@ -43,9 +44,18 @@ const Navigation = () => {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/wutch-logo.png" alt="Wutch" className="h-10 w-10" />
-            <span className="font-bold text-xl hidden sm:inline">Wutch</span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <img 
+              src={wutchLogo} 
+              alt="Wutch" 
+              className="h-10 w-10 transition-transform group-hover:scale-110"
+              width="40"
+              height="40"
+              loading="eager"
+            />
+            <span className="font-bold text-xl hidden sm:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Wutch
+            </span>
           </Link>
         </div>
 

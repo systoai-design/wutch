@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { ArrowLeft, Mail } from 'lucide-react';
+import wutchLogo from '@/assets/wutch-logo.png';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 
@@ -118,7 +119,14 @@ const ResetPassword = () => {
           </Link>
           
           <div className="text-center">
-            <img src="/wutch-logo.png" alt="Wutch" className="h-12 w-12 mx-auto mb-4" />
+            <img 
+              src={wutchLogo} 
+              alt="Wutch" 
+              className="h-12 w-12 mx-auto mb-4"
+              width="48"
+              height="48"
+              loading="eager"
+            />
             <h1 className="text-2xl font-bold">Reset Your Password</h1>
             <p className="text-muted-foreground mt-2">
               Enter your email address and we'll send you a link to reset your password
