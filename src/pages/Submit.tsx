@@ -19,7 +19,6 @@ import { Upload, DollarSign, Users, Clock, Key, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
-import * as web3 from '@solana/web3.js';
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -211,10 +210,10 @@ const Submit = () => {
           .from('profile_wallets')
           .select('wallet_address')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (walletError || !walletData?.wallet_address) {
-          throw new Error('Please connect your wallet before creating a bounty');
+          throw new Error('Please connect your wallet in your profile before creating a bounty');
         }
 
         // Charge the wallet for bounty + platform fee
@@ -245,20 +244,20 @@ const Submit = () => {
         }
 
         try {
+          // Import web3 dynamically to avoid bundling issues
+          const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
+          
           // Decode and sign the transaction
           const transactionBuffer = Uint8Array.from(
             atob(chargeData.transaction),
             c => c.charCodeAt(0)
           );
-          const transaction = web3.Transaction.from(transactionBuffer);
+          const transaction = Transaction.from(transactionBuffer);
           
           const signed = await solana.signTransaction(transaction);
           
           // Send the signed transaction
-          const connection = new web3.Connection(
-            web3.clusterApiUrl('devnet'),
-            'confirmed'
-          );
+          const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
           
           const signature = await connection.sendRawTransaction(signed.serialize());
           await connection.confirmTransaction(signature, 'confirmed');
