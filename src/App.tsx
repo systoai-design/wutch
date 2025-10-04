@@ -16,6 +16,8 @@ import Shorts from './pages/Shorts';
 import Submit from './pages/Submit';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
+import ResetPassword from './pages/ResetPassword';
+import UpdatePassword from './pages/UpdatePassword';
 import Search from './pages/Search';
 import NotFound from './pages/NotFound';
 
@@ -56,6 +58,8 @@ function AppContent() {
       <Route path="/" element={<Landing />} />
       <Route path="/bounties" element={<Bounties />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/update-password" element={<UpdatePassword />} />
       
       {/* App routes with Navigation and Sidebar */}
       <Route element={<AppLayout />}>
