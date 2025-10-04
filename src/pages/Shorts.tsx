@@ -217,9 +217,8 @@ const Shorts = () => {
       const newShorts = shorts.filter(s => s.id !== short.id);
       setShorts(newShorts);
       
-      if (newShorts.length === 0) {
-        window.location.href = '/';
-      } else if (currentIndex >= newShorts.length) {
+      // Stay on shorts page, adjust index if needed
+      if (newShorts.length > 0 && currentIndex >= newShorts.length) {
         setCurrentIndex(newShorts.length - 1);
       }
     } catch (error: any) {
