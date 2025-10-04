@@ -5,15 +5,27 @@ interface TypewriterTextProps {
 }
 
 export function TypewriterText({ className = '' }: TypewriterTextProps) {
-  const [displayText, setDisplayText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const fullText = 'Watch, Create & Earn';
+  const [displayText, setDisplayText] = useState(fullText); // Start with full text to prevent CLS
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false); // Control when animation starts
+
   const typingSpeed = 100;
   const deletingSpeed = 50;
   const pauseAfterComplete = 2000;
 
+  // Delay animation start until after page load to prevent CLS
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimating(true);
+      setDisplayText('');
+    }, 1500); // Start animation 1.5s after component mount
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isAnimating) return; // Don't animate until flag is set
+
     if (!isDeleting && displayText === fullText) {
       // Finished typing - pause then start deleting
       const timeout = setTimeout(() => {
@@ -39,12 +51,12 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
     }, isDeleting ? deletingSpeed : typingSpeed);
 
     return () => clearTimeout(timeout);
-  }, [displayText, isDeleting]);
+  }, [displayText, isDeleting, isAnimating, fullText]);
 
   return (
     <span className={className} style={{ display: 'inline-block', minWidth: '550px', textAlign: 'center' }}>
-      <span style={{ visibility: displayText ? 'visible' : 'hidden' }}>{displayText}</span>
-      <span className="animate-pulse" style={{ willChange: 'opacity' }}>|</span>
+      {displayText}
+      {isAnimating && <span className="animate-pulse" style={{ willChange: 'opacity' }}>|</span>}
     </span>
   );
 }
