@@ -137,11 +137,25 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Banner */}
+      {profile.banner_url ? (
+        <div className="relative h-48 md:h-64 w-full overflow-hidden">
+          <img 
+            src={profile.banner_url} 
+            alt="Profile banner" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
+        </div>
+      ) : (
+        <div className="h-48 md:h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5" />
+      )}
+
       {/* Header */}
-      <div className="border-b border-border bg-card">
+      <div className="border-b border-border bg-card -mt-16 relative">
         <div className="max-w-6xl mx-auto p-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="h-32 w-32">
+            <Avatar className="h-32 w-32 border-4 border-background">
               <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
               <AvatarFallback className="text-3xl">
                 {(profile.display_name || profile.username)[0].toUpperCase()}

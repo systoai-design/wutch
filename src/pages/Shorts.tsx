@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, X } from 'lucide-react';
 import DonationModal from '@/components/DonationModal';
+import CommentsSection from '@/components/CommentsSection';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { useShortVideoLike } from '@/hooks/useShortVideoLike';
+import { useVideoView } from '@/hooks/useVideoView';
+import { shareShortToTwitter } from '@/utils/shareUtils';
+import { toast } from '@/hooks/use-toast';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -13,6 +19,7 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 const Shorts = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -181,131 +188,212 @@ const Shorts = () => {
       className="h-[calc(100vh-4rem)] overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
       style={{ scrollBehavior: 'smooth' }}
     >
-      {shorts.map((short, index) => (
-        <div 
-          key={short.id}
-          className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black"
-        >
-          {/* Video */}
-          <video
-            ref={el => videoRefs.current[index] = el}
-            src={short.video_url}
-            className="w-full h-full object-contain max-w-md mx-auto"
-            loop
-            playsInline
-            preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
+      {shorts.map((short, index) => {
+        const isActive = index === currentIndex;
+        return (
+          <ShortVideoItem
+            key={short.id}
+            short={short}
+            index={index}
+            currentIndex={currentIndex}
+            isActive={isActive}
+            videoRefs={videoRefs}
+            containerRef={containerRef}
+            onOpenDonation={() => setIsDonationModalOpen(true)}
+            onOpenComments={() => setIsCommentsOpen(true)}
           />
+        );
+      })}
 
-          {/* Navigation Indicators - Right Side */}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
-            {shorts.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setCurrentIndex(idx);
-                  containerRef.current?.scrollTo({
-                    top: idx * window.innerHeight,
-                    behavior: 'smooth'
-                  });
-                }}
-                className={`w-1.5 h-8 rounded-full transition-all ${
-                  idx === currentIndex ? 'bg-primary' : 'bg-muted/50'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Bottom Overlay - Info & Actions */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-            <div className="max-w-md mx-auto">
-              <div className="flex items-end justify-between gap-4">
-                {/* Creator Info */}
-                <div className="flex-1 text-white">
-                  <div className="flex items-center gap-2 mb-2">
-                    {short.profiles?.avatar_url && (
-                      <img
-                        src={short.profiles.avatar_url}
-                        alt={short.profiles.username || 'User'}
-                        className="w-10 h-10 rounded-full border-2 border-white"
-                      />
-                    )}
-                    <div>
-                      <p className="font-semibold">
-                        {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
-                      </p>
-                    </div>
-                  </div>
-                  <h3 className="font-medium text-base mb-1 line-clamp-2">{short.title}</h3>
-                  {short.description && (
-                    <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-4 items-center">
-                  <div className="flex flex-col items-center">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                    >
-                      <Heart className="h-6 w-6" />
-                    </Button>
-                    <span className="text-xs text-white font-medium mt-1">
-                      {short.like_count || 0}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                    >
-                      <MessageCircle className="h-6 w-6" />
-                    </Button>
-                    <span className="text-xs text-white font-medium mt-1">0</span>
-                  </div>
-
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-                  >
-                    <Share2 className="h-6 w-6" />
-                  </Button>
-
-                  {short.profiles?.wallet_address && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full h-12 w-12 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
-                      onClick={() => setIsDonationModalOpen(true)}
-                    >
-                      <Wallet className="h-6 w-6" />
-                    </Button>
-                  )}
-                </div>
+      {/* Comments Sheet */}
+      {shorts[currentIndex] && (
+        <>
+          <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+            <SheetContent side="bottom" className="h-[80vh]">
+              <SheetHeader>
+                <SheetTitle>Comments</SheetTitle>
+              </SheetHeader>
+              <div className="h-[calc(100%-3rem)] mt-4">
+                <CommentsSection
+                  contentId={shorts[currentIndex].id}
+                  contentType="shortvideo"
+                />
               </div>
-            </div>
-          </div>
+            </SheetContent>
+          </Sheet>
 
           {/* Donation Modal */}
-          {index === currentIndex && short.profiles?.wallet_address && (
+          {shorts[currentIndex].profiles?.wallet_address && (
             <DonationModal
               isOpen={isDonationModalOpen}
               onClose={() => setIsDonationModalOpen(false)}
-              streamerName={short.profiles?.display_name || short.profiles?.username || 'Creator'}
-              walletAddress={short.profiles.wallet_address}
-              contentId={short.id}
+              streamerName={shorts[currentIndex].profiles?.display_name || shorts[currentIndex].profiles?.username || 'Creator'}
+              walletAddress={shorts[currentIndex].profiles.wallet_address}
+              contentId={shorts[currentIndex].id}
               contentType="shortvideo"
-              recipientUserId={short.user_id}
+              recipientUserId={shorts[currentIndex].user_id}
             />
           )}
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 };
+
+// Separate component for each short video
+function ShortVideoItem({
+  short,
+  index,
+  currentIndex,
+  isActive,
+  videoRefs,
+  containerRef,
+  onOpenDonation,
+  onOpenComments,
+}: {
+  short: any;
+  index: number;
+  currentIndex: number;
+  isActive: boolean;
+  videoRefs: React.MutableRefObject<(HTMLVideoElement | null)[]>;
+  containerRef: React.MutableRefObject<HTMLDivElement | null>;
+  onOpenDonation: () => void;
+  onOpenComments: () => void;
+}) {
+  const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
+  
+  // Track view when video becomes active
+  useVideoView(short.id, isActive);
+
+  // Update like count from props
+  useEffect(() => {
+    if (short.like_count !== undefined) {
+      setLikeCount(short.like_count);
+    }
+  }, [short.like_count, setLikeCount]);
+
+  const handleShare = () => {
+    shareShortToTwitter({
+      id: short.id,
+      title: short.title,
+      creatorName: short.profiles?.display_name || short.profiles?.username || 'Creator',
+    });
+    toast({
+      title: "Opening Twitter",
+      description: "Share this short with your followers!",
+    });
+  };
+
+  return (
+    <div className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black">
+      {/* Video */}
+      <video
+        ref={el => videoRefs.current[index] = el}
+        src={short.video_url}
+        className="w-full h-full object-contain max-w-md mx-auto"
+        loop
+        playsInline
+        preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
+      />
+
+      {/* Navigation Indicators - Right Side */}
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
+        <button
+          onClick={() => {
+            containerRef.current?.scrollTo({
+              top: index * window.innerHeight,
+              behavior: 'smooth'
+            });
+          }}
+          className={`w-1.5 h-8 rounded-full transition-all ${
+            isActive ? 'bg-primary' : 'bg-muted/50'
+          }`}
+        />
+      </div>
+
+      {/* Bottom Overlay - Info & Actions */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-end justify-between gap-4">
+            {/* Creator Info */}
+            <div className="flex-1 text-white">
+              <div className="flex items-center gap-2 mb-2">
+                {short.profiles?.avatar_url && (
+                  <img
+                    src={short.profiles.avatar_url}
+                    alt={short.profiles.username || 'User'}
+                    className="w-10 h-10 rounded-full border-2 border-white"
+                  />
+                )}
+                <div>
+                  <p className="font-semibold">
+                    {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
+                  </p>
+                </div>
+              </div>
+              <h3 className="font-medium text-base mb-1 line-clamp-2">{short.title}</h3>
+              {short.description && (
+                <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-4 items-center">
+              <div className="flex flex-col items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleLike}
+                  className={`rounded-full h-12 w-12 backdrop-blur-sm transition-colors ${
+                    isLiked 
+                      ? 'bg-primary/90 hover:bg-primary text-white' 
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
+                </Button>
+                <span className="text-xs text-white font-medium mt-1">
+                  {likeCount}
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onOpenComments}
+                  className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                >
+                  <MessageCircle className="h-6 w-6" />
+                </Button>
+                <span className="text-xs text-white font-medium mt-1">Chat</span>
+              </div>
+
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleShare}
+                className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+              >
+                <Share2 className="h-6 w-6" />
+              </Button>
+
+              {short.profiles?.wallet_address && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-12 w-12 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
+                  onClick={onOpenDonation}
+                >
+                  <Wallet className="h-6 w-6" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Shorts;

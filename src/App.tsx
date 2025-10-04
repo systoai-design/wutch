@@ -16,6 +16,7 @@ import Shorts from './pages/Shorts';
 import Submit from './pages/Submit';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
+import Search from './pages/Search';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ function AppContent() {
         <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
         <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
         <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
         <Route path="/trending" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/recent" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       </Route>

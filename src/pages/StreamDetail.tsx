@@ -10,12 +10,14 @@ import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink } from 'lucide-rea
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
+import CommentsSection from '@/components/CommentsSection';
 import { EditStreamDialog } from '@/components/EditStreamDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useViewingSession } from '@/hooks/useViewingSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { shareStreamToTwitter } from '@/utils/shareUtils';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -276,7 +278,20 @@ const StreamDetail = () => {
                   <Heart className="h-5 w-5" />
                 </Button>
                 
-                <Button variant="outline" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  onClick={() => {
+                    if (stream && streamer) {
+                      shareStreamToTwitter({
+                        id: stream.id,
+                        title: stream.title,
+                        creatorName: streamer.display_name || streamer.username,
+                      });
+                      toast.success('Opening Twitter to share this stream!');
+                    }
+                  }}
+                >
                   <Share2 className="h-4 w-4" />
                   Share
                 </Button>
@@ -380,10 +395,11 @@ const StreamDetail = () => {
                     </div>
                   )}
                 </TabsContent>
-                <TabsContent value="chat" className="mt-4">
-                  <p className="text-muted-foreground text-center py-8">
-                    Chat functionality coming soon
-                  </p>
+                <TabsContent value="chat" className="mt-4 h-[500px]">
+                  <CommentsSection
+                    contentId={id!}
+                    contentType="livestream"
+                  />
                 </TabsContent>
               </Tabs>
             </Card>

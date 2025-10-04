@@ -644,6 +644,10 @@ export type Database = {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number
       }
+      increment_short_video_views: {
+        Args: { video_id: string }
+        Returns: undefined
+      }
       increment_user_donations: {
         Args: { donation_amount: number; user_id: string }
         Returns: undefined

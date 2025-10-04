@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, Moon, Sun, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,25 @@ import { useState } from 'react';
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
@@ -43,11 +56,13 @@ const Navigation = () => {
               placeholder="Search streams, creators..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="w-full pr-10"
             />
             <Button
               variant="ghost"
               size="icon"
+              onClick={handleSearch}
               className="absolute right-0 top-0 h-full"
             >
               <Search className="h-5 w-5" />
@@ -93,11 +108,13 @@ const Navigation = () => {
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="w-full pr-10"
           />
           <Button
             variant="ghost"
             size="icon"
+            onClick={handleSearch}
             className="absolute right-0 top-0 h-full"
           >
             <Search className="h-5 w-5" />
