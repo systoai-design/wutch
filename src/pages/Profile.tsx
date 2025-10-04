@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
+import { DonationSettings } from '@/components/DonationSettings';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -386,6 +387,10 @@ const ProfilePage = () => {
 
               {isOwnProfile && (
                 <ProfileWalletDisplay userId={profile.id} />
+              )}
+
+              {isOwnProfile && (
+                <DonationSettings />
               )}
 
               {(socialLinks.twitter || socialLinks.discord || socialLinks.website) && (
