@@ -247,19 +247,25 @@ export function EarningsOverview({ userId }: EarningsOverviewProps) {
           <div className="flex items-start gap-2">
             <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
             <p>
-              <strong>Livestreams:</strong> Earn $2.00 per 1,000 views (CPM)
+              <strong>Donations:</strong> Receive 95% of all donations (5% platform fee)
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
             <p>
-              <strong>Short Videos:</strong> Earn $1.50 per 1,000 views (CPM)
+              <strong>Bounties:</strong> 100% of bounty rewards (pre-funded by creators)
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
             <p>
-              <strong>Donations:</strong> Receive 95% (5% platform fee)
+              <strong>Share Campaigns:</strong> 100% of share rewards (pre-funded by creators)
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
+            <p>
+              <strong>View Earnings (Beta):</strong> $0.10 per 1,000 views (reduced during beta)
             </p>
           </div>
           <div className="flex items-start gap-2">

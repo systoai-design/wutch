@@ -314,6 +314,38 @@ export type Database = {
           },
         ]
       }
+      platform_fees: {
+        Row: {
+          created_at: string | null
+          donation_id: string | null
+          fee_amount: number
+          id: string
+          transaction_signature: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          donation_id?: string | null
+          fee_amount: number
+          id?: string
+          transaction_signature?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          donation_id?: string | null
+          fee_amount?: number
+          id?: string
+          transaction_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_fees_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           id: string
@@ -423,6 +455,7 @@ export type Database = {
         Row: {
           created_at: string
           creator_id: string
+          escrow_transaction_signature: string | null
           id: string
           is_active: boolean
           livestream_id: string
@@ -435,6 +468,7 @@ export type Database = {
         Insert: {
           created_at?: string
           creator_id: string
+          escrow_transaction_signature?: string | null
           id?: string
           is_active?: boolean
           livestream_id: string
@@ -447,6 +481,7 @@ export type Database = {
         Update: {
           created_at?: string
           creator_id?: string
+          escrow_transaction_signature?: string | null
           id?: string
           is_active?: boolean
           livestream_id?: string

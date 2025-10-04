@@ -51,6 +51,53 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         throw new Error('Total budget must be greater than 0');
       }
 
+      // Step 1: Check for Phantom wallet
+      const solana = (window as any).solana;
+      if (!solana?.isPhantom) {
+        throw new Error('Phantom wallet required to fund campaign');
+      }
+
+      if (!solana.isConnected) {
+        await solana.connect();
+      }
+
+      toast({
+        title: 'Preparing Deposit',
+        description: `Please approve ${totalBudget} SOL deposit to fund your campaign...`,
+      });
+
+      // Step 2: Call charge-bounty-wallet to prepare deposit transaction
+      const ESCROW_WALLET = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+      
+      const { data: txData, error: txError } = await supabase.functions.invoke(
+        'charge-bounty-wallet',
+        {
+          body: {
+            amount: totalBudget,
+            fromWalletAddress: solana.publicKey.toString(),
+            toWalletAddress: ESCROW_WALLET
+          }
+        }
+      );
+
+      if (txError) throw txError;
+
+      // Step 3: Import Solana web3 and sign transaction
+      const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      
+      const transaction = Transaction.from(Buffer.from(txData.transaction, 'base64'));
+      const signed = await solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      
+      toast({
+        title: 'Confirming Transaction',
+        description: 'Waiting for blockchain confirmation...',
+      });
+
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      // Step 4: Create campaign with escrow signature
       const { error } = await supabase
         .from('sharing_campaigns')
         .insert({
@@ -59,14 +106,15 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
           reward_per_share: rewardPerShare,
           total_budget: totalBudget,
           max_shares_per_user: maxSharesPerUser,
+          escrow_transaction_signature: signature,
           is_active: true,
         });
 
       if (error) throw error;
 
       toast({
-        title: 'Campaign Created! 🎉',
-        description: 'Users can now earn rewards by sharing your stream!',
+        title: 'Campaign Created & Funded! 🎉',
+        description: `${totalBudget} SOL deposited. Users can now earn rewards by sharing!`,
       });
 
       setIsOpen(false);
@@ -175,6 +223,11 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total budget:</span>
                 <span className="font-semibold">${formData.totalBudget}</span>
+              </div>
+              <div className="pt-2 mt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  ⚠️ You'll deposit {formData.totalBudget} SOL upfront to fund this campaign
+                </p>
               </div>
             </div>
           </Card>

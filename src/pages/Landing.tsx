@@ -214,7 +214,7 @@ const Landing = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.2s' }}>
-            Watch streams, upload shorts, go live. Earn crypto from views, donations, and bounties.
+            Watch streams, upload shorts, go live. Earn crypto from donations, bounties, and sharing campaigns.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -269,7 +269,7 @@ const Landing = () => {
               </div>
               <h3 className="text-2xl font-bold text-foreground">1. Watch & Earn</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Watch livestreams and short videos. Every view earns you crypto automatically through our CPM-based system, just like YouTube creators.
+                Watch livestreams and short videos. Claim bounties for active watching and participate in sharing campaigns to earn crypto rewards.
               </p>
             </Card>
 
@@ -279,7 +279,7 @@ const Landing = () => {
               </div>
               <h3 className="text-2xl font-bold text-foreground">2. Create Content</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Upload short videos or go live. Earn from views automatically, plus receive donations and tips from your audience.
+                Upload short videos or go live. Receive 95% of all donations (5% platform fee) and tips from your audience. Create funded bounties and sharing campaigns to engage viewers.
               </p>
             </Card>
 
@@ -380,9 +380,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Earn From Views</h3>
+              <h3 className="text-2xl font-bold text-foreground">Multiple Revenue Streams</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Get paid per view on your content, just like YouTube. Automatic CPM-based earnings with transparent rates and instant payouts starting at 1 SOL.
+                Earn 95% of all donations from your audience (5% platform fee). Create pre-funded bounties and sharing campaigns to drive engagement. View earnings in beta at $0.10 CPM.
               </p>
             </Card>
 
@@ -436,6 +436,61 @@ const Landing = () => {
               </p>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Transparency Section */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Card className="p-8 md:p-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="h-8 w-8 text-primary" />
+              <h3 className="text-3xl md:text-4xl font-bold text-foreground">Fair & Transparent Fees</h3>
+            </div>
+            <div className="space-y-6 text-muted-foreground">
+              <p className="text-lg">
+                We believe in complete transparency. Here's exactly how our platform economics work:
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Donations: 95% to Creators</p>
+                    <p className="text-sm">You keep 95%, we take 5% to maintain the platform and cover transaction costs</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Bounties: 100% Pre-Funded</p>
+                    <p className="text-sm">Creators deposit rewards in secure escrow. Users receive 100% of claimed bounties</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Share Campaigns: 100% Pre-Funded</p>
+                    <p className="text-sm">Creators deposit campaign budgets upfront. No hidden costs or deductions</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">View Earnings: Beta Phase</p>
+                    <p className="text-sm">Currently at reduced rates ($0.10 CPM) during platform beta testing</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
 

@@ -67,9 +67,14 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
         await solana.connect();
       }
 
+      // Calculate 95% to creator, 5% to platform
+      const creatorAmount = amount * 0.95;
+      const platformFee = amount * 0.05;
+      const ESCROW_WALLET = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+
       toast({
         title: 'Processing Donation',
-        description: `Sending ${amount} SOL to ${streamerName}. Please approve in your wallet.`,
+        description: `Sending ${creatorAmount.toFixed(4)} SOL to ${streamerName} (${platformFee.toFixed(4)} SOL platform fee). Please approve in your wallet.`,
       });
 
       // Import Solana web3 dynamically
@@ -78,14 +83,22 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
       // Create connection
       const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
-      // Create transaction
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: new PublicKey(solana.publicKey.toString()),
-          toPubkey: new PublicKey(walletAddress),
-          lamports: amount * LAMPORTS_PER_SOL,
-        })
-      );
+      // Create transaction with TWO transfers: 95% to creator, 5% to platform
+      const transaction = new Transaction()
+        .add(
+          SystemProgram.transfer({
+            fromPubkey: new PublicKey(solana.publicKey.toString()),
+            toPubkey: new PublicKey(walletAddress),
+            lamports: Math.floor(creatorAmount * LAMPORTS_PER_SOL),
+          })
+        )
+        .add(
+          SystemProgram.transfer({
+            fromPubkey: new PublicKey(solana.publicKey.toString()),
+            toPubkey: new PublicKey(ESCROW_WALLET),
+            lamports: Math.floor(platformFee * LAMPORTS_PER_SOL),
+          })
+        );
 
       transaction.feePayer = solana.publicKey;
       const { blockhash } = await connection.getLatestBlockhash();
@@ -96,8 +109,8 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
       const signature = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction(signature, 'confirmed');
 
-      // Record donation in database
-      const { error: donationError } = await supabase
+      // Record donation in database (full amount)
+      const { data: donationData, error: donationError } = await supabase
         .from('donations')
         .insert({
           content_type: contentType,
@@ -108,19 +121,28 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
           transaction_signature: signature,
           status: 'confirmed',
           message: null,
-        });
+        })
+        .select()
+        .single();
 
       if (donationError) throw donationError;
 
-      // Update creator's total donations received
+      // Record platform fee
+      await supabase.from('platform_fees').insert({
+        donation_id: donationData.id,
+        fee_amount: platformFee,
+        transaction_signature: signature,
+      });
+
+      // Update creator's total donations received (95% only)
       const { error: updateError } = await supabase.rpc('increment_user_donations', {
         user_id: recipientUserId,
-        donation_amount: amount,
+        donation_amount: creatorAmount,
       });
 
       if (updateError) console.error('Error updating user donations:', updateError);
 
-      // Update content's total donations by fetching current value and adding to it
+      // Update content's total donations (95% only)
       const tableName = contentType === 'livestream' ? 'livestreams' : 'short_videos';
       const { data: contentData } = await supabase
         .from(tableName)
@@ -132,13 +154,13 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
         const currentTotal = parseFloat(String(contentData.total_donations || 0));
         await supabase
           .from(tableName)
-          .update({ total_donations: currentTotal + amount })
+          .update({ total_donations: currentTotal + creatorAmount })
           .eq('id', contentId);
       }
 
       toast({
         title: 'Thank You!',
-        description: `Your donation of ${amount} SOL was successful!`,
+        description: `${creatorAmount.toFixed(4)} SOL sent to ${streamerName} (${platformFee.toFixed(4)} SOL platform fee)`,
       });
 
       onClose();
@@ -198,6 +220,23 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
               }}
             />
           </div>
+
+          {(selectedAmount || customAmount) && (
+            <div className="p-4 bg-muted rounded-lg space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Amount:</span>
+                <span className="font-semibold">{(selectedAmount || parseFloat(customAmount) || 0).toFixed(4)} SOL</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Creator Receives (95%):</span>
+                <span className="font-semibold text-primary">{((selectedAmount || parseFloat(customAmount) || 0) * 0.95).toFixed(4)} SOL</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Platform Fee (5%):</span>
+                <span className="text-xs">{((selectedAmount || parseFloat(customAmount) || 0) * 0.05).toFixed(4)} SOL</span>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Wallet Address</Label>
