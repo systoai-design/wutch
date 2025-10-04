@@ -214,15 +214,14 @@ const Landing = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.2s' }}>
-            Whether you're watching or creating content, earn real crypto. Get paid per view on your streams and shorts, 
-            receive donations, claim bounties, and build your crypto portfolio simply by being part of the community.
+            Watch streams, upload shorts, go live. Earn crypto from views, donations, and bounties.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="lg" className="text-lg px-10 py-6 h-auto hover:scale-105 transition-transform">
+            <Button asChild size="default" className="px-6 py-2 hover:scale-105 transition-transform">
               <Link to="/auth">Start Earning Now</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-lg px-10 py-6 h-auto hover:scale-105 transition-transform">
+            <Button asChild size="default" variant="outline" className="px-6 py-2 hover:scale-105 transition-transform">
               <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 How It Works
               </button>

@@ -9,7 +9,7 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
   const [currentPhase, setCurrentPhase] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const phrases = ['Watch', 'Create', 'Earn'];
+  const phrases = ['Watch', 'Delete', 'Earn'];
   const typingSpeed = 150;
   const deletingSpeed = 100;
   const pauseAfterComplete = 2000;
