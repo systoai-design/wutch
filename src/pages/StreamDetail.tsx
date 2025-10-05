@@ -34,11 +34,8 @@ const StreamDetail = () => {
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
-  const [isPumpFunOpen, setIsPumpFunOpen] = useState(false);
-  const [windowOpenedAt, setWindowOpenedAt] = useState<number>(0);
   const [warningDismissedUntil, setWarningDismissedUntil] = useState<number>(0);
   const pumpFunWindowRef = useRef<Window | null>(null);
-  const crossOriginErrorCountRef = useRef(0);
 
   // Track viewing session
   const { 
@@ -46,7 +43,8 @@ const StreamDetail = () => {
     formattedWatchTime, 
     isTabVisible, 
     meetsMinimumWatchTime,
-    isSessionStarted 
+    isSessionStarted,
+    isExternalWindowOpen
   } = useViewingSession({ 
     livestreamId: id || '',
     shouldStart: hasStartedWatching,
@@ -58,68 +56,6 @@ const StreamDetail = () => {
       });
     }
   });
-
-  // Poll Pump.fun window to check if it's still open
-  // Using optimistic approach - assume window is open until confirmed closed
-  useEffect(() => {
-    if (!windowOpenedAt || !pumpFunWindowRef.current) {
-      return;
-    }
-
-    console.log("Starting external window polling...");
-    crossOriginErrorCountRef.current = 0;
-
-    const checkInterval = setInterval(() => {
-      try {
-        // Only mark as closed if we can confirm it
-        if (pumpFunWindowRef.current?.closed) {
-          console.log("External Pump.fun window was closed");
-          setIsPumpFunOpen(false);
-          pumpFunWindowRef.current = null;
-          crossOriginErrorCountRef.current = 0;
-          
-          toast.warning('Pump.fun Window May Be Closed', {
-            description: 'Consider reopening Pump.fun to ensure you\'re watching the stream.',
-            duration: 5000,
-            action: {
-              label: 'Reopen',
-              onClick: () => {
-                if (stream?.pump_fun_url) {
-                  setIsPumpFunOpen(true);
-                  setWindowOpenedAt(Date.now());
-                  const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                  if (newWindow) {
-                    pumpFunWindowRef.current = newWindow;
-                  }
-                }
-              }
-            }
-          });
-        } else {
-          // Window is still open, reset error counter
-          crossOriginErrorCountRef.current = 0;
-          console.log("External window polling: window is open");
-        }
-      } catch (error) {
-        // Handle cross-origin restrictions gracefully - be optimistic
-        crossOriginErrorCountRef.current++;
-        console.log(`Cross-origin error (${crossOriginErrorCountRef.current}/3):`, error);
-        
-        // Only mark as closed after 3 consecutive errors
-        if (crossOriginErrorCountRef.current >= 3) {
-          console.log("External window likely closed (3 consecutive errors)");
-          setIsPumpFunOpen(false);
-          pumpFunWindowRef.current = null;
-          crossOriginErrorCountRef.current = 0;
-        }
-      }
-    }, 2000);
-
-    return () => {
-      console.log("Stopping external window polling");
-      clearInterval(checkInterval);
-    };
-  }, [windowOpenedAt, stream?.pump_fun_url]);
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -257,15 +193,10 @@ const StreamDetail = () => {
                     size="lg" 
                     className="gap-2"
                     onClick={() => {
-                      if (!isOwner && user) {
-                        setHasStartedWatching(true);
-                        setIsPumpFunOpen(true);
-                        setWindowOpenedAt(Date.now());
-                        crossOriginErrorCountRef.current = 0;
-                      }
                       const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
                       if (newWindow && !isOwner && user) {
                         pumpFunWindowRef.current = newWindow;
+                        setHasStartedWatching(true);
                       }
                     }}
                   >
@@ -383,7 +314,7 @@ const StreamDetail = () => {
                         You can freely switch between this page and Pump.fun - switching tabs within this browser won't stop the timer.
                       </AlertDescription>
                     </Alert>
-                    {!isPumpFunOpen && hasStartedWatching && Date.now() > warningDismissedUntil && (
+                    {!isExternalWindowOpen && hasStartedWatching && Date.now() > warningDismissedUntil && (
                       <Alert className="border-warning/50 bg-warning/10">
                         <AlertCircle className="h-4 w-4 text-warning" />
                         <AlertDescription className="flex items-center justify-between gap-2">
@@ -396,9 +327,6 @@ const StreamDetail = () => {
                               variant="outline"
                               onClick={() => {
                                 if (stream?.pump_fun_url) {
-                                  setIsPumpFunOpen(true);
-                                  setWindowOpenedAt(Date.now());
-                                  crossOriginErrorCountRef.current = 0;
                                   const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
                                   if (newWindow) {
                                     pumpFunWindowRef.current = newWindow;
@@ -412,8 +340,7 @@ const StreamDetail = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                setWarningDismissedUntil(Date.now() + 5 * 60 * 1000); // 5 minutes
-                                setIsPumpFunOpen(true);
+                                setWarningDismissedUntil(Date.now() + 5 * 60 * 1000);
                               }}
                             >
                               Dismiss
@@ -425,8 +352,7 @@ const StreamDetail = () => {
                     <WatchTimeIndicator
                       watchTime={watchTime}
                       formattedWatchTime={formattedWatchTime}
-                      isTabVisible={isTabVisible}
-                      isPumpFunOpen={isPumpFunOpen}
+                      isExternalWindowOpen={isExternalWindowOpen}
                       meetsMinimumWatchTime={meetsMinimumWatchTime}
                     />
                   </>

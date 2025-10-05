@@ -25,13 +25,15 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const lastWatchTimeRef = useRef<number>(0);
 
   // Optimized: Consolidated window polling and display update using requestAnimationFrame
+  // Start immediately when shouldStart is true
   useEffect(() => {
-    if (!externalWindow) {
+    if (!shouldStart || !externalWindow) {
       setIsExternalWindowOpen(false);
       closedCheckCountRef.current = 0;
       return;
     }
 
+    // Start with window open = true (optimistic start)
     setIsExternalWindowOpen(true);
     closedCheckCountRef.current = 0;
 
@@ -94,7 +96,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [externalWindow, isExternalWindowOpen]);
+  }, [shouldStart, externalWindow, isExternalWindowOpen]);
 
   // Create or resume viewing session
   useEffect(() => {
@@ -276,5 +278,6 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     isTabVisible: isExternalWindowOpen, // Keep for backward compatibility
     meetsMinimumWatchTime: watchTime >= 300, // 5 minutes
     isSessionStarted,
+    isExternalWindowOpen,
   };
 };

@@ -6,8 +6,7 @@ import { Progress } from '@/components/ui/progress';
 interface WatchTimeIndicatorProps {
   watchTime: number;
   formattedWatchTime: string;
-  isTabVisible: boolean;
-  isPumpFunOpen: boolean;
+  isExternalWindowOpen: boolean;
   meetsMinimumWatchTime: boolean;
   minimumRequired?: number; // in seconds, default 300 (5 minutes)
 }
@@ -15,14 +14,12 @@ interface WatchTimeIndicatorProps {
 const WatchTimeIndicator = ({ 
   watchTime, 
   formattedWatchTime, 
-  isTabVisible,
-  isPumpFunOpen, 
+  isExternalWindowOpen, 
   meetsMinimumWatchTime,
   minimumRequired = 300 
 }: WatchTimeIndicatorProps) => {
   const progressPercentage = Math.min((watchTime / minimumRequired) * 100, 100);
   const minutesRequired = Math.floor(minimumRequired / 60);
-  const isTracking = isPumpFunOpen || isTabVisible;
 
   return (
     <Card className="p-4 space-y-3">
@@ -32,23 +29,18 @@ const WatchTimeIndicator = ({
           <span className="font-semibold">Watch Time Tracker</span>
         </div>
         <Badge 
-          variant={isTracking ? "default" : "secondary"}
+          variant={isExternalWindowOpen ? "default" : "secondary"}
           className="gap-1"
         >
-          {isTracking ? (
+          {isExternalWindowOpen ? (
             <>
               <Eye className="h-3 w-3" />
               Tracking
             </>
-          ) : !isPumpFunOpen ? (
-            <>
-              <EyeOff className="h-3 w-3" />
-              Stream Closed
-            </>
           ) : (
             <>
               <EyeOff className="h-3 w-3" />
-              Tab Hidden
+              Stream Closed
             </>
           )}
         </Badge>
@@ -75,8 +67,8 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep either this page OR the Pump.fun window open to earn watch time.
-            {!isPumpFunOpen && !isTabVisible && " (Timer paused - both windows closed)"}
+            Keep the Pump.fun window open to earn watch time.
+            {!isExternalWindowOpen && " (Timer paused - window closed)"}
           </p>
         )}
       </div>
