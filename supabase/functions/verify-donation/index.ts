@@ -75,6 +75,10 @@ serve(async (req) => {
       );
     }
 
+    // Calculate platform fee (5%)
+    const platformFee = amount * 0.05;
+    const creatorAmount = amount * 0.95;
+
     // Record the donation
     const { data: donation, error: donationError } = await supabaseClient
       .from('donations')
@@ -99,6 +103,13 @@ serve(async (req) => {
       );
     }
 
+    // Add platform fee to revenue pool
+    await supabaseClient.rpc('add_to_revenue_pool', {
+      p_amount: platformFee,
+      p_fee_source: 'donation',
+      p_source_id: donation.id
+    });
+
     // Update total donations for the content
     if (contentType === 'livestream') {
       await supabaseClient
@@ -112,10 +123,10 @@ serve(async (req) => {
         .eq('id', contentId);
     }
 
-    // Update profile total donations
+    // Update profile total donations (creator gets 95%)
     await supabaseClient.rpc('increment_user_donations', {
       user_id: recipientUserId,
-      donation_amount: amount
+      donation_amount: creatorAmount
     });
 
     console.log('Donation verified and recorded:', donation);

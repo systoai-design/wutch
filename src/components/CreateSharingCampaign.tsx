@@ -51,6 +51,10 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         throw new Error('Total budget must be greater than 0');
       }
 
+      // Calculate platform fee (5%)
+      const platformFee = totalBudget * 0.05;
+      const totalWithFee = totalBudget + platformFee;
+
       // Step 1: Check for Phantom wallet
       const solana = (window as any).solana;
       if (!solana?.isPhantom) {
@@ -63,7 +67,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
       toast({
         title: 'Preparing Deposit',
-        description: `Please approve ${totalBudget} SOL deposit to fund your campaign...`,
+        description: `Please approve ${totalWithFee.toFixed(3)} SOL deposit (includes 5% platform fee)...`,
       });
 
       // Step 2: Call charge-bounty-wallet to prepare deposit transaction
@@ -73,7 +77,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         'charge-bounty-wallet',
         {
           body: {
-            amount: totalBudget,
+            amount: totalWithFee,
             fromWalletAddress: solana.publicKey.toString(),
             toWalletAddress: ESCROW_WALLET
           }
@@ -98,7 +102,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
       await connection.confirmTransaction(signature, 'confirmed');
 
       // Step 4: Create campaign with escrow signature
-      const { error } = await supabase
+      const { data: campaignData, error } = await supabase
         .from('sharing_campaigns')
         .insert({
           creator_id: user.id,
@@ -106,15 +110,27 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
           reward_per_share: rewardPerShare,
           total_budget: totalBudget,
           max_shares_per_user: maxSharesPerUser,
+          platform_fee_amount: platformFee,
           escrow_transaction_signature: signature,
           is_active: true,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Step 5: Add platform fee to revenue pool
+      if (campaignData) {
+        await supabase.rpc('add_to_revenue_pool', {
+          p_amount: platformFee,
+          p_fee_source: 'campaign',
+          p_source_id: campaignData.id,
+        });
+      }
+
       toast({
         title: 'Campaign Created & Funded! 🎉',
-        description: `${totalBudget} SOL deposited. Users can now earn rewards by sharing!`,
+        description: `${totalWithFee.toFixed(3)} SOL deposited. Users can now earn rewards by sharing!`,
       });
 
       setIsOpen(false);
@@ -136,6 +152,8 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
   };
 
   const estimatedShares = parseFloat(formData.totalBudget) / parseFloat(formData.rewardPerShare);
+  const platformFee = parseFloat(formData.totalBudget) * 0.05;
+  const totalCost = parseFloat(formData.totalBudget) + platformFee;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -221,12 +239,20 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
                 <span className="font-semibold">${formData.rewardPerShare}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total budget:</span>
+                <span className="text-muted-foreground">Campaign budget:</span>
                 <span className="font-semibold">${formData.totalBudget}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Platform fee (5%):</span>
+                <span className="font-semibold">${platformFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-border font-semibold">
+                <span>Total Deposit:</span>
+                <span className="text-primary">{totalCost.toFixed(3)} SOL</span>
               </div>
               <div className="pt-2 mt-2 border-t border-border">
                 <p className="text-xs text-muted-foreground">
-                  ⚠️ You'll deposit {formData.totalBudget} SOL upfront to fund this campaign
+                  💡 The 5% platform fee helps fund view earnings and maintain the platform
                 </p>
               </div>
             </div>

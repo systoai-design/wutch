@@ -293,7 +293,7 @@ const Submit = () => {
 
       // Create bounty record if payment was successful
       if (formData.createBounty && livestreamData && bountyTransactionSignature) {
-        const { error: bountyError } = await supabase
+        const { data: bountyData, error: bountyError } = await supabase
           .from('stream_bounties')
           .insert({
             livestream_id: livestreamData.id,
@@ -302,10 +302,22 @@ const Submit = () => {
             reward_per_participant: parseFloat(formData.rewardPerPerson),
             participant_limit: parseInt(formData.participantLimit),
             secret_word: formData.secretWord,
+            platform_fee_amount: bountyCalc.fee,
             is_active: true,
-          });
+          })
+          .select()
+          .single();
 
         if (bountyError) throw bountyError;
+
+        // Add platform fee to revenue pool
+        if (bountyData) {
+          await supabase.rpc('add_to_revenue_pool', {
+            p_amount: bountyCalc.fee,
+            p_fee_source: 'bounty',
+            p_source_id: bountyData.id,
+          });
+        }
       }
 
       toast({

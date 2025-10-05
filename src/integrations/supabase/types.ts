@@ -319,21 +319,27 @@ export type Database = {
           created_at: string | null
           donation_id: string | null
           fee_amount: number
+          fee_source: string | null
           id: string
+          source_id: string | null
           transaction_signature: string | null
         }
         Insert: {
           created_at?: string | null
           donation_id?: string | null
           fee_amount: number
+          fee_source?: string | null
           id?: string
+          source_id?: string | null
           transaction_signature?: string | null
         }
         Update: {
           created_at?: string | null
           donation_id?: string | null
           fee_amount?: number
+          fee_source?: string | null
           id?: string
+          source_id?: string | null
           transaction_signature?: string | null
         }
         Relationships: [
@@ -345,6 +351,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_revenue_pool: {
+        Row: {
+          available_balance: number
+          id: string
+          last_updated: string
+          settings: Json
+          total_collected: number
+          total_paid_for_views: number
+        }
+        Insert: {
+          available_balance?: number
+          id?: string
+          last_updated?: string
+          settings?: Json
+          total_collected?: number
+          total_paid_for_views?: number
+        }
+        Update: {
+          available_balance?: number
+          id?: string
+          last_updated?: string
+          settings?: Json
+          total_collected?: number
+          total_paid_for_views?: number
+        }
+        Relationships: []
       }
       platform_settings: {
         Row: {
@@ -460,6 +493,7 @@ export type Database = {
           is_active: boolean
           livestream_id: string
           max_shares_per_user: number | null
+          platform_fee_amount: number
           reward_per_share: number
           spent_budget: number
           total_budget: number
@@ -473,6 +507,7 @@ export type Database = {
           is_active?: boolean
           livestream_id: string
           max_shares_per_user?: number | null
+          platform_fee_amount?: number
           reward_per_share?: number
           spent_budget?: number
           total_budget: number
@@ -486,6 +521,7 @@ export type Database = {
           is_active?: boolean
           livestream_id?: string
           max_shares_per_user?: number | null
+          platform_fee_amount?: number
           reward_per_share?: number
           spent_budget?: number
           total_budget?: number
@@ -610,6 +646,7 @@ export type Database = {
           is_active: boolean
           livestream_id: string
           participant_limit: number
+          platform_fee_amount: number
           reward_per_participant: number
           secret_word: string
           total_deposit: number
@@ -624,6 +661,7 @@ export type Database = {
           is_active?: boolean
           livestream_id: string
           participant_limit: number
+          platform_fee_amount?: number
           reward_per_participant: number
           secret_word: string
           total_deposit: number
@@ -638,6 +676,7 @@ export type Database = {
           is_active?: boolean
           livestream_id?: string
           participant_limit?: number
+          platform_fee_amount?: number
           reward_per_participant?: number
           secret_word?: string
           total_deposit?: number
@@ -741,7 +780,9 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
           earnings_amount: number
+          funded_by_pool: boolean | null
           id: string
+          pool_balance_at_time: number | null
           user_id: string
           view_count: number
         }
@@ -750,7 +791,9 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string
           earnings_amount?: number
+          funded_by_pool?: boolean | null
           id?: string
+          pool_balance_at_time?: number | null
           user_id: string
           view_count?: number
         }
@@ -759,7 +802,9 @@ export type Database = {
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
           earnings_amount?: number
+          funded_by_pool?: boolean | null
           id?: string
+          pool_balance_at_time?: number | null
           user_id?: string
           view_count?: number
         }
@@ -822,6 +867,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_to_revenue_pool: {
+        Args: { p_amount: number; p_fee_source: string; p_source_id: string }
+        Returns: undefined
+      }
       credit_view_earnings: {
         Args: {
           p_content_id: string

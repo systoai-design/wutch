@@ -12,6 +12,8 @@ import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
 import CommentsSection from '@/components/CommentsSection';
 import { EditStreamDialog } from '@/components/EditStreamDialog';
+import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
+import { ShareAndEarn } from '@/components/ShareAndEarn';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useViewingSession } from '@/hooks/useViewingSession';
@@ -269,6 +271,19 @@ const StreamDetail = () => {
                   <Share2 className="h-4 w-4" />
                   Share
                 </Button>
+
+                {/* Share campaign - Owner can create, viewers can earn */}
+                {isOwner && stream && (
+                  <CreateSharingCampaign livestreamId={stream.id} />
+                )}
+                
+                {!isOwner && user && stream && (
+                  <ShareAndEarn 
+                    livestreamId={stream.id}
+                    streamTitle={stream.title}
+                    streamUrl={`${window.location.origin}/stream/${stream.id}`}
+                  />
+                )}
 
                 {canDelete && (
                   <AlertDialog>
