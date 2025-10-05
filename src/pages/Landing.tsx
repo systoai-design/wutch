@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,12 +24,18 @@ const Landing = () => {
     activeWatchers: 0,
     liveStreams: 0
   });
+  const [creatorStats, setCreatorStats] = useState({
+    totalPaidToCreators: 0,
+    activeCreators: 0,
+    averageEarnings: 0
+  });
 
   useEffect(() => {
     document.title = 'Wutch - Watch & Create Content, Earn Real Crypto | View-Based Monetization';
     fetchFeaturedBounties();
     fetchLeaderboard();
     fetchStats();
+    fetchCreatorStats();
   }, []);
 
   const fetchStats = async () => {
@@ -135,6 +141,38 @@ const Landing = () => {
     }
   };
 
+  const fetchCreatorStats = async () => {
+    try {
+      // Fetch total earnings paid to creators
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('total_earnings, pending_earnings');
+
+      if (profilesError) throw profilesError;
+
+      const totalPaidToCreators = (profilesData || []).reduce(
+        (sum, profile) => sum + parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0'),
+        0
+      );
+
+      // Count active creators (those with earnings)
+      const activeCreators = (profilesData || []).filter(
+        (profile) => (parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0')) > 0
+      ).length;
+
+      // Calculate average earnings
+      const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;
+
+      setCreatorStats({
+        totalPaidToCreators,
+        activeCreators,
+        averageEarnings
+      });
+    } catch (error) {
+      console.error('Error fetching creator stats:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -171,6 +209,12 @@ const Landing = () => {
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Leaderboard
+            </button>
+            <button
+              onClick={() => document.getElementById('creator-rewards')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Creator Rewards
             </button>
             <button
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
@@ -361,6 +405,198 @@ const Landing = () => {
             ) : (
               <LeaderboardTable entries={leaderboard} />
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Creator Rewards Section */}
+      <section id="creator-rewards" className="py-20 md:py-28 bg-background scroll-mt-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Creator Rewards</h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              Keep more of what you earn with the fairest revenue split in streaming
+            </p>
+          </div>
+
+          {/* Hero Stats */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
+            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+              <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-primary mb-2">
+                ${creatorStats.totalPaidToCreators.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Total Paid to Creators</div>
+            </Card>
+            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+              <Users className="h-12 w-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-primary mb-2">
+                {creatorStats.activeCreators.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Active Creators</div>
+            </Card>
+            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+              <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
+              <div className="text-4xl font-bold text-primary mb-2">
+                ${creatorStats.averageEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">Average Creator Earnings</div>
+            </Card>
+          </div>
+
+          {/* Revenue Streams Grid */}
+          <div className="max-w-6xl mx-auto mb-16">
+            <h3 className="text-3xl font-bold text-center mb-10 text-foreground">Four Ways to Earn</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="p-6 space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <Gift className="h-7 w-7 text-primary" />
+                </div>
+                <h4 className="text-xl font-bold text-foreground">Donations</h4>
+                <div className="text-3xl font-bold text-primary">95%</div>
+                <p className="text-sm text-muted-foreground">You keep 95% of all donations from your viewers</p>
+              </Card>
+
+              <Card className="p-6 space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <Coins className="h-7 w-7 text-primary" />
+                </div>
+                <h4 className="text-xl font-bold text-foreground">Bounties</h4>
+                <div className="text-3xl font-bold text-primary">100%</div>
+                <p className="text-sm text-muted-foreground">Pre-fund bounties, viewers claim them. Zero platform cut</p>
+              </Card>
+
+              <Card className="p-6 space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <TrendingUp className="h-7 w-7 text-primary" />
+                </div>
+                <h4 className="text-xl font-bold text-foreground">Share Campaigns</h4>
+                <div className="text-3xl font-bold text-primary">100%</div>
+                <p className="text-sm text-muted-foreground">Reward viewers for sharing. All campaign funds go to participants</p>
+              </Card>
+
+              <Card className="p-6 space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <Eye className="h-7 w-7 text-primary" />
+                </div>
+                <h4 className="text-xl font-bold text-foreground">View Earnings</h4>
+                <div className="text-2xl font-bold text-primary">$0.10 CPM</div>
+                <p className="text-sm text-muted-foreground">Beta phase view earnings from every verified watch</p>
+              </Card>
+            </div>
+          </div>
+
+          {/* Platform Comparison */}
+          <div className="max-w-4xl mx-auto mb-16">
+            <h3 className="text-3xl font-bold text-center mb-10 text-foreground">Industry-Leading Creator Split</h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="p-8 space-y-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="text-2xl font-bold text-foreground">Wutch</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-foreground font-medium">Creator</span>
+                    <span className="text-primary font-bold">95%</span>
+                  </div>
+                  <div className="h-8 bg-background/50 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full" style={{ width: '95%' }} />
+                  </div>
+                  <div className="flex justify-between text-sm mt-2">
+                    <span className="text-muted-foreground">Platform</span>
+                    <span className="text-muted-foreground">5%</span>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-8 space-y-6 bg-card border-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                    <Video className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h4 className="text-2xl font-bold text-foreground">Traditional Platforms</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-foreground font-medium">Creator</span>
+                    <span className="text-muted-foreground font-bold">50-70%</span>
+                  </div>
+                  <div className="h-8 bg-background/50 rounded-full overflow-hidden">
+                    <div className="h-full bg-muted rounded-full" style={{ width: '60%' }} />
+                  </div>
+                  <div className="flex justify-between text-sm mt-2">
+                    <span className="text-muted-foreground">Platform</span>
+                    <span className="text-muted-foreground">30-50%</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Payment Timeline */}
+          <div className="max-w-5xl mx-auto mb-16">
+            <h3 className="text-3xl font-bold text-center mb-10 text-foreground">Fast & Simple Payouts</h3>
+            <div className="grid md:grid-cols-4 gap-6">
+              <Card className="p-6 text-center space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Video className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-lg font-bold text-foreground">1. Create & Earn</div>
+                <p className="text-sm text-muted-foreground">Stream, upload shorts, engage with your audience</p>
+              </Card>
+
+              <Card className="p-6 text-center space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-lg font-bold text-foreground">2. Track Earnings</div>
+                <p className="text-sm text-muted-foreground">Monitor your pending earnings in real-time</p>
+              </Card>
+
+              <Card className="p-6 text-center space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Wallet className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-lg font-bold text-foreground">3. Request Payout</div>
+                <p className="text-sm text-muted-foreground">Minimum 1 SOL, instant withdrawal request</p>
+              </Card>
+
+              <Card className="p-6 text-center space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Clock className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-lg font-bold text-foreground">4. Get Paid</div>
+                <p className="text-sm text-muted-foreground">Receive SOL in 24-48 hours to your wallet</p>
+              </Card>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center max-w-3xl mx-auto">
+            <Card className="p-12 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+              <h3 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">Ready to Start Earning More?</h3>
+              <p className="text-lg text-muted-foreground mb-8">
+                Join the fairest creator platform. Keep 95% of donations, create bounties, and engage your audience like never before.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="px-8 py-6 h-auto text-lg hover:scale-105 transition-transform">
+                  <Link to="/auth">Start Creating & Earning</Link>
+                </Button>
+                <Button 
+                  asChild 
+                  size="lg" 
+                  variant="outline" 
+                  className="px-8 py-6 h-auto text-lg hover:scale-105 transition-transform"
+                >
+                  <button onClick={() => document.getElementById('bounties')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                    See Live Examples
+                  </button>
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
