@@ -264,7 +264,13 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
   }
 
   if (!bounty) {
-    return null;
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-muted-foreground">
+          No bounty available for this stream yet. Stay tuned for future rewards!
+        </p>
+      </Card>
+    );
   }
 
   const spotsRemaining = bounty.participant_limit - bounty.claimed_count;

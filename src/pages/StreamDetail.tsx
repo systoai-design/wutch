@@ -424,7 +424,7 @@ const StreamDetail = () => {
             )}
 
             {/* Bounty Claim - Only show for non-owners */}
-            {!isOwner && user && isSessionStarted && (
+            {!isOwner && user && hasStartedWatching && (
               <ClaimBounty
                 livestreamId={id!}
                 watchTime={watchTime}
