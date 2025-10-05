@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -14,8 +14,11 @@ import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
+import { WalletStatusBadge } from '@/components/WalletStatusBadge';
+import { WalletEducationPanel } from '@/components/WalletEducationPanel';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { formatDistanceToNow } from 'date-fns';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
@@ -23,32 +26,76 @@ type Livestream = Database['public']['Tables']['livestreams']['Row'];
 // Component to display user's private wallet address (only visible to owner)
 function ProfileWalletDisplay({ userId }: { userId: string }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [firstConnectedAt, setFirstConnectedAt] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadWallet = async () => {
       const { data } = await supabase
         .from('profile_wallets')
-        .select('wallet_address')
+        .select('wallet_address, first_connected_at')
         .eq('user_id', userId)
         .single();
       
       if (data?.wallet_address) {
         setWalletAddress(data.wallet_address);
+        setFirstConnectedAt(data.first_connected_at);
       }
     };
     loadWallet();
   }, [userId]);
 
-  if (!walletAddress) return null;
+  const handleCopy = () => {
+    if (!walletAddress) return;
+    navigator.clipboard.writeText(walletAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({
+      title: 'Copied!',
+      description: 'Wallet address copied to clipboard',
+    });
+  };
+
+  if (!walletAddress) {
+    return (
+      <div className="p-4 bg-muted rounded-lg">
+        <p className="text-sm text-muted-foreground">
+          No wallet connected. Connect your wallet in Edit Profile to receive donations and claim rewards.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h3 className="font-semibold mb-2">Wallet Address</h3>
-      <div className="p-3 bg-muted rounded-lg text-sm font-mono break-all">
-        {walletAddress}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Connected Wallet</h3>
+        <WalletStatusBadge isConnected={!!walletAddress} />
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
-        Only visible to you
+      <div className="p-4 bg-muted rounded-lg space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <code className="text-sm font-mono break-all flex-1">
+            {walletAddress}
+          </code>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="gap-2 shrink-0"
+          >
+            <Copy className="h-3 w-3" />
+            {copied ? 'Copied!' : 'Copy'}
+          </Button>
+        </div>
+        {firstConnectedAt && (
+          <p className="text-xs text-muted-foreground">
+            Connected {formatDistanceToNow(new Date(firstConnectedAt), { addSuffix: true })}
+          </p>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Only visible to you. Manage your wallet in Edit Profile.
       </p>
     </div>
   );
@@ -316,12 +363,14 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
                 {isOwnProfile ? (
-                  <EditProfileDialog 
-                    profile={profile} 
-                    onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
-                  />
+                  <>
+                    <EditProfileDialog 
+                      profile={profile} 
+                      onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
+                    />
+                  </>
                 ) : (
                   <>
                     <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"}>
@@ -415,9 +464,9 @@ const ProfilePage = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="about" className="mt-6">
-            <Card className="p-6 space-y-4">
-              {isOwnProfile && (
+          <TabsContent value="about" className="mt-6 space-y-6">
+            {isOwnProfile && (
+              <Card className="p-6 space-y-4">
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
@@ -455,56 +504,54 @@ const ProfilePage = () => {
                     </div>
                   )}
                 </div>
-              )}
 
-              {isOwnProfile && (
                 <ProfileWalletDisplay userId={profile.id} />
-              )}
 
-              {isOwnProfile && (
                 <DonationSettings />
-              )}
+              </Card>
+            )}
 
-              {(socialLinks.twitter || socialLinks.discord || socialLinks.website) && (
-                <div>
-                  <h3 className="font-semibold mb-2">Social Links</h3>
-                  <div className="space-y-2">
-                    {socialLinks.twitter && (
-                      <a
-                        href={socialLinks.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                      >
-                        <Twitter className="h-4 w-4" />
-                        Twitter
-                      </a>
-                    )}
-                    {socialLinks.discord && (
-                      <a
-                        href={socialLinks.discord}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                      >
-                        Discord
-                      </a>
-                    )}
-                    {socialLinks.website && (
-                      <a
-                        href={socialLinks.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                      >
-                        <Globe className="h-4 w-4" />
-                        Website
-                      </a>
-                    )}
-                  </div>
+            {!isOwnProfile && <WalletEducationPanel />}
+
+            {(socialLinks.twitter || socialLinks.discord || socialLinks.website) && (
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4">Social Links</h3>
+                <div className="space-y-2">
+                  {socialLinks.twitter && (
+                    <a
+                      href={socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                    >
+                      <Twitter className="h-4 w-4" />
+                      Twitter
+                    </a>
+                  )}
+                  {socialLinks.discord && (
+                    <a
+                      href={socialLinks.discord}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                    >
+                      Discord
+                    </a>
+                  )}
+                  {socialLinks.website && (
+                    <a
+                      href={socialLinks.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                    >
+                      <Globe className="h-4 w-4" />
+                      Website
+                    </a>
+                  )}
                 </div>
-              )}
-            </Card>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

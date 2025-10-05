@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
+import { WalletManagement } from '@/components/WalletManagement';
+import { Separator } from '@/components/ui/separator';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -317,7 +319,16 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
 
 
-            <div className="pt-4 border-t">
+            <Separator className="my-6" />
+
+            <div>
+              <h3 className="font-semibold mb-4">Wallet Management</h3>
+              <WalletManagement />
+            </div>
+
+            <Separator className="my-6" />
+
+            <div>
               <h3 className="font-semibold mb-4">Social Links</h3>
               <div className="space-y-4">
                 <div>

@@ -402,19 +402,28 @@ export type Database = {
       }
       profile_wallets: {
         Row: {
+          connection_count: number | null
           created_at: string
+          first_connected_at: string | null
+          last_connected_at: string | null
           updated_at: string
           user_id: string
           wallet_address: string | null
         }
         Insert: {
+          connection_count?: number | null
           created_at?: string
+          first_connected_at?: string | null
+          last_connected_at?: string | null
           updated_at?: string
           user_id: string
           wallet_address?: string | null
         }
         Update: {
+          connection_count?: number | null
           created_at?: string
+          first_connected_at?: string | null
+          last_connected_at?: string | null
           updated_at?: string
           user_id?: string
           wallet_address?: string | null

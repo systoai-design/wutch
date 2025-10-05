@@ -103,7 +103,19 @@ export const WalletConnect = () => {
           onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation (23505 is PostgreSQL unique violation code)
+        if (error.code === '23505' && error.message.includes('unique_wallet_address')) {
+          toast({
+            title: "Wallet Already Connected",
+            description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
+            variant: "destructive",
+          });
+          await solana.disconnect();
+          return;
+        }
+        throw error;
+      }
 
       setWalletAddress(address);
       toast({
