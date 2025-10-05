@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -20,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
+import ScheduleStreamPicker from '@/components/ScheduleStreamPicker';
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -63,7 +65,12 @@ const Submit = () => {
     participantLimit: '',
     secretWord: '',
     minWatchTimeMinutes: '10',
+    // Schedule fields
+    scheduleForLater: false,
   });
+
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
+  const [scheduleTime, setScheduleTime] = useState('12:00');
 
   // Calculate bounty summary in SOL
   const calculateTotalBounty = () => {
@@ -177,6 +184,43 @@ const Submit = () => {
     setIsSubmitting(true);
 
     try {
+      // Validate scheduled time if scheduling
+      let startedAt = null;
+      let streamStatus: 'pending' | 'live' = 'live';
+      let isLive = true;
+
+      if (formData.scheduleForLater) {
+        if (!scheduleDate || !scheduleTime) {
+          toast({
+            title: 'Schedule Date/Time Required',
+            description: 'Please select both date and time for scheduled stream',
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Combine date and time
+        const [hours, minutes] = scheduleTime.split(':').map(Number);
+        const scheduledDateTime = new Date(scheduleDate);
+        scheduledDateTime.setHours(hours, minutes, 0, 0);
+
+        // Check if scheduled time is in the future
+        if (scheduledDateTime <= new Date()) {
+          toast({
+            title: 'Invalid Schedule Time',
+            description: 'Scheduled time must be in the future',
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        startedAt = scheduledDateTime.toISOString();
+        streamStatus = 'pending';
+        isLive = false;
+      }
+
       // Process bounty payment FIRST if bounty is enabled
       let bountyTransactionSignature = null;
       
@@ -283,8 +327,9 @@ const Submit = () => {
           tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           promotional_link: formData.promotional_link ? sanitizeUrl(formData.promotional_link) : null,
           promotional_link_text: formData.promotional_link_text || null,
-          status: 'live',
-          is_live: true,
+          status: streamStatus,
+          is_live: isLive,
+          started_at: startedAt,
         })
         .select()
         .single();
@@ -526,6 +571,38 @@ const Submit = () => {
               <p className="text-xs text-muted-foreground">
                 Customize the button text viewers see (max 50 characters)
               </p>
+            </div>
+
+            {/* Schedule Section */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="space-y-1">
+                  <Label htmlFor="scheduleForLater" className="font-semibold cursor-pointer">
+                    Schedule for Later
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Schedule your stream to appear in "Upcoming" section
+                  </p>
+                </div>
+                <Switch
+                  id="scheduleForLater"
+                  checked={formData.scheduleForLater}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, scheduleForLater: checked })
+                  }
+                />
+              </div>
+
+              {formData.scheduleForLater && (
+                <Card className="p-4 bg-muted/50">
+                  <ScheduleStreamPicker
+                    date={scheduleDate}
+                    onDateChange={setScheduleDate}
+                    time={scheduleTime}
+                    onTimeChange={setScheduleTime}
+                  />
+                </Card>
+              )}
             </div>
 
             {/* Bounty Section */}

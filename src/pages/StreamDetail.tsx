@@ -14,6 +14,7 @@ import CommentsSection from '@/components/CommentsSection';
 import { EditStreamDialog } from '@/components/EditStreamDialog';
 import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
+import GuestPromptDialog from '@/components/GuestPromptDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useViewingSession } from '@/hooks/useViewingSession';
@@ -31,7 +32,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const StreamDetail = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { isAdmin } = useAdmin();
   const isMobile = useIsMobile();
   const [stream, setStream] = useState<Livestream | null>(null);
@@ -40,6 +41,8 @@ const StreamDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
   const [warningDismissedUntil, setWarningDismissedUntil] = useState<number>(0);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const [guestPromptAction, setGuestPromptAction] = useState<'like' | 'donate'>('like');
   const pumpFunWindowRef = useRef<Window | null>(null);
 
   // Track viewing session
@@ -182,7 +185,13 @@ const StreamDetail = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
+      <GuestPromptDialog
+        open={showGuestPrompt}
+        onOpenChange={setShowGuestPrompt}
+        action={guestPromptAction}
+      />
+      <div className="min-h-screen">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 lg:p-6">
         <div className="lg:col-span-2 space-y-4">
           {/* Video Player */}
@@ -275,7 +284,14 @@ const StreamDetail = () => {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={toggleLike}
+                  onClick={() => {
+                    if (isGuest) {
+                      setGuestPromptAction('like');
+                      setShowGuestPrompt(true);
+                    } else {
+                      toggleLike();
+                    }
+                  }}
                   className="relative"
                 >
                   <Heart className={`h-5 w-5 ${isLiked ? 'fill-primary text-primary' : ''}`} />
@@ -413,6 +429,8 @@ const StreamDetail = () => {
                 livestreamId={id!}
                 watchTime={watchTime}
                 meetsMinimumWatchTime={meetsMinimumWatchTime}
+                streamTitle={stream.title}
+                creatorName={streamer?.display_name || streamer?.username || 'Creator'}
               />
             )}
 
@@ -470,6 +488,7 @@ const StreamDetail = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

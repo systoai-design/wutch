@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bounty_claim_shares: {
+        Row: {
+          bounty_id: string
+          id: string
+          livestream_id: string
+          share_platform: string
+          shared_at: string
+          user_id: string
+        }
+        Insert: {
+          bounty_id: string
+          id?: string
+          livestream_id: string
+          share_platform?: string
+          shared_at?: string
+          user_id: string
+        }
+        Update: {
+          bounty_id?: string
+          id?: string
+          livestream_id?: string
+          share_platform?: string
+          shared_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_claim_shares_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_claim_shares_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bounty_claims: {
         Row: {
           bounty_id: string

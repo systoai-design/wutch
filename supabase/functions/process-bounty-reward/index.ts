@@ -69,6 +69,21 @@ serve(async (req) => {
       )
     }
 
+    // Verify share requirement
+    const { data: shareData } = await supabaseClient
+      .from('bounty_claim_shares')
+      .select('*')
+      .eq('bounty_id', bounty_id)
+      .eq('user_id', user_id)
+      .single()
+
+    if (!shareData) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'You must share the stream before claiming the bounty' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Verify secret word (case-insensitive)
     const isCorrect = submitted_word.toLowerCase().trim() === bounty.secret_word.toLowerCase().trim()
 

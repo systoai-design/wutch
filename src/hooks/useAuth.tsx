@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   signOut: () => Promise<void>;
   isLoading: boolean;
+  isGuest: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,8 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const isGuest = !user && !isLoading;
+
   return (
-    <AuthContext.Provider value={{ user, session, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, session, signOut, isLoading, isGuest }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import CommentItem from "@/components/CommentItem";
+import GuestPromptDialog from "@/components/GuestPromptDialog";
 
 interface Comment {
   id: string;
@@ -26,11 +27,12 @@ interface CommentsSectionProps {
 }
 
 export default function CommentsSection({ contentId, contentType }: CommentsSectionProps) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
 
   useEffect(() => {
     fetchComments();
@@ -94,11 +96,7 @@ export default function CommentsSection({ contentId, contentType }: CommentsSect
     e.preventDefault();
     
     if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to comment",
-        variant: "destructive",
-      });
+      setShowGuestPrompt(true);
       return;
     }
 
@@ -133,7 +131,13 @@ export default function CommentsSection({ contentId, contentType }: CommentsSect
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
+      <GuestPromptDialog
+        open={showGuestPrompt}
+        onOpenChange={setShowGuestPrompt}
+        action="comment"
+      />
+      <div className="flex flex-col h-full">
       {/* Comments List */}
       <ScrollArea className="flex-1 px-4">
         {loading ? (
@@ -184,5 +188,6 @@ export default function CommentsSection({ contentId, contentType }: CommentsSect
         )}
       </div>
     </div>
+    </>
   );
 }

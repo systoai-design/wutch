@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Trophy, Wallet, Clock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Trophy, Wallet, Clock, Share2, Twitter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Database } from '@/integrations/supabase/types';
+import { shareStreamToTwitter } from '@/utils/shareUtils';
 
 type StreamBounty = Database['public']['Tables']['stream_bounties']['Row'];
 
@@ -15,9 +17,11 @@ interface ClaimBountyProps {
   livestreamId: string;
   watchTime: number;
   meetsMinimumWatchTime: boolean;
+  streamTitle: string;
+  creatorName: string;
 }
 
-const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBountyProps) => {
+const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTitle, creatorName }: ClaimBountyProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [bounty, setBounty] = useState<StreamBounty | null>(null);
@@ -27,6 +31,8 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
   const [hasClaimedWork, setHasClaimedWork] = useState(false);
   const [workClaimExpiresAt, setWorkClaimExpiresAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasShared, setHasShared] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     const fetchBounty = async () => {
@@ -61,6 +67,18 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
           if (claimData) {
             setHasClaimed(true);
           }
+
+          // Check if user has shared
+          const { data: shareData } = await supabase
+            .from('bounty_claim_shares')
+            .select('*')
+            .eq('bounty_id', bountyData.id)
+            .eq('user_id', user.id)
+            .single();
+
+          if (shareData) {
+            setHasShared(true);
+          }
         }
       } catch (error) {
         console.error('Error fetching bounty:', error);
@@ -72,8 +90,49 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
     fetchBounty();
   }, [livestreamId, user]);
 
+  const handleShare = async () => {
+    if (!user || !bounty) return;
+
+    setIsSharing(true);
+    try {
+      // Record the share
+      const { error } = await supabase
+        .from('bounty_claim_shares')
+        .insert({
+          user_id: user.id,
+          bounty_id: bounty.id,
+          livestream_id: livestreamId,
+          share_platform: 'twitter',
+        });
+
+      if (error) throw error;
+
+      // Open Twitter share
+      shareStreamToTwitter({
+        id: livestreamId,
+        title: streamTitle,
+        creatorName: creatorName,
+      });
+
+      setHasShared(true);
+      toast({
+        title: 'Share Recorded! ✓',
+        description: 'You can now claim your bounty once watch time is met.',
+      });
+    } catch (error) {
+      console.error('Error recording share:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to record share. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const handleClaimWork = () => {
-    if (!meetsMinimumWatchTime) return;
+    if (!meetsMinimumWatchTime || !hasShared) return;
     
     const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutes from now
     setHasClaimedWork(true);
@@ -228,14 +287,32 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Share Requirement Card */}
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Reward per person</p>
-          <p className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            {bounty.reward_per_participant} SOL
-          </p>
+          <p className="text-sm text-muted-foreground">Share Stream</p>
+          <div className="flex items-center gap-2">
+            {hasShared ? (
+              <Badge variant="default" className="flex items-center gap-1">
+                <Share2 className="h-3 w-3" />
+                Shared ✓
+              </Badge>
+            ) : (
+              <Button
+                onClick={handleShare}
+                disabled={isSharing}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Twitter className="h-4 w-4" />
+                {isSharing ? 'Sharing...' : 'Share to Qualify'}
+              </Button>
+            )}
+          </div>
         </div>
+        
+        {/* Watch Time Display */}
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Watch time</p>
           <p className="text-2xl font-bold flex items-center gap-2">
@@ -244,6 +321,16 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime }: ClaimBo
           </p>
         </div>
       </div>
+
+      {/* Requirements Alert */}
+      {!hasShared && !hasClaimed && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You must share the stream on Twitter/X before you can claim the bounty.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {hasClaimed ? (
         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">

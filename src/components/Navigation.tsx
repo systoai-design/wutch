@@ -19,7 +19,7 @@ const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
   const { toggle } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -117,13 +117,24 @@ const Navigation = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
-              <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
-                <Link to="/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer py-3 min-h-[44px]">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
+              {isGuest ? (
+                <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                  <Link to="/auth">
+                    <User className="h-4 w-4 mr-2" />
+                    Sign Up / Login
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer py-3 min-h-[44px]">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
