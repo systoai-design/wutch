@@ -176,22 +176,22 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur-md transition-all duration-300">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
+      <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur-md transition-all duration-300">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group touch-manipulation">
             <img 
               src={wutchLogo} 
               alt="Wutch" 
-              className="h-10 w-10 transition-transform group-hover:scale-110"
+              className="h-8 w-8 sm:h-10 sm:w-10 transition-transform group-hover:scale-110"
               width="40"
               height="40"
               loading="eager"
             />
-            <span className="text-2xl font-bold text-foreground">Wutch</span>
+            <span className="text-xl sm:text-2xl font-bold text-foreground">Wutch</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6">
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -224,21 +224,21 @@ const Landing = () => {
             </button>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="transition-transform hover:scale-110"
+              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
             >
               {isDark ? (
-                <Sun className="h-5 w-5" />
+                <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <Moon className="h-5 w-5" />
+                <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
             </Button>
-            <Button asChild size="lg" className="transition-all hover:scale-105">
+            <Button asChild size="default" className="transition-all hover:scale-105 text-sm sm:text-base h-10 sm:h-11 px-4 sm:px-6 touch-manipulation">
               <Link to="/auth">Launch App</Link>
             </Button>
           </div>
@@ -246,26 +246,26 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 md:py-24 lg:py-36">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
-            <Coins className="h-4 w-4" />
+      <section className="container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-24 lg:py-36">
+        <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium animate-fade-in">
+            <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
             Earn Crypto From Every View
           </div>
           
-          <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.1s' }}>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.1s' }}>
             <TypewriterText className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-primary/70" />
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" style={{ animationDelay: '0.2s' }}>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed px-2" style={{ animationDelay: '0.2s' }}>
             Watch streams, upload shorts, go live. Earn crypto from donations, bounties, and sharing campaigns.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="default" className="px-6 py-2 hover:scale-105 transition-transform">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in px-2" style={{ animationDelay: '0.3s' }}>
+            <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
               <Link to="/auth">Start Earning Now</Link>
             </Button>
-            <Button asChild size="default" variant="outline" className="px-6 py-2 hover:scale-105 transition-transform">
+            <Button asChild size="default" variant="outline" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
               <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 How It Works
               </button>
@@ -273,24 +273,24 @@ const Landing = () => {
           </div>
 
           {/* Stats with subtle background */}
-          <div className="grid grid-cols-3 gap-6 md:gap-8 pt-16 max-w-3xl mx-auto">
-            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <div className="text-3xl md:text-4xl font-bold text-primary">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 pt-8 sm:pt-12 md:pt-16 max-w-3xl mx-auto px-2">
+            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
                 ${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
-              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Total Paid Out</div>
+              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Total Paid Out</div>
             </div>
-            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="text-3xl md:text-4xl font-bold text-primary">
+            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
                 {stats.activeWatchers.toLocaleString()}+
               </div>
-              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Active Earners</div>
+              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Active Earners</div>
             </div>
-            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <div className="text-3xl md:text-4xl font-bold text-primary">
+            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
                 {stats.liveStreams.toLocaleString()}
               </div>
-              <div className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">Live Now</div>
+              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Live Now</div>
             </div>
           </div>
         </div>

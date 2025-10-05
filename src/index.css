@@ -119,4 +119,50 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Touch-friendly interactions for mobile */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Hide Lovable badge */
+[data-lovable-badge],
+a[href*="lovable.dev"][target="_blank"]:has(img),
+a[href*="lovable.app"][target="_blank"]:has(img),
+div[class*="lovable-badge"],
+.lovable-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  /* Ensure minimum touch target size of 44x44px */
+  button, 
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+  }
+  
+  /* Better tap targets */
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text size adjustment on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  /* Smoother scrolling on mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
 }

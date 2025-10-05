@@ -40,30 +40,30 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md transition-all duration-300">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-4">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md transition-all duration-300">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-3">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={toggle}
-            className="hidden md:inline-flex"
+            className="hidden md:inline-flex h-11 w-11"
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="md:hidden">
+          <Button variant="ghost" size="icon" className="md:hidden h-11 w-11 -ml-2">
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group touch-manipulation">
             <img 
               src={wutchLogo} 
               alt="Wutch" 
-              className="h-10 w-10 transition-transform group-hover:scale-110"
+              className="h-9 w-9 sm:h-10 sm:w-10 transition-transform group-hover:scale-110"
               width="40"
               height="40"
               loading="eager"
             />
-            <span className="font-bold text-xl hidden sm:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="font-bold text-lg sm:text-xl hidden xs:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Wutch
             </span>
           </Link>
@@ -90,29 +90,30 @@ const Navigation = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <WalletConnect />
           
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="hidden sm:inline-flex transition-transform hover:scale-110"
+            className="hidden sm:inline-flex transition-transform hover:scale-110 h-11 w-11"
+            aria-label="Toggle theme"
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-11 w-11 touch-manipulation" aria-label="User menu">
                 <User className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
+            <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
+              <DropdownMenuItem asChild className="cursor-pointer py-3">
                 <Link to="/profile">Profile</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer py-3">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
@@ -121,7 +122,7 @@ const Navigation = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-3 md:hidden">
+      <div className="px-3 sm:px-4 pb-3 md:hidden">
         <div className="relative w-full">
           <Input
             type="text"
@@ -129,13 +130,14 @@ const Navigation = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pr-10"
+            className="w-full pr-10 h-11 text-base"
           />
           <Button
             variant="ghost"
             size="icon"
             onClick={handleSearch}
-            className="absolute right-0 top-0 h-full"
+            className="absolute right-0 top-0 h-11 w-11 touch-manipulation"
+            aria-label="Search"
           >
             <Search className="h-5 w-5" />
           </Button>
