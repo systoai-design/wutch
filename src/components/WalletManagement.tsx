@@ -179,7 +179,7 @@ export const WalletManagement = () => {
             <strong>No wallet connected.</strong> Connect your Solana wallet to receive donations, claim bounties, and participate in share & earn campaigns.
           </AlertDescription>
         </Alert>
-        <Button onClick={() => setShowChangeWarning(true)} className="w-full gap-2">
+        <Button onClick={() => setShowChangeWarning(true)} className="w-full gap-2" type="button">
           <Wallet className="h-4 w-4" />
           Connect Wallet
         </Button>
@@ -215,8 +215,8 @@ export const WalletManagement = () => {
               </div>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConnectNewWallet} disabled={isProcessing}>
+              <AlertDialogCancel disabled={isProcessing} type="button">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConnectNewWallet} disabled={isProcessing} type="button">
                 {isProcessing ? 'Connecting...' : 'Connect Wallet'}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -246,6 +246,7 @@ export const WalletManagement = () => {
             size="sm"
             onClick={handleCopyAddress}
             className="gap-2"
+            type="button"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
           </Button>
@@ -264,6 +265,7 @@ export const WalletManagement = () => {
           onClick={() => setShowChangeWarning(true)}
           disabled={isProcessing}
           className="flex-1"
+          type="button"
         >
           Change Wallet
         </Button>
@@ -272,6 +274,7 @@ export const WalletManagement = () => {
           onClick={() => setShowDisconnectWarning(true)}
           disabled={isProcessing}
           className="flex-1"
+          type="button"
         >
           Disconnect
         </Button>
@@ -312,8 +315,8 @@ export const WalletManagement = () => {
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConnectNewWallet} disabled={isProcessing} className="bg-orange-500 hover:bg-orange-600">
+            <AlertDialogCancel disabled={isProcessing} type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConnectNewWallet} disabled={isProcessing} className="bg-orange-500 hover:bg-orange-600" type="button">
               {isProcessing ? 'Changing...' : 'Yes, Change Wallet'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -348,8 +351,8 @@ export const WalletManagement = () => {
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDisconnectWallet} disabled={isProcessing} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel disabled={isProcessing} type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDisconnectWallet} disabled={isProcessing} className="bg-destructive hover:bg-destructive/90" type="button">
               {isProcessing ? 'Disconnecting...' : 'Yes, Disconnect'}
             </AlertDialogAction>
           </AlertDialogFooter>
