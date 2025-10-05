@@ -31,7 +31,7 @@ const Landing = () => {
   });
 
   useEffect(() => {
-    document.title = 'Wutch - Watch & Create Content, Earn Real Crypto | View-Based Monetization';
+    document.title = 'Wutch - Earn SOLANA | 4 Ways to Get Crypto Rewards | Watch, Create, Share';
     fetchFeaturedBounties();
     fetchLeaderboard();
     fetchStats();
@@ -300,9 +300,9 @@ const Landing = () => {
       <section id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-muted/30 to-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">How It Works</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">How to Earn SOLANA on Wutch - 4 Simple Ways</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Multiple ways to earn crypto on Wutch - from watching to creating
+              Earn cryptocurrency through watching streams, creating content, claiming bounties, and sharing campaigns. Start earning SOLANA today.
             </p>
           </div>
 
@@ -311,7 +311,7 @@ const Landing = () => {
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Eye className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">1. Watch & Earn</h3>
+              <h3 className="text-2xl font-bold text-foreground">Watch Livestreams & Earn SOLANA Rewards</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Watch livestreams and short videos. Claim bounties for active watching and participate in sharing campaigns to earn crypto rewards.
               </p>
@@ -321,7 +321,7 @@ const Landing = () => {
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Video className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">2. Create Content</h3>
+              <h3 className="text-2xl font-bold text-foreground">Create Videos & Earn 95% of Crypto Donations</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Upload short videos or go live. Receive 95% of all donations (5% platform fee) and tips from your audience. Create funded bounties and sharing campaigns to engage viewers.
               </p>
@@ -331,7 +331,7 @@ const Landing = () => {
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Coins className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">3. Claim Bounties</h3>
+              <h3 className="text-2xl font-bold text-foreground">Claim SOLANA Bounties for Active Watching</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Watch for secret words in streams and claim bounty rewards. Accumulate watch time (minimum 5 minutes) to qualify.
               </p>
@@ -341,7 +341,7 @@ const Landing = () => {
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Zap className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">4. Cash Out</h3>
+              <h3 className="text-2xl font-bold text-foreground">Instant SOL Payouts to Your Wallet</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.
               </p>
@@ -394,9 +394,9 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4 text-foreground">Top Earners</h2>
+              <h2 className="text-4xl font-bold mb-4 text-foreground">SOLANA Leaderboard - Top Crypto Earners This Month</h2>
               <p className="text-xl text-muted-foreground">
-                See who's earning the most on Wutch
+                See who's earning the most SOLANA on Wutch
               </p>
             </div>
 
@@ -413,9 +413,9 @@ const Landing = () => {
       <section id="creator-rewards" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Creator Rewards</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Creator Earnings - 95% Revenue Split on All Donations</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Keep more of what you earn with the fairest revenue split in streaming
+              Industry-leading 95% creator revenue split. Earn SOLANA through donations, bounties, sharing campaigns, and view-based monetization.
             </p>
           </div>
 
@@ -605,9 +605,9 @@ const Landing = () => {
       <section id="features" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Why Choose Wutch?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Why Wutch is the Best Crypto Rewards Platform for Creators & Viewers</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              The most rewarding platform to watch and create content
+              Earn SOLANA through multiple methods. The fairest blockchain-powered content platform with transparent rewards.
             </p>
           </div>
 
@@ -616,9 +616,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Coins className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Multiple Revenue Streams</h3>
+              <h3 className="text-2xl font-bold text-foreground">Multiple SOLANA Revenue Streams</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Earn 95% of all donations from your audience (5% platform fee). Create pre-funded bounties and sharing campaigns to drive engagement. View earnings in beta at $0.10 CPM.
+                Earn 95% of all crypto donations from your audience (5% platform fee). Create pre-funded SOLANA bounties and sharing campaigns to drive engagement. View earnings in beta at $0.10 CPM.
               </p>
             </Card>
 
@@ -636,9 +636,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Stream Bounties</h3>
+              <h3 className="text-2xl font-bold text-foreground">SOLANA Stream Bounties</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Creators set bounties with secret words. Be among the first to claim and earn more on top of your view earnings.
+                Creators set crypto bounties with secret words. Be among the first to claim and earn SOLANA rewards on top of your view earnings.
               </p>
             </Card>
 
@@ -646,9 +646,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Video className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Multiple Revenue Streams</h3>
+              <h3 className="text-2xl font-bold text-foreground">Blockchain-Powered Creator Economy</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Views, donations, bounties, and share campaigns. Creators have multiple ways to monetize their content and grow income.
+                Views, crypto donations, SOLANA bounties, and share campaigns. Creators have multiple ways to monetize their content and grow blockchain income.
               </p>
             </Card>
 
@@ -656,9 +656,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <TrendingUp className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Share & Earn More</h3>
+              <h3 className="text-2xl font-bold text-foreground">Share & Earn SOLANA Rewards</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Share streams on social media and earn additional rewards through creator referral campaigns. More shares = more earnings.
+                Share streams on social media and earn additional SOLANA rewards through creator referral campaigns. More shares = more crypto earnings.
               </p>
             </Card>
 
@@ -666,9 +666,9 @@ const Landing = () => {
               <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Shield className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Secure & Transparent</h3>
+              <h3 className="text-2xl font-bold text-foreground">Secure Solana Blockchain Platform</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Built on Solana blockchain with transparent reward distribution, secure wallet integration, and instant on-chain payouts.
+                Built on Solana blockchain with transparent reward distribution, secure Web3 wallet integration, and instant on-chain SOLANA payouts.
               </p>
             </Card>
           </div>
@@ -735,11 +735,11 @@ const Landing = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto space-y-10">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Ready to Start Earning?
+              Start Earning SOLANA Today - Join 1000+ Active Users
             </h2>
             <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
-              Join thousands of creators and viewers already earning crypto rewards. 
-              Watch streams, create content, and get paid for your time and engagement.
+              Join thousands of creators and viewers already earning SOLANA crypto rewards. 
+              Watch streams, create content, claim bounties, and get paid for your time and engagement on the blockchain.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
