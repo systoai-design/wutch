@@ -59,8 +59,7 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
   }, [displayWord, isDeleting, isAnimating, currentWordIndex, words]);
 
   return (
-    <span className={className} style={{ display: 'inline-block', minWidth: '550px', textAlign: 'center' }}>
-      <span className="text-foreground">Watch, Create & </span>
+    <span className={className} style={{ display: 'inline-block', minWidth: '200px', textAlign: 'center' }}>
       <span className="text-primary">{displayWord}</span>
       {isAnimating && <span className="animate-pulse text-foreground" style={{ willChange: 'opacity' }}>|</span>}
     </span>
