@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX, X } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
@@ -275,11 +275,14 @@ const Shorts = () => {
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="h-[calc(100vh-4rem)] overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scrollbar-hide w-full"
-      style={{ scrollBehavior: 'smooth' }}
-    >
+    <div className="relative w-full">
+      <div 
+        ref={containerRef}
+        className={`h-[calc(100vh-4rem)] overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scrollbar-hide w-full transition-all duration-300 ease-in-out ${
+          isCommentsOpen ? 'md:pr-[400px]' : ''
+        }`}
+        style={{ scrollBehavior: 'smooth' }}
+      >
       {shorts.map((short, index) => {
         const isActive = index === currentIndex;
         const isOwner = user?.id === short.user_id;
@@ -299,15 +302,16 @@ const Shorts = () => {
             onDelete={() => setDeleteDialogOpen(true)}
             commentCount={commentCounts[short.id] || 0}
             canDelete={canDelete}
+            isCommentsOpen={isCommentsOpen}
           />
         );
       })}
 
-      {/* Comments Sheet */}
+      {/* Mobile Comments Sheet - Only on mobile */}
       {shorts[currentIndex] && (
         <>
           <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-            <SheetContent side="bottom" className="h-[80vh]">
+            <SheetContent side="bottom" className="h-[65vh] md:hidden">
               <SheetHeader>
                 <SheetTitle>Comments</SheetTitle>
               </SheetHeader>
@@ -319,6 +323,30 @@ const Shorts = () => {
               </div>
             </SheetContent>
           </Sheet>
+
+          {/* Desktop Comments Sidebar - Only on desktop */}
+          <div 
+            className={`hidden md:block fixed right-0 top-16 bottom-0 w-[400px] bg-background border-l shadow-2xl z-40 transition-transform duration-300 ease-in-out ${
+              isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Comments</h2>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsCommentsOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="h-[calc(100%-64px)]">
+              <CommentsSection
+                contentId={shorts[currentIndex].id}
+                contentType="shortvideo"
+              />
+            </div>
+          </div>
 
           {/* Donation Modal */}
           {shorts[currentIndex].profiles?.public_wallet_address && (
@@ -352,6 +380,7 @@ const Shorts = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </div>
   );
 };
 
@@ -368,6 +397,7 @@ function ShortVideoItem({
   onDelete,
   commentCount,
   canDelete,
+  isCommentsOpen,
 }: {
   short: any;
   index: number;
@@ -380,6 +410,7 @@ function ShortVideoItem({
   onDelete: () => void;
   commentCount: number;
   canDelete: boolean;
+  isCommentsOpen?: boolean;
 }) {
   const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -473,7 +504,11 @@ function ShortVideoItem({
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black overflow-hidden">
+    <div 
+      className={`snap-start snap-always relative flex items-center justify-center bg-black overflow-hidden transition-all duration-300 ease-in-out ${
+        isCommentsOpen ? 'h-[35vh] md:h-[calc(100vh-4rem)]' : 'h-[calc(100vh-4rem)]'
+      }`}
+    >
       {/* Video */}
       <video
         ref={el => videoRefs.current[index] = el}
@@ -485,18 +520,18 @@ function ShortVideoItem({
       />
 
       {/* Video Controls - Top Left */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+      <div className="absolute top-4 left-4 flex items-start gap-2 z-20">
         {/* Play/Pause Button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={togglePlayPause}
-          className="rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all"
+          className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
         >
           {isPlaying ? (
-            <Pause className="h-5 w-5" />
+            <Pause className="h-7 w-7" />
           ) : (
-            <Play className="h-5 w-5 ml-0.5" />
+            <Play className="h-7 w-7 ml-0.5" />
           )}
         </Button>
 
@@ -509,22 +544,23 @@ function ShortVideoItem({
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all"
+            onClick={() => handleVolumeChange(volume === 0 ? [100] : [0])}
+            className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
           >
             {volume === 0 ? (
-              <VolumeX className="h-5 w-5" />
+              <VolumeX className="h-7 w-7" />
             ) : (
-              <Volume2 className="h-5 w-5" />
+              <Volume2 className="h-7 w-7" />
             )}
           </Button>
           
           {/* Volume Slider - Reveals on Hover */}
           <div 
-            className={`absolute left-12 top-1/2 -translate-y-1/2 transition-all duration-300 ${
-              showVolumeSlider ? 'opacity-100 w-24' : 'opacity-0 w-0 pointer-events-none'
+            className={`absolute left-16 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out ${
+              showVolumeSlider ? 'opacity-100 w-28' : 'opacity-0 w-0 pointer-events-none'
             }`}
           >
-            <div className="bg-black/70 backdrop-blur-sm rounded-full px-3 py-2">
+            <div className="bg-white/30 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
               <Slider
                 value={[volume]}
                 onValueChange={handleVolumeChange}
