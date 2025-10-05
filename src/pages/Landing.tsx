@@ -462,8 +462,8 @@ const Landing = () => {
                   <Coins className="h-7 w-7 text-primary" />
                 </div>
                 <h4 className="text-xl font-bold text-foreground">Bounties</h4>
-                <div className="text-3xl font-bold text-primary">100%</div>
-                <p className="text-sm text-muted-foreground">Pre-fund bounties, viewers claim them. Zero platform cut</p>
+                <div className="text-3xl font-bold text-primary">95%</div>
+                <p className="text-sm text-muted-foreground">Create bounties with 5% platform fee. Viewers receive 100% of claimed rewards</p>
               </Card>
 
               <Card className="p-6 space-y-4 bg-card hover:shadow-xl transition-all hover:scale-105 group">
@@ -702,8 +702,8 @@ const Landing = () => {
                     <span className="text-primary text-sm">✓</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Bounties: 100% Pre-Funded</p>
-                    <p className="text-sm">Creators deposit rewards in secure escrow. Users receive 100% of claimed bounties</p>
+                    <p className="font-semibold text-foreground mb-1">Bounties: 95% to Rewards Pool (5% Platform Fee)</p>
+                    <p className="text-sm">Creators pay 5% fee when creating bounties. Users receive 100% of the advertised reward when claiming</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
