@@ -3,6 +3,7 @@ import { Home, Flame, Clock, Video, Upload, User, TrendingUp, Coins, Gamepad2, G
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const categories = [
   { name: 'Trading', icon: TrendingUp },
@@ -15,7 +16,7 @@ const categories = [
 
 const Sidebar = () => {
   const location = useLocation();
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, isMobileOpen, setMobileOpen } = useSidebar();
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/app' },
@@ -27,8 +28,61 @@ const Sidebar = () => {
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 
+  const sidebarContent = (
+    <div className="p-4">
+      <nav className="space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+          
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                isActive
+                  ? 'bg-secondary text-secondary-foreground font-semibold'
+                  : 'hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-8">
+        <h3 className="px-4 mb-3 text-sm font-semibold text-muted-foreground">
+          Categories
+        </h3>
+        <div className="space-y-1">
+          {categories.map((category) => (
+            <button
+              key={category.name}
+              className="w-full flex items-center gap-3 text-left px-4 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
+            >
+              <category.icon className="h-4 w-4 shrink-0" />
+              <span>{category.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider delayDuration={0}>
+      {/* Mobile Sheet */}
+      <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-60 p-0 md:hidden">
+          {sidebarContent}
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar */}
       <aside 
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-background h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto scrollbar-hide transition-all duration-300",

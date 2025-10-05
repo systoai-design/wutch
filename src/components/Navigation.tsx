@@ -20,7 +20,7 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut, isGuest } = useAuth();
-  const { toggle } = useSidebar();
+  const { toggle, toggleMobile } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
@@ -49,15 +49,15 @@ const Navigation = () => {
             onClick={toggle}
             className="hidden md:inline-flex min-h-[44px] min-w-[44px]"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={toggle}
+            onClick={toggleMobile}
             className="md:hidden min-h-[44px] min-w-[44px] -ml-2"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </Button>
           <Link to="/" className="flex items-center gap-2 group touch-manipulation">
             <img 
