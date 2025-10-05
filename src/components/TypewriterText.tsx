@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 
 interface TypewriterTextProps {
   className?: string;
+  words?: string[];
 }
 
-export function TypewriterText({ className = '' }: TypewriterTextProps) {
-  const words = ['Watch', 'Create', 'Earn'];
+export function TypewriterText({ className = '', words = ['Sharing', 'Shorts', 'Watching'] }: TypewriterTextProps) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [displayWord, setDisplayWord] = useState('Earn'); // Start with "Earn" to prevent CLS
+  const [displayWord, setDisplayWord] = useState(words[0]); // Start with first word to prevent CLS
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
