@@ -8,6 +8,12 @@ import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronRight, DollarSign } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -29,6 +35,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get('category')
   );
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchAllStreams();
@@ -120,13 +127,13 @@ const Home = () => {
     <div>
       <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
       
-      <main className="p-4 lg:p-6 max-w-[2000px] mx-auto">
+      <main className="p-3 sm:p-4 lg:p-6 max-w-[2000px] mx-auto">
         {/* Earnings Info Banner */}
-        <Card className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-chart-1/10 border-primary/20">
-          <div className="flex items-center gap-3">
-            <DollarSign className="h-5 w-5 text-primary" />
+        <Card className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-chart-1/10 border-primary/20">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium">
+              <p className="text-xs sm:text-sm font-medium">
                 💰 Earn SOL from Views! Livestreams: $2/1K views • Shorts: $1.50/1K views
               </p>
             </div>
@@ -161,22 +168,40 @@ const Home = () => {
             {liveStreams.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                     Live Now
-                    <span className="inline-flex items-center gap-1 text-sm font-normal text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-normal text-muted-foreground">
                       ({liveStreams.length})
                     </span>
                   </h2>
                 </div>
-                <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                  <div className="flex gap-4 pb-4">
-                    {liveStreams.map((stream) => (
-                      <div key={stream.id} className="flex-shrink-0 w-80">
-                        <StreamCard stream={stream} />
-                      </div>
-                    ))}
+                {isMobile ? (
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      dragFree: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 sm:-ml-4">
+                      {liveStreams.map((stream) => (
+                        <CarouselItem key={stream.id} className="pl-2 sm:pl-4 basis-[85%] xs:basis-[75%] sm:basis-1/2">
+                          <StreamCard stream={stream} compact />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                ) : (
+                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                    <div className="flex gap-4 pb-4">
+                      {liveStreams.map((stream) => (
+                        <div key={stream.id} className="flex-shrink-0 w-80">
+                          <StreamCard stream={stream} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
             )}
 
@@ -184,22 +209,28 @@ const Home = () => {
             {shorts.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold">Shorts</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold">Shorts</h2>
                   <Link to="/shorts">
-                    <Button variant="ghost" size="sm" className="gap-2">
+                    <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
                       View All <ChevronRight className="h-4 w-4" />
                     </Button>
                   </Link>
                 </div>
-                <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                  <div className="flex gap-3 pb-4">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    dragFree: true,
+                  }}
+                  className="w-full"
+                >
+                  <CarouselContent className="-ml-2 sm:-ml-3">
                     {shorts.map((short) => (
-                      <div key={short.id} className="flex-shrink-0 w-40">
+                      <CarouselItem key={short.id} className="pl-2 sm:pl-3 basis-[45%] xs:basis-[38%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%]">
                         <ShortCard short={short} />
-                      </div>
+                      </CarouselItem>
                     ))}
-                  </div>
-                </div>
+                  </CarouselContent>
+                </Carousel>
               </section>
             )}
 

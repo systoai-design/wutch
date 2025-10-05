@@ -109,6 +109,16 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Better touch handling on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer utilities {

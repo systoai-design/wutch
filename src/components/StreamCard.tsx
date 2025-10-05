@@ -10,9 +10,10 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface StreamCardProps {
   stream: Livestream;
+  compact?: boolean;
 }
 
-const StreamCard = ({ stream }: StreamCardProps) => {
+const StreamCard = ({ stream, compact = false }: StreamCardProps) => {
   const [streamer, setStreamer] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -32,44 +33,43 @@ const StreamCard = ({ stream }: StreamCardProps) => {
   }, [stream.user_id]);
 
   return (
-    <Link to={`/stream/${stream.id}`} className="group block">
-      <div className="space-y-3">
-        <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-300">
+    <Link to={`/stream/${stream.id}`} className="group block touch-manipulation">
+      <div className={compact ? 'space-y-2' : 'space-y-3'}>
+        <div className={`relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-300 ${compact ? 'rounded-lg' : ''}`}>
           <img
             src={stream.thumbnail_url || '/placeholder.svg'}
             alt={stream.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {stream.is_live && (
-            <div className="absolute top-2 left-2">
-              <Badge variant="destructive" className="bg-live text-live-foreground font-bold flex items-center gap-1 shadow-lg px-2.5 py-1">
+            <div className={compact ? 'absolute top-1.5 left-1.5' : 'absolute top-2 left-2'}>
+              <Badge variant="destructive" className={`bg-live text-live-foreground font-bold flex items-center gap-1 shadow-lg ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
                 <Circle className="h-2 w-2 fill-current animate-pulse" />
                 LIVE
               </Badge>
             </div>
           )}
-          <div className="absolute bottom-2 right-2 bg-background/95 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 shadow-md">
-            <Eye className="h-3.5 w-3.5" />
+          <div className={`absolute bottom-2 right-2 bg-background/95 backdrop-blur-sm rounded-md font-bold flex items-center gap-1.5 shadow-md ${compact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'}`}>
+            <Eye className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
             {(stream.viewer_count || 0).toLocaleString()}
           </div>
-          {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
-        <div className="flex gap-3">
+        <div className={`flex ${compact ? 'gap-2' : 'gap-3'}`}>
           <img
             src={streamer?.avatar_url || '/placeholder.svg'}
             alt={streamer?.username || 'Streamer'}
-            className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-background"
+            className={`rounded-full flex-shrink-0 ring-2 ring-background ${compact ? 'w-8 h-8' : 'w-9 h-9'}`}
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors mb-1">
+            <h3 className={`font-bold line-clamp-2 leading-tight group-hover:text-primary transition-colors ${compact ? 'text-xs mb-0.5' : 'text-sm mb-1'}`}>
               {stream.title}
             </h3>
-            <p className="text-xs text-muted-foreground font-medium">
+            <p className={`text-muted-foreground font-medium ${compact ? 'text-xs' : 'text-xs'}`}>
               {streamer?.display_name || streamer?.username || 'Loading...'}
             </p>
-            {stream.category && (
+            {stream.category && !compact && (
               <div className="flex items-center gap-2 mt-1.5">
                 <Badge variant="secondary" className="text-xs font-semibold rounded-full px-2 py-0">
                   {stream.category}
