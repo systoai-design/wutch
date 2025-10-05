@@ -6,6 +6,7 @@ interface TypewriterTextProps {
 
 export function TypewriterText({ className = '' }: TypewriterTextProps) {
   const fullText = 'Watch, Create & Earn';
+  const splitPoint = 16; // "Watch, Create & " is 16 characters
   const [displayText, setDisplayText] = useState(fullText); // Start with full text to prevent CLS
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false); // Control when animation starts
@@ -55,8 +56,9 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
 
   return (
     <span className={className} style={{ display: 'inline-block', minWidth: '550px', textAlign: 'center' }}>
-      {displayText}
-      {isAnimating && <span className="animate-pulse" style={{ willChange: 'opacity' }}>|</span>}
+      <span className="text-foreground">{displayText.slice(0, splitPoint)}</span>
+      <span className="text-red-500">{displayText.slice(splitPoint)}</span>
+      {isAnimating && <span className="animate-pulse text-foreground" style={{ willChange: 'opacity' }}>|</span>}
     </span>
   );
 }
