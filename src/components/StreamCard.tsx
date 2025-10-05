@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Circle } from 'lucide-react';
+import { Eye, Circle, Coins } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -11,9 +11,10 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 interface StreamCardProps {
   stream: Livestream;
   compact?: boolean;
+  hasBounty?: boolean;
 }
 
-const StreamCard = ({ stream, compact = false }: StreamCardProps) => {
+const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardProps) => {
   const [streamer, setStreamer] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -46,6 +47,14 @@ const StreamCard = ({ stream, compact = false }: StreamCardProps) => {
               <Badge variant="destructive" className={`bg-live text-live-foreground font-bold flex items-center gap-1 shadow-lg ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
                 <Circle className="h-2 w-2 fill-current animate-pulse" />
                 LIVE
+              </Badge>
+            </div>
+          )}
+          {hasBounty && (
+            <div className={compact ? 'absolute top-1.5 right-1.5' : 'absolute top-2 right-2'}>
+              <Badge className={`bg-accent/90 text-accent-foreground font-bold flex items-center gap-1 shadow-lg backdrop-blur-sm border border-accent ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
+                <Coins className="h-2.5 w-2.5" />
+                Bounty
               </Badge>
             </div>
           )}

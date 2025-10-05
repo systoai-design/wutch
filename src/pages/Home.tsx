@@ -16,6 +16,11 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
+type LivestreamWithBounty = Livestream & {
+  bounty_count?: number;
+  total_available_rewards?: number;
+  has_active_bounty?: boolean;
+};
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
     'username' | 'display_name' | 'avatar_url'>;
@@ -26,9 +31,9 @@ const Home = () => {
     document.title = 'Home - Watch Live Streams | Wutch';
   }, []);
   const [searchParams] = useSearchParams();
-  const [liveStreams, setLiveStreams] = useState<Livestream[]>([]);
-  const [upcomingStreams, setUpcomingStreams] = useState<Livestream[]>([]);
-  const [endedStreams, setEndedStreams] = useState<Livestream[]>([]);
+  const [liveStreams, setLiveStreams] = useState<LivestreamWithBounty[]>([]);
+  const [upcomingStreams, setUpcomingStreams] = useState<LivestreamWithBounty[]>([]);
+  const [endedStreams, setEndedStreams] = useState<LivestreamWithBounty[]>([]);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
@@ -53,14 +58,30 @@ const Home = () => {
         return baseQuery;
       };
 
-      // Fetch live streams
+      // Fetch live streams with bounty info
       let liveQuery = supabase
         .from('livestreams')
-        .select('*')
+        .select(`
+          *,
+          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+        `)
         .eq('is_live', true)
         .order('viewer_count', { ascending: false });
       liveQuery = buildQuery(liveQuery);
       const { data: liveData } = await liveQuery;
+      
+      // Process bounty data
+      const processedLiveData: LivestreamWithBounty[] = (liveData || []).map(stream => {
+        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        return {
+          ...stream,
+          bounty_count: activeBounties.length,
+          has_active_bounty: activeBounties.length > 0,
+          total_available_rewards: activeBounties.reduce((sum: number, b: any) => 
+            sum + (b.reward_per_participant * (b.participant_limit - b.claimed_count)), 0
+          )
+        };
+      });
 
       // Fetch shorts
       const { data: shortsData } = await supabase
@@ -72,29 +93,59 @@ const Home = () => {
         .order('created_at', { ascending: false })
         .limit(15);
 
-      // Fetch upcoming streams (pending status)
+      // Fetch upcoming streams with bounty info
       let upcomingQuery = supabase
         .from('livestreams')
-        .select('*')
+        .select(`
+          *,
+          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+        `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       upcomingQuery = buildQuery(upcomingQuery);
       const { data: upcomingData } = await upcomingQuery;
+      
+      const processedUpcomingData: LivestreamWithBounty[] = (upcomingData || []).map(stream => {
+        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        return {
+          ...stream,
+          bounty_count: activeBounties.length,
+          has_active_bounty: activeBounties.length > 0,
+          total_available_rewards: activeBounties.reduce((sum: number, b: any) => 
+            sum + (b.reward_per_participant * (b.participant_limit - b.claimed_count)), 0
+          )
+        };
+      });
 
-      // Fetch ended streams
+      // Fetch ended streams with bounty info
       let endedQuery = supabase
         .from('livestreams')
-        .select('*')
+        .select(`
+          *,
+          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+        `)
         .eq('status', 'ended')
         .order('ended_at', { ascending: false })
         .limit(50);
       endedQuery = buildQuery(endedQuery);
       const { data: endedData } = await endedQuery;
+      
+      const processedEndedData: LivestreamWithBounty[] = (endedData || []).map(stream => {
+        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        return {
+          ...stream,
+          bounty_count: activeBounties.length,
+          has_active_bounty: activeBounties.length > 0,
+          total_available_rewards: activeBounties.reduce((sum: number, b: any) => 
+            sum + (b.reward_per_participant * (b.participant_limit - b.claimed_count)), 0
+          )
+        };
+      });
 
-      setLiveStreams(liveData || []);
+      setLiveStreams(processedLiveData);
       setShorts(shortsData || []);
-      setUpcomingStreams(upcomingData || []);
-      setEndedStreams(endedData || []);
+      setUpcomingStreams(processedUpcomingData);
+      setEndedStreams(processedEndedData);
     } catch (error) {
       console.error('Error fetching streams:', error);
     } finally {
@@ -111,6 +162,8 @@ const Home = () => {
   }
 
   const getFilteredStreams = () => {
+    const allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams];
+    
     switch (activeFilter) {
       case 'live':
         return liveStreams;
@@ -118,8 +171,12 @@ const Home = () => {
         return endedStreams;
       case 'trending':
         return [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
+      case 'with-bounty':
+        return allStreams.filter(stream => stream.has_active_bounty);
+      case 'without-bounty':
+        return allStreams.filter(stream => !stream.has_active_bounty);
       default:
-        return [...liveStreams, ...upcomingStreams, ...endedStreams];
+        return allStreams;
     }
   };
 
@@ -152,12 +209,14 @@ const Home = () => {
                   {activeFilter === 'live' && 'No live streams at the moment.'}
                   {activeFilter === 'recent' && 'No recently ended streams.'}
                   {activeFilter === 'trending' && 'No trending streams right now.'}
+                  {activeFilter === 'with-bounty' && 'No streams with bounties available.'}
+                  {activeFilter === 'without-bounty' && 'No streams without bounties.'}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-5">
                 {getFilteredStreams().map((stream) => (
-                  <StreamCard key={stream.id} stream={stream} />
+                  <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
                 ))}
               </div>
             )}
@@ -186,7 +245,7 @@ const Home = () => {
                     <CarouselContent className="-ml-2 sm:-ml-4">
                       {liveStreams.map((stream) => (
                         <CarouselItem key={stream.id} className="pl-2 sm:pl-4 basis-[85%] xs:basis-[75%] sm:basis-1/2">
-                          <StreamCard stream={stream} compact />
+                          <StreamCard stream={stream} compact hasBounty={stream.has_active_bounty} />
                         </CarouselItem>
                       ))}
                     </CarouselContent>
@@ -196,7 +255,7 @@ const Home = () => {
                     <div className="flex gap-4 pb-4">
                       {liveStreams.map((stream) => (
                         <div key={stream.id} className="flex-shrink-0 w-80">
-                          <StreamCard stream={stream} />
+                          <StreamCard stream={stream} hasBounty={stream.has_active_bounty} />
                         </div>
                       ))}
                     </div>
@@ -247,7 +306,7 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-5">
                   {upcomingStreams.map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} />
+                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
                   ))}
                 </div>
               </section>
@@ -266,7 +325,7 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-5">
                   {endedStreams.slice(0, 20).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} />
+                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
                   ))}
                 </div>
                 {endedStreams.length > 20 && (
