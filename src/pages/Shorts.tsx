@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -276,7 +277,7 @@ const Shorts = () => {
   return (
     <div 
       ref={containerRef}
-      className="h-[calc(100vh-4rem)] overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+      className="h-[calc(100vh-4rem)] overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scrollbar-hide w-full"
       style={{ scrollBehavior: 'smooth' }}
     >
       {shorts.map((short, index) => {
@@ -381,9 +382,76 @@ function ShortVideoItem({
   canDelete: boolean;
 }) {
   const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState(100);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   
   // Track view when video becomes active
   useVideoView(short.id, isActive);
+
+  // Video event listeners for time tracking and play state
+  useEffect(() => {
+    const video = videoRefs.current[index];
+    if (!video) return;
+
+    const handleTimeUpdate = () => setCurrentTime(video.currentTime);
+    const handleLoadedMetadata = () => setDuration(video.duration);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+
+    // Set initial volume
+    video.volume = volume / 100;
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+    };
+  }, [index, volume]);
+
+  const togglePlayPause = () => {
+    const video = videoRefs.current[index];
+    if (!video) return;
+    
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    const video = videoRefs.current[index];
+    if (video) {
+      video.volume = newVolume / 100;
+    }
+  };
+
+  const handleProgressChange = (value: number[]) => {
+    const newTime = value[0];
+    setCurrentTime(newTime);
+    const video = videoRefs.current[index];
+    if (video) {
+      video.currentTime = newTime;
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Update like count from props
   useEffect(() => {
@@ -405,7 +473,7 @@ function ShortVideoItem({
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black">
+    <div className="h-[calc(100vh-4rem)] snap-start snap-always relative flex items-center justify-center bg-black overflow-hidden">
       {/* Video */}
       <video
         ref={el => videoRefs.current[index] = el}
@@ -415,6 +483,93 @@ function ShortVideoItem({
         playsInline
         preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
       />
+
+      {/* Video Controls - Top Left */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+        {/* Play/Pause Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={togglePlayPause}
+          className="rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all"
+        >
+          {isPlaying ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Play className="h-5 w-5 ml-0.5" />
+          )}
+        </Button>
+
+        {/* Volume Control */}
+        <div 
+          className="relative flex items-center"
+          onMouseEnter={() => setShowVolumeSlider(true)}
+          onMouseLeave={() => setShowVolumeSlider(false)}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-10 w-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all"
+          >
+            {volume === 0 ? (
+              <VolumeX className="h-5 w-5" />
+            ) : (
+              <Volume2 className="h-5 w-5" />
+            )}
+          </Button>
+          
+          {/* Volume Slider - Reveals on Hover */}
+          <div 
+            className={`absolute left-12 top-1/2 -translate-y-1/2 transition-all duration-300 ${
+              showVolumeSlider ? 'opacity-100 w-24' : 'opacity-0 w-0 pointer-events-none'
+            }`}
+          >
+            <div className="bg-black/70 backdrop-blur-sm rounded-full px-3 py-2">
+              <Slider
+                value={[volume]}
+                onValueChange={handleVolumeChange}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar - Bottom */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 z-20 transition-all duration-200"
+        onMouseEnter={() => setIsHoveringProgress(true)}
+        onMouseLeave={() => setIsHoveringProgress(false)}
+      >
+        {isHoveringProgress ? (
+          /* Expanded Progress Bar with Time Display */
+          <div className="bg-gradient-to-t from-black/80 to-transparent pt-8 pb-2 px-4">
+            <div className="max-w-md mx-auto">
+              <div className="flex items-center justify-between text-white text-xs mb-2 font-medium">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+              <Slider
+                value={[currentTime]}
+                onValueChange={handleProgressChange}
+                max={duration || 100}
+                step={0.1}
+                className="w-full [&_.bg-primary]:bg-red-500 cursor-pointer"
+              />
+            </div>
+          </div>
+        ) : (
+          /* Thin Progress Line */
+          <div className="relative w-full h-0.5 bg-white/30">
+            <div 
+              className="absolute top-0 left-0 h-full bg-red-500 transition-all"
+              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Navigation Indicators - Right Side */}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">

@@ -93,7 +93,7 @@ function AppLayout() {
       <Navigation />
       <div className="flex w-full">
         <Sidebar />
-        <main className="flex-1">
+        <main className="flex-1 w-full min-w-0">
           <Outlet />
         </main>
       </div>
