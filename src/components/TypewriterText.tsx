@@ -57,7 +57,7 @@ export function TypewriterText({ className = '' }: TypewriterTextProps) {
   return (
     <span className={className} style={{ display: 'inline-block', minWidth: '550px', textAlign: 'center' }}>
       <span className="text-foreground">{displayText.slice(0, splitPoint)}</span>
-      <span className="text-red-500">{displayText.slice(splitPoint)}</span>
+      <span className="text-primary">{displayText.slice(splitPoint)}</span>
       {isAnimating && <span className="animate-pulse text-foreground" style={{ willChange: 'opacity' }}>|</span>}
     </span>
   );
