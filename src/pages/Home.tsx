@@ -47,6 +47,8 @@ const Home = () => {
   useEffect(() => {
     if (location.pathname === '/trending') {
       setActiveFilter('trending');
+    } else if (location.pathname === '/upcoming') {
+      setActiveFilter('upcoming');
     } else if (location.pathname === '/recent') {
       setActiveFilter('recent');
     } else {

@@ -77,6 +77,7 @@ function AppContent() {
           <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
           <Route path="/trending" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/upcoming" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/recent" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         </Route>
         
