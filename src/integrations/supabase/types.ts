@@ -199,6 +199,35 @@ export type Database = {
           },
         ]
       }
+      livestream_likes: {
+        Row: {
+          created_at: string
+          id: string
+          livestream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          livestream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          livestream_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestream_likes_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       livestreams: {
         Row: {
           category: string | null
@@ -207,6 +236,7 @@ export type Database = {
           ended_at: string | null
           id: string
           is_live: boolean | null
+          like_count: number | null
           promotional_link: string | null
           promotional_link_text: string | null
           pump_fun_url: string
@@ -227,6 +257,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          like_count?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           pump_fun_url: string
@@ -247,6 +278,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          like_count?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           pump_fun_url?: string

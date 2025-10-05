@@ -17,6 +17,8 @@ import { ShareAndEarn } from '@/components/ShareAndEarn';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useViewingSession } from '@/hooks/useViewingSession';
+import { useStreamLike } from '@/hooks/useStreamLike';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
@@ -31,6 +33,7 @@ const StreamDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
+  const isMobile = useIsMobile();
   const [stream, setStream] = useState<Livestream | null>(null);
   const [streamer, setStreamer] = useState<Profile | null>(null);
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
@@ -53,11 +56,16 @@ const StreamDetail = () => {
     externalWindow: pumpFunWindowRef.current,
     onTimerStart: () => {
       toast.success('Timer Started!', {
-        description: 'Keep both this page and Pump.fun open to earn rewards.',
+        description: isMobile 
+          ? 'Watch time tracking active! Stay on this page to earn rewards.' 
+          : 'Keep both this page and Pump.fun open to earn rewards.',
         duration: 5000,
       });
     }
   });
+
+  // Track stream likes
+  const { isLiked, likeCount, toggleLike, setLikeCount } = useStreamLike(id || '');
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -77,6 +85,11 @@ const StreamDetail = () => {
         }
 
         setStream(streamData);
+        
+        // Update like count from stream data
+        if (streamData.like_count !== undefined) {
+          setLikeCount(streamData.like_count);
+        }
 
         // Fetch streamer profile
         const { data: streamerData } = await supabase
@@ -175,35 +188,44 @@ const StreamDetail = () => {
           {/* Video Player */}
           <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
-              <div className="text-center space-y-6 p-8">
+              <div className="text-center space-y-4 sm:space-y-6 p-4 sm:p-8">
                 {stream.is_live && (
-                  <Badge variant="destructive" className="bg-live text-live-foreground text-lg px-4 py-2">
+                  <Badge variant="destructive" className="bg-live text-live-foreground text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
                     <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
                     LIVE
                   </Badge>
                 )}
                 
-                <div className="space-y-3">
-                  <h3 className="text-xl font-semibold">Watch on Pump.fun</h3>
-                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg sm:text-xl font-semibold">Watch on Pump.fun</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm max-w-md mx-auto px-4">
                     This stream is hosted on Pump.fun. Click the button below to watch.
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 items-center justify-center px-4">
                   <Button 
                     size="lg" 
-                    className="gap-2"
+                    className="gap-2 w-full sm:w-auto"
                     onClick={() => {
-                      const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                      if (newWindow && !isOwner && user) {
-                        pumpFunWindowRef.current = newWindow;
-                        setHasStartedWatching(true);
+                      if (isMobile) {
+                        // Mobile: Open in same tab, start timer immediately
+                        window.open(stream.pump_fun_url, '_blank');
+                        if (!isOwner && user) {
+                          setHasStartedWatching(true);
+                        }
+                      } else {
+                        // Desktop: Open in popup window
+                        const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                        if (newWindow && !isOwner && user) {
+                          pumpFunWindowRef.current = newWindow;
+                          setHasStartedWatching(true);
+                        }
                       }
                     }}
                   >
-                    <ExternalLink className="h-5 w-5" />
-                    Watch Stream on Pump.fun
+                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="text-sm sm:text-base">Watch Stream on Pump.fun</span>
                   </Button>
                   
                   {isOwner && (
@@ -211,7 +233,7 @@ const StreamDetail = () => {
                   )}
                 </div>
 
-                <p className="text-xs text-muted-foreground font-mono opacity-50">
+                <p className="text-xs text-muted-foreground font-mono opacity-50 break-all px-4">
                   {stream.pump_fun_url}
                 </p>
               </div>
@@ -250,8 +272,18 @@ const StreamDetail = () => {
               </Link>
 
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="icon">
-                  <Heart className="h-5 w-5" />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={toggleLike}
+                  className="relative"
+                >
+                  <Heart className={`h-5 w-5 ${isLiked ? 'fill-primary text-primary' : ''}`} />
+                  {likeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {likeCount}
+                    </span>
+                  )}
                 </Button>
                 
                 <Button 

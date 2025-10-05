@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UseViewingSessionProps {
   livestreamId: string;
@@ -11,6 +12,7 @@ interface UseViewingSessionProps {
 
 export const useViewingSession = ({ livestreamId, shouldStart = false, externalWindow, onTimerStart }: UseViewingSessionProps) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
   const [isExternalWindowOpen, setIsExternalWindowOpen] = useState(false);
@@ -25,9 +27,61 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   const lastWatchTimeRef = useRef<number>(0);
 
   // Optimized: Consolidated window polling and display update using requestAnimationFrame
-  // Start immediately when shouldStart is true
+  // Mobile: Start timer immediately without external window tracking
   useEffect(() => {
-    if (!shouldStart || !externalWindow) {
+    if (!shouldStart) {
+      setIsExternalWindowOpen(false);
+      closedCheckCountRef.current = 0;
+      return;
+    }
+
+    // Mobile: Start timer immediately, use Page Visibility API
+    if (isMobile) {
+      setIsExternalWindowOpen(true);
+      setIsSessionStarted(true);
+      startTimeRef.current = Date.now();
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          // Tab hidden, pause timer
+          const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          accumulatedTimeRef.current += currentSessionTime;
+          setIsExternalWindowOpen(false);
+        } else {
+          // Tab visible, resume timer
+          setIsExternalWindowOpen(true);
+          startTimeRef.current = Date.now();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      // Update watch time display
+      const updateDisplay = () => {
+        if (!document.hidden) {
+          const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          const newWatchTime = accumulatedTimeRef.current + currentSessionTime;
+          
+          if (newWatchTime !== lastWatchTimeRef.current) {
+            lastWatchTimeRef.current = newWatchTime;
+            setWatchTime(newWatchTime);
+          }
+        }
+        animationFrameRef.current = requestAnimationFrame(updateDisplay);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(updateDisplay);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
+    }
+
+    // Desktop: Use external window tracking
+    if (!externalWindow) {
       setIsExternalWindowOpen(false);
       closedCheckCountRef.current = 0;
       return;
@@ -96,7 +150,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [shouldStart, externalWindow, isExternalWindowOpen]);
+  }, [shouldStart, externalWindow, isExternalWindowOpen, isMobile]);
 
   // Create or resume viewing session
   useEffect(() => {
