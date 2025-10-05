@@ -142,10 +142,31 @@ const Home = () => {
         };
       });
 
-      setLiveStreams(processedLiveData);
+      // Sort: bounty streams first, then by viewer count
+      const sortedLive = processedLiveData.sort((a, b) => {
+        if (a.has_active_bounty && !b.has_active_bounty) return -1;
+        if (!a.has_active_bounty && b.has_active_bounty) return 1;
+        return (b.viewer_count || 0) - (a.viewer_count || 0);
+      });
+
+      // Sort: bounty streams first for upcoming
+      const sortedUpcoming = processedUpcomingData.sort((a, b) => {
+        if (a.has_active_bounty && !b.has_active_bounty) return -1;
+        if (!a.has_active_bounty && b.has_active_bounty) return 1;
+        return 0;
+      });
+
+      // Sort: bounty streams first for ended
+      const sortedEnded = processedEndedData.sort((a, b) => {
+        if (a.has_active_bounty && !b.has_active_bounty) return -1;
+        if (!a.has_active_bounty && b.has_active_bounty) return 1;
+        return 0;
+      });
+
+      setLiveStreams(sortedLive);
       setShorts(shortsData || []);
-      setUpcomingStreams(processedUpcomingData);
-      setEndedStreams(processedEndedData);
+      setUpcomingStreams(sortedUpcoming);
+      setEndedStreams(sortedEnded);
     } catch (error) {
       console.error('Error fetching streams:', error);
     } finally {
@@ -191,7 +212,7 @@ const Home = () => {
             <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
             <div className="flex-1">
               <p className="text-xs sm:text-sm font-medium">
-                💰 Earn SOL from Views! Livestreams: $2/1K views • Shorts: $1.50/1K views
+                💰 Earn SOL from Views! Beta Phase: $0.10 CPM (per 1,000 views) for Livestreams & Shorts
               </p>
             </div>
           </div>
