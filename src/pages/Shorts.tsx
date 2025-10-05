@@ -310,8 +310,8 @@ const Shorts = () => {
       {/* Mobile Comments Sheet - Only on mobile */}
       {shorts[currentIndex] && (
         <>
-          <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-            <SheetContent side="bottom" className="h-[65vh] md:hidden">
+          <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen} modal={false}>
+            <SheetContent side="bottom" className="h-[65vh] md:hidden pointer-events-auto">
               <SheetHeader>
                 <SheetTitle>Comments</SheetTitle>
               </SheetHeader>
@@ -509,102 +509,104 @@ function ShortVideoItem({
         isCommentsOpen ? 'h-[35vh] md:h-[calc(100vh-4rem)]' : 'h-[calc(100vh-4rem)]'
       }`}
     >
-      {/* Video */}
-      <video
-        ref={el => videoRefs.current[index] = el}
-        src={short.video_url}
-        className="w-full h-full object-contain max-w-md mx-auto"
-        loop
-        playsInline
-        preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
-      />
+      {/* Video Container with Controls Inside */}
+      <div className="relative w-full h-full max-w-md mx-auto">
+        <video
+          ref={el => videoRefs.current[index] = el}
+          src={short.video_url}
+          className="w-full h-full object-contain"
+          loop
+          playsInline
+          preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
+        />
 
-      {/* Video Controls - Top Left */}
-      <div className="absolute top-4 left-4 flex items-start gap-2 z-20">
-        {/* Play/Pause Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={togglePlayPause}
-          className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
-        >
-          {isPlaying ? (
-            <Pause className="h-7 w-7" />
-          ) : (
-            <Play className="h-7 w-7 ml-0.5" />
-          )}
-        </Button>
-
-        {/* Volume Control */}
-        <div 
-          className="relative flex items-center"
-          onMouseEnter={() => setShowVolumeSlider(true)}
-          onMouseLeave={() => setShowVolumeSlider(false)}
-        >
+        {/* Video Controls - Top Left */}
+        <div className="absolute top-4 left-4 flex items-start gap-2 z-20">
+          {/* Play/Pause Button */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => handleVolumeChange(volume === 0 ? [100] : [0])}
+            onClick={togglePlayPause}
             className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
           >
-            {volume === 0 ? (
-              <VolumeX className="h-7 w-7" />
+            {isPlaying ? (
+              <Pause className="h-7 w-7" />
             ) : (
-              <Volume2 className="h-7 w-7" />
+              <Play className="h-7 w-7 ml-0.5" />
             )}
           </Button>
-          
-          {/* Volume Slider - Reveals on Hover */}
+
+          {/* Volume Control */}
           <div 
-            className={`absolute left-16 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out ${
-              showVolumeSlider ? 'opacity-100 w-28' : 'opacity-0 w-0 pointer-events-none'
-            }`}
+            className="relative flex items-center"
+            onMouseEnter={() => setShowVolumeSlider(true)}
+            onMouseLeave={() => setShowVolumeSlider(false)}
           >
-            <div className="bg-white/30 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
-              <Slider
-                value={[volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleVolumeChange(volume === 0 ? [100] : [0])}
+              className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
+            >
+              {volume === 0 ? (
+                <VolumeX className="h-7 w-7" />
+              ) : (
+                <Volume2 className="h-7 w-7" />
+              )}
+            </Button>
+            
+            {/* Volume Slider - Reveals on Hover */}
+            <div 
+              className={`absolute left-16 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out ${
+                showVolumeSlider ? 'opacity-100 w-28' : 'opacity-0 w-0 pointer-events-none'
+              }`}
+            >
+              <div className="bg-white/30 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
+                <Slider
+                  value={[volume]}
+                  onValueChange={handleVolumeChange}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Progress Bar - Bottom */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 z-20 transition-all duration-200"
-        onMouseEnter={() => setIsHoveringProgress(true)}
-        onMouseLeave={() => setIsHoveringProgress(false)}
-      >
-        {isHoveringProgress ? (
-          /* Expanded Progress Bar with Time Display */
-          <div className="bg-gradient-to-t from-black/80 to-transparent pt-8 pb-2 px-4">
-            <div className="max-w-md mx-auto">
-              <div className="flex items-center justify-between text-white text-xs mb-2 font-medium">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+        {/* Progress Bar - Bottom */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 z-20 transition-all duration-200"
+          onMouseEnter={() => setIsHoveringProgress(true)}
+          onMouseLeave={() => setIsHoveringProgress(false)}
+        >
+          {isHoveringProgress ? (
+            /* Expanded Progress Bar with Time Display */
+            <div className="bg-gradient-to-t from-black/80 to-transparent pt-8 pb-2 px-4">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-between text-white text-xs mb-2 font-medium">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+                <Slider
+                  value={[currentTime]}
+                  onValueChange={handleProgressChange}
+                  max={duration || 100}
+                  step={0.1}
+                  className="w-full [&_.bg-primary]:bg-red-500 cursor-pointer"
+                />
               </div>
-              <Slider
-                value={[currentTime]}
-                onValueChange={handleProgressChange}
-                max={duration || 100}
-                step={0.1}
-                className="w-full [&_.bg-primary]:bg-red-500 cursor-pointer"
+            </div>
+          ) : (
+            /* Thin Progress Line */
+            <div className="relative w-full h-0.5 bg-white/30">
+              <div 
+                className="absolute top-0 left-0 h-full bg-red-500 transition-all"
+                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
               />
             </div>
-          </div>
-        ) : (
-          /* Thin Progress Line */
-          <div className="relative w-full h-0.5 bg-white/30">
-            <div 
-              className="absolute top-0 left-0 h-full bg-red-500 transition-all"
-              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-            />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Navigation Indicators - Right Side */}
