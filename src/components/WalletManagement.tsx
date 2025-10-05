@@ -191,8 +191,10 @@ export const WalletManagement = () => {
                 <Wallet className="h-5 w-5" />
                 Connect Your Wallet
               </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-3 text-left">
-                <p>You're about to connect your Solana wallet to your Wutch account.</p>
+              <AlertDialogDescription>
+                You're about to connect your Solana wallet to your Wutch account.
+              </AlertDialogDescription>
+              <div className="space-y-3 text-left text-sm">
                 <div className="space-y-2">
                   <p className="font-semibold">What you'll be able to do:</p>
                   <ul className="list-disc pl-5 space-y-1">
@@ -210,7 +212,7 @@ export const WalletManagement = () => {
                     <li>Your wallet address is stored securely and only visible to you</li>
                   </ul>
                 </div>
-              </AlertDialogDescription>
+              </div>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
@@ -283,9 +285,10 @@ export const WalletManagement = () => {
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Change Wallet Address
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3 text-left">
-              <p className="font-semibold">You are about to change your connected Solana wallet.</p>
-              
+            <AlertDialogDescription>
+              You are about to change your connected Solana wallet.
+            </AlertDialogDescription>
+            <div className="space-y-3 text-left text-sm">
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 space-y-2">
                 <p className="font-semibold text-destructive">What happens when you change your wallet:</p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
@@ -306,7 +309,7 @@ export const WalletManagement = () => {
               </div>
 
               <p className="text-sm font-semibold">Are you sure you want to continue?</p>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
@@ -325,9 +328,10 @@ export const WalletManagement = () => {
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Disconnect Wallet
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3 text-left">
-              <p className="font-semibold">You are about to disconnect your Solana wallet from your Wutch account.</p>
-              
+            <AlertDialogDescription>
+              You are about to disconnect your Solana wallet from your Wutch account.
+            </AlertDialogDescription>
+            <div className="space-y-3 text-left text-sm">
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 space-y-2">
                 <p className="font-semibold text-destructive">What happens when you disconnect:</p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
@@ -341,7 +345,7 @@ export const WalletManagement = () => {
               </div>
 
               <p className="text-sm font-semibold text-destructive">This action cannot be easily undone. Are you sure you want to disconnect your wallet?</p>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
