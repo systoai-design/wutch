@@ -218,17 +218,21 @@ const StreamDetail = () => {
                     className="gap-2 w-full sm:w-auto"
                     onClick={() => {
                       if (isMobile) {
-                        // Mobile: Open in same tab, start timer immediately
-                        window.open(stream.pump_fun_url, '_blank');
+                        // Mobile: Start timer BEFORE opening window
                         if (!isOwner && user) {
+                          console.log('Starting watch session (mobile)');
                           setHasStartedWatching(true);
                         }
+                        window.open(stream.pump_fun_url, '_blank');
                       } else {
-                        // Desktop: Open in popup window
-                        const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                        if (newWindow && !isOwner && user) {
-                          pumpFunWindowRef.current = newWindow;
+                        // Desktop: Start timer BEFORE opening window
+                        if (!isOwner && user) {
+                          console.log('Starting watch session (desktop)');
                           setHasStartedWatching(true);
+                        }
+                        const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
+                        if (newWindow) {
+                          pumpFunWindowRef.current = newWindow;
                         }
                       }
                     }}
