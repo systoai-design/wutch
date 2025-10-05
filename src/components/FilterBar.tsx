@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Circle, Coins } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export type FilterOption = 'all' | 'live' | 'recent' | 'trending' | 'upcoming' | 'with-bounty' | 'without-bounty';
 
@@ -9,6 +10,10 @@ interface FilterBarProps {
 }
 
 const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(true);
+  
   const filters: { label: string; value: FilterOption; icon?: typeof Circle }[] = [
     { label: 'All', value: 'all' },
     { label: 'Live Now', value: 'live', icon: Circle },
@@ -19,15 +24,55 @@ const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
     { label: 'Trending', value: 'trending' },
   ];
 
+  // Handle scroll position to show/hide gradients
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftGradient(scrollLeft > 10);
+    setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  // Auto-scroll active filter into view
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const activeButton = container.querySelector(`[data-filter="${activeFilter}"]`);
+    if (activeButton) {
+      activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeFilter]);
+
   return (
-    <div className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-[56px] sm:top-[64px] z-40">
-      <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory touch-manipulation">
+    <div className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-[56px] sm:top-[64px] z-40 relative">
+      {/* Left gradient indicator */}
+      <div 
+        className={`absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/95 to-transparent pointer-events-none z-10 transition-opacity duration-300 ${
+          showLeftGradient ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      
+      {/* Right gradient indicator */}
+      <div 
+        className={`absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/95 to-transparent pointer-events-none z-10 transition-opacity duration-300 ${
+          showRightGradient ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory touch-manipulation scroll-smooth"
+      >
         {filters.map((filter) => {
           const Icon = filter.icon;
           const isActive = activeFilter === filter.value;
           return (
             <Button
               key={filter.value}
+              data-filter={filter.value}
               variant={isActive ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onFilterChange(filter.value)}
