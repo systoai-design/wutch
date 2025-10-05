@@ -16,6 +16,7 @@ import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
 import { WalletStatusBadge } from '@/components/WalletStatusBadge';
 import { WalletEducationPanel } from '@/components/WalletEducationPanel';
+import { PublicWalletButton } from '@/components/PublicWalletButton';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
@@ -404,6 +405,10 @@ const ProfilePage = () => {
                     )}
                   </>
                 )}
+                <PublicWalletButton 
+                  walletAddress={profile.public_wallet_address} 
+                  username={profile.username}
+                />
                 {socialLinks.twitter && (
                   <Button variant="outline" size="icon" asChild>
                     <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
