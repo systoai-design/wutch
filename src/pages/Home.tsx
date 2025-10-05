@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import StreamCard from '@/components/StreamCard';
 import ShortCard from '@/components/ShortCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ChevronRight, DollarSign } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -27,6 +26,8 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 };
 
 const Home = () => {
+  const location = useLocation();
+  
   useEffect(() => {
     document.title = 'Home - Watch Live Streams | Wutch';
   }, []);
@@ -41,6 +42,17 @@ const Home = () => {
     searchParams.get('category')
   );
   const isMobile = useIsMobile();
+
+  // Set filter based on current route
+  useEffect(() => {
+    if (location.pathname === '/trending') {
+      setActiveFilter('trending');
+    } else if (location.pathname === '/recent') {
+      setActiveFilter('recent');
+    } else {
+      setActiveFilter('all');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchAllStreams();
@@ -206,18 +218,6 @@ const Home = () => {
       <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
       
       <main className="p-3 sm:p-4 lg:p-6 max-w-[2000px] mx-auto">
-        {/* Earnings Info Banner */}
-        <Card className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-chart-1/10 border-primary/20">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-xs sm:text-sm font-medium">
-                💰 Earn SOL from Views! Beta Phase: $0.10 CPM (per 1,000 views) for Livestreams & Shorts
-              </p>
-            </div>
-          </div>
-        </Card>
-        
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
