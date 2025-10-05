@@ -36,7 +36,7 @@ const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardPr
   return (
     <Link to={`/stream/${stream.id}`} className="group block touch-manipulation">
       <div className={compact ? 'space-y-2' : 'space-y-3'}>
-        <div className={`relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-300 ${compact ? 'rounded-lg' : ''} ${hasBounty ? 'ring-2 ring-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.4)] animate-pulse' : ''}`}>
+        <div className={`relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500 ${compact ? 'rounded-lg' : ''} ${hasBounty ? 'ring-1 ring-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : ''}`}>
           <img
             src={stream.thumbnail_url || '/placeholder.svg'}
             alt={stream.title}
@@ -52,7 +52,7 @@ const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardPr
           )}
           {hasBounty && (
             <div className={compact ? 'absolute top-1.5 right-1.5' : 'absolute top-2 right-2'}>
-              <Badge className={`bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold flex items-center gap-1 shadow-lg shadow-yellow-500/50 border-0 animate-pulse ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
+              <Badge className={`bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold flex items-center gap-1 shadow-md shadow-yellow-500/20 border-0 ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
                 <Coins className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
                 Bounty
               </Badge>
@@ -62,7 +62,7 @@ const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardPr
             <Eye className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
             {(stream.viewer_count || 0).toLocaleString()}
           </div>
-          <div className={`absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${hasBounty ? 'bg-gradient-to-br from-yellow-500/10 via-transparent to-orange-500/10' : ''}`} />
+          <div className={`absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${hasBounty ? 'bg-gradient-to-br from-yellow-500/5 via-transparent to-amber-500/5' : ''}`} />
         </div>
 
         <div className={`flex ${compact ? 'gap-2' : 'gap-3'}`}>
