@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from "react-router-dom";
+import { useAuthDialog } from "@/store/authDialogStore";
 
 interface GuestPromptDialogProps {
   open: boolean;
@@ -17,7 +17,7 @@ interface GuestPromptDialogProps {
 }
 
 const GuestPromptDialog = ({ open, onOpenChange, action }: GuestPromptDialogProps) => {
-  const navigate = useNavigate();
+  const { open: openAuthDialog } = useAuthDialog();
 
   const actionMessages = {
     like: {
@@ -55,7 +55,10 @@ const GuestPromptDialog = ({ open, onOpenChange, action }: GuestPromptDialogProp
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => navigate("/auth")}>
+          <AlertDialogAction onClick={() => {
+            onOpenChange(false);
+            openAuthDialog('signup');
+          }}>
             Sign Up
           </AlertDialogAction>
         </AlertDialogFooter>

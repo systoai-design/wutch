@@ -14,6 +14,7 @@ import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
+import { useAuthDialog } from '@/store/authDialogStore';
 
 const Navigation = () => {
   const location = useLocation();
@@ -21,6 +22,7 @@ const Navigation = () => {
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut, isGuest } = useAuth();
   const { toggle, toggleMobile } = useSidebar();
+  const { open: openAuthDialog } = useAuthDialog();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
@@ -118,11 +120,12 @@ const Navigation = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
               {isGuest ? (
-                <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
-                  <Link to="/auth">
-                    <User className="h-4 w-4 mr-2" />
-                    Sign Up / Login
-                  </Link>
+                <DropdownMenuItem 
+                  onClick={() => openAuthDialog('signup')} 
+                  className="cursor-pointer py-3 min-h-[44px]"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Sign Up / Login
                 </DropdownMenuItem>
               ) : (
                 <>

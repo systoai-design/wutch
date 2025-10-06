@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import Sidebar from '@/components/Sidebar';
 import BottomNavigation from '@/components/BottomNavigation';
+import { AuthDialog } from '@/components/AuthDialog';
+import { useAuthDialog } from '@/store/authDialogStore';
 
 // Lazy load pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -21,7 +23,6 @@ const StreamDetail = lazy(() => import('./pages/StreamDetail'));
 const Shorts = lazy(() => import('./pages/Shorts'));
 const Submit = lazy(() => import('./pages/Submit'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Auth = lazy(() => import('./pages/Auth'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 const Search = lazy(() => import('./pages/Search'));
@@ -31,6 +32,13 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const { open: openAuthDialog } = useAuthDialog();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      openAuthDialog('signup');
+    }
+  }, [user, isLoading, openAuthDialog]);
 
   if (isLoading) {
     return (
@@ -41,7 +49,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;
@@ -68,7 +76,6 @@ function AppContent() {
         {/* Public routes without app layout */}
         <Route path="/" element={<Landing />} />
         <Route path="/bounties" element={<Bounties />} />
-        <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         
@@ -117,6 +124,7 @@ const App = () => {
           <AuthProvider>
             <Toaster />
             <Sonner />
+            <AuthDialog />
             <AppContent />
           </AuthProvider>
         </TooltipProvider>

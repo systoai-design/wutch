@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +8,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { ArrowLeft, Mail } from 'lucide-react';
 import wutchLogo from '@/assets/wutch-logo.png';
+import { useAuthDialog } from '@/store/authDialogStore';
+import { useNavigate } from 'react-router-dom';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 
 const ResetPassword = () => {
   const { toast } = useToast();
+  const { open: openAuthDialog } = useAuthDialog();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -95,12 +98,17 @@ const ResetPassword = () => {
               Send Another Email
             </Button>
 
-            <Link to="/auth">
-              <Button variant="ghost" className="w-full gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Login
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              className="w-full gap-2"
+              onClick={() => {
+                navigate('/app');
+                openAuthDialog('login');
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Login
+            </Button>
           </div>
         </Card>
       </div>
@@ -111,12 +119,18 @@ const ResetPassword = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
       <Card className="w-full max-w-md p-6 shadow-lg animate-scale-in">
         <div className="mb-6">
-          <Link to="/auth">
-            <Button variant="ghost" size="sm" className="gap-2 mb-4 -ml-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Login
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2 mb-4 -ml-2"
+            onClick={() => {
+              navigate('/app');
+              openAuthDialog('login');
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Login
+          </Button>
           
           <div className="text-center">
             <img 
@@ -160,9 +174,15 @@ const ResetPassword = () => {
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>Remember your password?{' '}
-            <Link to="/auth" className="text-primary hover:underline font-medium">
+            <button 
+              onClick={() => {
+                navigate('/app');
+                openAuthDialog('login');
+              }} 
+              className="text-primary hover:underline font-medium"
+            >
               Log in
-            </Link>
+            </button>
           </p>
         </div>
       </Card>

@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { MFAVerification } from '@/components/MFAVerification';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import wutchLogo from '@/assets/wutch-logo.png';
+import { useAuthDialog } from '@/store/authDialogStore';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string()
@@ -38,26 +39,16 @@ const getPasswordStrength = (password: string): { score: number; label: string; 
   return { score, label: 'Strong', color: 'bg-success' };
 };
 
-const Auth = () => {
+export const AuthDialog = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
+  const { isOpen, defaultTab, close } = useAuthDialog();
   const [isLoading, setIsLoading] = useState(false);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' });
-
-  useEffect(() => {
-    document.title = 'Login or Sign Up | Wutch';
-  }, []);
-
-  // Redirect authenticated users to app
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate('/app', { replace: true });
-    }
-  }, [user, authLoading, navigate]);
 
   const [loginData, setLoginData] = useState({ emailOrUsername: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -75,6 +66,14 @@ const Auth = () => {
     }
   }, [signupData.password]);
 
+  // Close dialog and reset if user is authenticated
+  useEffect(() => {
+    if (user && isOpen) {
+      close();
+      setShowMFAVerification(false);
+    }
+  }, [user, isOpen, close]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -85,11 +84,9 @@ const Auth = () => {
 
       let emailToLogin = loginData.emailOrUsername;
 
-      // Check if input is an email or username
       const isEmail = emailSchema.safeParse(loginData.emailOrUsername).success;
       
       if (!isEmail) {
-        // It's a username, so we need to look up the email using edge function
         const { data, error } = await supabase.functions.invoke('get-email-by-username', {
           body: { username: loginData.emailOrUsername }
         });
@@ -108,7 +105,6 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Check if user has MFA enabled
       const { data: factors } = await supabase.auth.mfa.listFactors();
       const hasMFA = factors && factors.totp && factors.totp.length > 0;
 
@@ -122,12 +118,11 @@ const Auth = () => {
         description: 'You have successfully logged in.',
       });
 
-      navigate('/app');
+      close();
     } catch (error: any) {
       console.error('Login error:', error);
       let errorMessage = error.message || 'Invalid email, username, or password';
       
-      // Handle specific error cases
       if (error.message?.includes('rate limit')) {
         errorMessage = 'Too many login attempts. Please try again later.';
       } else if (error.message?.includes('Invalid login')) {
@@ -151,7 +146,6 @@ const Auth = () => {
     try {
       emailSchema.parse(signupData.email);
       
-      // Validate password with detailed error messages
       const passwordValidation = passwordSchema.safeParse(signupData.password);
       if (!passwordValidation.success) {
         throw new Error(passwordValidation.error.errors[0].message);
@@ -161,7 +155,7 @@ const Auth = () => {
         throw new Error('Username is required');
       }
 
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/app`;
 
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
@@ -178,7 +172,6 @@ const Auth = () => {
       if (error) {
         console.error('Signup error:', error);
         
-        // Handle specific error cases with user-friendly messages
         if (error.message?.toLowerCase().includes('leaked password')) {
           throw new Error('This password has been found in a data breach. Please choose a different password.');
         } else if (error.message?.toLowerCase().includes('user already registered')) {
@@ -188,7 +181,6 @@ const Auth = () => {
         throw new Error(error.message || 'Failed to create account');
       }
 
-      // Verify profile was created (use maybeSingle to avoid PGRST116 error)
       if (data.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -210,21 +202,20 @@ const Auth = () => {
 
       toast({
         title: 'Account Created!',
-        description: 'Please check your email to verify your account before you can earn rewards.',
+        description: 'Please check your email to verify your account.',
       });
 
-      navigate('/app');
+      close();
     } catch (error: any) {
       console.error('Signup error:', error);
       let errorMessage = error.message || 'Could not create account';
       
-      // Handle specific error cases
       if (error.message?.includes('leaked password')) {
         errorMessage = 'This password has been compromised in a data breach. Please choose a different password.';
       } else if (error.message?.includes('User already registered')) {
         errorMessage = 'An account with this email already exists. Please log in instead.';
       } else if (error.message?.includes('Password')) {
-        errorMessage = error.message; // Show specific password requirement errors
+        errorMessage = error.message;
       }
 
       toast({
@@ -261,43 +252,45 @@ const Auth = () => {
 
   if (showMFAVerification) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
-        <div className="w-full max-w-md">
+      <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+        <DialogContent className="sm:max-w-md">
           <MFAVerification
             onVerificationComplete={() => {
               toast({
                 title: 'Welcome back!',
                 description: 'You have successfully logged in.',
               });
-              navigate('/app');
+              close();
             }}
             onCancel={() => {
               setShowMFAVerification(false);
               supabase.auth.signOut();
             }}
           />
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted/30">
-      <Card className="w-full max-w-md p-6 shadow-lg animate-scale-in">
-        <div className="mb-6 text-center">
-          <img 
-            src={wutchLogo} 
-            alt="Wutch" 
-            className="h-12 w-12 mx-auto mb-4"
-            width="48"
-            height="48"
-            loading="eager"
-          />
-          <h1 className="text-2xl font-bold">Welcome to Wutch</h1>
-          <p className="text-muted-foreground mt-2">Share streams, earn crypto rewards</p>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex flex-col items-center gap-3">
+            <img 
+              src={wutchLogo} 
+              alt="Wutch" 
+              className="h-10 w-10"
+              width="40"
+              height="40"
+              loading="eager"
+            />
+            <DialogTitle className="text-xl">Welcome to Wutch</DialogTitle>
+            <p className="text-sm text-muted-foreground">Share streams, earn crypto rewards</p>
+          </div>
+        </DialogHeader>
 
-        <Tabs defaultValue="login">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -314,7 +307,6 @@ const Auth = () => {
                   value={loginData.emailOrUsername}
                   onChange={(e) => setLoginData({ ...loginData, emailOrUsername: e.target.value })}
                   required
-                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
 
@@ -324,6 +316,7 @@ const Auth = () => {
                   <Link 
                     to="/reset-password" 
                     className="text-xs text-primary hover:underline"
+                    onClick={() => close()}
                   >
                     Forgot password?
                   </Link>
@@ -336,7 +329,7 @@ const Auth = () => {
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                     required
-                    className="transition-all focus:scale-[1.02] pr-10"
+                    className="pr-10"
                   />
                   <button
                     type="button"
@@ -348,7 +341,7 @@ const Auth = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full transition-all hover:scale-105" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Log In'}
               </Button>
 
@@ -545,9 +538,7 @@ const Auth = () => {
             </form>
           </TabsContent>
         </Tabs>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default Auth;
