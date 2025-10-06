@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
+import { WutchVideoCard } from '@/components/WutchVideoCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -25,6 +26,12 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
     'username' | 'display_name' | 'avatar_url'>;
 };
 
+type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
+  profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
+    'username' | 'display_name' | 'avatar_url'>;
+  trending_score?: number;
+};
+
 const Home = () => {
   const location = useLocation();
   
@@ -36,6 +43,7 @@ const Home = () => {
   const [upcomingStreams, setUpcomingStreams] = useState<LivestreamWithBounty[]>([]);
   const [endedStreams, setEndedStreams] = useState<LivestreamWithBounty[]>([]);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
+  const [wutchVideos, setWutchVideos] = useState<WutchVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
@@ -106,6 +114,44 @@ const Home = () => {
         `)
         .order('created_at', { ascending: false })
         .limit(15);
+
+      // Fetch wutch videos (long-form) with separate profile query
+      const { data: wutchData } = await supabase
+        .from('wutch_videos')
+        .select('*')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      // Fetch profiles for wutch videos
+      const wutchUserIds = [...new Set((wutchData || []).map(v => v.user_id))];
+      const { data: wutchProfiles } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', wutchUserIds);
+
+      const profilesMap = new Map(wutchProfiles?.map(p => [p.id, p]) || []);
+
+      // Calculate trending score for wutch videos
+      const now = Date.now();
+      const wutchWithScore = (wutchData || []).map((video) => {
+        const ageInDays = (now - new Date(video.created_at || '').getTime()) / (1000 * 60 * 60 * 24);
+        const recencyBonus = Math.max(0, 100 - ageInDays * 10); // Decay over 10 days
+        const trendingScore = 
+          (video.view_count || 0) * 0.7 + 
+          (video.like_count || 0) * 0.2 + 
+          recencyBonus * 0.1;
+        const profile = profilesMap.get(video.user_id);
+        return { 
+          ...video, 
+          profiles: profile ? {
+            username: profile.username,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url
+          } : undefined,
+          trending_score: trendingScore 
+        };
+      }).sort((a, b) => (b.trending_score || 0) - (a.trending_score || 0));
 
       // Fetch upcoming streams with bounty info
       let upcomingQuery = supabase
@@ -179,6 +225,7 @@ const Home = () => {
 
       setLiveStreams(sortedLive);
       setShorts(shortsData || []);
+      setWutchVideos(wutchWithScore);
       setUpcomingStreams(sortedUpcoming);
       setEndedStreams(sortedEnded);
     } catch (error) {
@@ -196,22 +243,36 @@ const Home = () => {
     );
   }
 
-  const getFilteredStreams = () => {
+  // Filter content based on active filter (returns mixed streams and videos)
+  const getFilteredContent = () => {
     const allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams];
     
     switch (activeFilter) {
       case 'live':
-        return liveStreams;
+        return { streams: liveStreams, videos: [] };
       case 'recent':
-        return endedStreams;
+        return { streams: endedStreams, videos: wutchVideos.slice(0, 9) };
       case 'trending':
-        return [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
+        // Mix trending streams and videos
+        return { 
+          streams: [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0)).slice(0, 9),
+          videos: wutchVideos.slice(0, 9)
+        };
       case 'with-bounty':
-        return allStreams.filter(stream => stream.has_active_bounty);
+        return { 
+          streams: allStreams.filter(stream => stream.has_active_bounty),
+          videos: []
+        };
       case 'without-bounty':
-        return allStreams.filter(stream => !stream.has_active_bounty);
+        return { 
+          streams: allStreams.filter(stream => !stream.has_active_bounty),
+          videos: []
+        };
+      case 'upcoming':
+        return { streams: upcomingStreams, videos: [] };
+      case 'all':
       default:
-        return allStreams;
+        return { streams: [], videos: [] };
     }
   };
 
@@ -225,24 +286,60 @@ const Home = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : activeFilter !== 'all' ? (
-          <div className="space-y-6">
-            {getFilteredStreams().length === 0 ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">
-                  {activeFilter === 'live' && 'No live streams at the moment.'}
-                  {activeFilter === 'recent' && 'No recently ended streams.'}
-                  {activeFilter === 'trending' && 'No trending streams right now.'}
-                  {activeFilter === 'with-bounty' && 'No streams with bounties available.'}
-                  {activeFilter === 'without-bounty' && 'No streams without bounties.'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 lg:gap-5">
-                {getFilteredStreams().map((stream) => (
-                  <StreamCard key={stream.id} stream={stream} compact hasBounty={stream.has_active_bounty} />
-                ))}
-              </div>
-            )}
+          <div className="space-y-8">
+            {(() => {
+              const filteredContent = getFilteredContent();
+              return (filteredContent.streams.length > 0 || filteredContent.videos.length > 0) ? (
+                <>
+                  {filteredContent.streams.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl sm:text-2xl font-bold">
+                          {activeFilter === 'live' && 'Live Streams'}
+                          {activeFilter === 'recent' && 'Recently Ended'}
+                          {activeFilter === 'trending' && 'Trending Streams'}
+                          {activeFilter === 'upcoming' && 'Upcoming Streams'}
+                          {activeFilter === 'with-bounty' && 'Streams with Bounties'}
+                          {activeFilter === 'without-bounty' && 'Streams without Bounties'}
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {filteredContent.streams.map((stream) => (
+                          <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  
+                  {filteredContent.videos.length > 0 && (
+                    <section>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl sm:text-2xl font-bold">
+                          {activeFilter === 'trending' && 'Trending Videos'}
+                          {activeFilter === 'recent' && 'Recent Videos'}
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {filteredContent.videos.map((video) => (
+                          <WutchVideoCard key={video.id} video={video} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground text-lg">
+                    {activeFilter === 'live' && 'No live streams at the moment.'}
+                    {activeFilter === 'recent' && 'No recently ended streams or videos.'}
+                    {activeFilter === 'trending' && 'No trending content right now.'}
+                    {activeFilter === 'with-bounty' && 'No streams with bounties available.'}
+                    {activeFilter === 'without-bounty' && 'No streams without bounties.'}
+                    {activeFilter === 'upcoming' && 'No upcoming streams.'}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div className="space-y-8">
@@ -291,6 +388,25 @@ const Home = () => {
                     ))}
                   </CarouselContent>
                 </Carousel>
+              </section>
+            )}
+
+            {/* Wutch Videos Section */}
+            {wutchVideos.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold">Trending Wutch Videos</h2>
+                  <Link to="/wutch">
+                    <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
+                      View All <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {wutchVideos.slice(0, 9).map((video) => (
+                    <WutchVideoCard key={video.id} video={video} />
+                  ))}
+                </div>
               </section>
             )}
 

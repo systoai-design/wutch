@@ -23,9 +23,9 @@ export function validatePromotionalLink(url: string): { isValid: boolean; error?
   try {
     const urlObj = new URL(url);
     
-    // Enforce HTTPS
-    if (urlObj.protocol !== 'https:') {
-      return { isValid: false, error: 'Only HTTPS links are allowed' };
+    // Allow both HTTP and HTTPS
+    if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
+      return { isValid: false, error: 'Only HTTP and HTTPS links are allowed' };
     }
 
     // Check against blocked domains
