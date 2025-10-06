@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ShortCard } from '@/components/ShortCard';
 import { ShortVideoModal } from '@/components/ShortVideoModal';
 import { MobileShortPlayer } from '@/components/MobileShortPlayer';
+import ShortsHeader from '@/components/ShortsHeader';
 import CommentsSection from '@/components/CommentsSection';
 import DonationModal from '@/components/DonationModal';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -140,6 +141,9 @@ const Shorts = () => {
   if (isMobile) {
     return (
       <>
+        {/* Mobile-only header */}
+        <ShortsHeader />
+        
         <div 
           ref={containerRef}
           className="mobile-shorts-container h-[100dvh] overflow-y-scroll snap-y snap-mandatory"

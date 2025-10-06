@@ -153,26 +153,17 @@ const Navigation = () => {
         </div>
       </div>
 
-      <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 md:hidden">
-        <div className="relative w-full">
-          <Input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full pr-10 min-h-[44px] text-base"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSearch}
-            className="absolute right-0 top-0 min-h-[44px] min-w-[44px] touch-manipulation"
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-        </div>
+      <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 md:hidden flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/search')}
+          className="min-h-[44px] min-w-[44px] touch-manipulation"
+          aria-label="Search"
+        >
+          <Search className="h-5 w-5" />
+        </Button>
+        <span className="text-sm text-muted-foreground">Search streams, creators...</span>
       </div>
     </nav>
   );

@@ -3,9 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useThemeStore } from '@/store/themeStore';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Navigation from '@/components/Navigation';
 import Sidebar from '@/components/Sidebar';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -96,13 +97,11 @@ function AppContent() {
           {/* SEO-friendly routes */}
           <Route path="/stream/:username/:titleSlug/:id" element={<StreamDetail />} />
           <Route path="/wutch/:username/:titleSlug/:id" element={<WutchVideoDetail />} />
-          <Route path="/shorts/:username/:titleSlug/:id" element={<Shorts />} />
           
           {/* Legacy routes for backward compatibility */}
           <Route path="/stream/:id" element={<StreamDetail />} />
           <Route path="/wutch" element={<WutchVideos />} />
           <Route path="/wutch/:id" element={<WutchVideoDetail />} />
-          <Route path="/shorts" element={<Shorts />} />
           
           <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
           <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -110,6 +109,12 @@ function AppContent() {
           <Route path="/trending" element={<Home />} />
           <Route path="/upcoming" element={<Home />} />
           <Route path="/recent" element={<Home />} />
+        </Route>
+
+        {/* Shorts routes with special mobile layout */}
+        <Route element={<ShortsLayout />}>
+          <Route path="/shorts/:username/:titleSlug/:id" element={<Shorts />} />
+          <Route path="/shorts" element={<Shorts />} />
         </Route>
         
         <Route path="*" element={<NotFound />} />
@@ -131,6 +136,19 @@ function AppLayout() {
       <BottomNavigation />
     </div>
   );
+}
+
+function ShortsLayout() {
+  const isMobile = useIsMobile();
+  const location = useLocation();
+  
+  // On mobile, render shorts without any navigation/layout
+  if (isMobile) {
+    return <Outlet />;
+  }
+  
+  // On desktop, use standard layout
+  return <AppLayout />;
 }
 
 const App = () => {
