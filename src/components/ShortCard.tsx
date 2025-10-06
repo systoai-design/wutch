@@ -79,14 +79,8 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
     >
       {/* Aspect Ratio Container (9:16 for vertical video) */}
       <div className="relative aspect-[9/16] bg-muted">
-        {/* Thumbnail or Video Preview */}
-        {!isPlaying && short.thumbnail_url ? (
-          <img
-            src={short.thumbnail_url}
-            alt={short.title}
-            className="w-full h-full object-cover"
-          />
-        ) : short.video_url ? (
+        {/* Video Element - Always in DOM */}
+        {short.video_url && (
           <video
             ref={videoRef}
             src={short.video_url}
@@ -96,7 +90,16 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             muted
             loop={false}
           />
-        ) : null}
+        )}
+        
+        {/* Thumbnail Overlay - Show when not playing */}
+        {!isPlaying && short.thumbnail_url && (
+          <img
+            src={short.thumbnail_url}
+            alt={short.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
