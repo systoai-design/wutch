@@ -1,31 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import StreamCard from '@/components/StreamCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type Livestream = Database['public']['Tables']['livestreams']['Row'];
-
-interface LivestreamWithBounty extends Livestream {
-  hasBounty?: boolean;
-  profiles?: {
-    username: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
-}
+import { useStreamsQuery } from '@/hooks/useStreamsQuery';
 
 const Streams = () => {
   const [searchParams] = useSearchParams();
   const filter = searchParams.get('filter') as FilterOption || 'all';
-  
-  const [liveStreams, setLiveStreams] = useState<LivestreamWithBounty[]>([]);
-  const [upcomingStreams, setUpcomingStreams] = useState<LivestreamWithBounty[]>([]);
-  const [endedStreams, setEndedStreams] = useState<LivestreamWithBounty[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>(filter);
+
+  const { data, isLoading } = useStreamsQuery();
 
   useEffect(() => {
     document.title = 'Live Streams | Wutch';
@@ -35,98 +20,28 @@ const Streams = () => {
     setActiveFilter(filter);
   }, [filter]);
 
-  useEffect(() => {
-    fetchStreams();
-  }, []);
-
-  const fetchStreams = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch live streams
-      const { data: liveData } = await supabase
-        .from('livestreams')
-        .select(`
-          *,
-          profiles!livestreams_user_id_fkey (username, display_name, avatar_url)
-        `)
-        .eq('is_live', true)
-        .order('viewer_count', { ascending: false });
-
-      // Fetch upcoming streams
-      const { data: upcomingData } = await supabase
-        .from('livestreams')
-        .select(`
-          *,
-          profiles!livestreams_user_id_fkey (username, display_name, avatar_url)
-        `)
-        .eq('is_live', false)
-        .gte('started_at', new Date().toISOString())
-        .is('ended_at', null)
-        .order('started_at', { ascending: true });
-
-      // Fetch ended streams
-      const { data: endedData } = await supabase
-        .from('livestreams')
-        .select(`
-          *,
-          profiles!livestreams_user_id_fkey (username, display_name, avatar_url)
-        `)
-        .eq('is_live', false)
-        .not('ended_at', 'is', null)
-        .order('ended_at', { ascending: false })
-        .limit(12);
-
-      // Check for bounties
-      const { data: bounties } = await supabase
-        .from('stream_bounties')
-        .select('livestream_id')
-        .eq('is_active', true);
-
-      const bountyStreamIds = new Set(bounties?.map(b => b.livestream_id) || []);
-
-      const addBountyInfo = (streams: any[]) =>
-        streams?.map(stream => ({
-          ...stream,
-          hasBounty: bountyStreamIds.has(stream.id),
-        })) || [];
-
-      setLiveStreams(addBountyInfo(liveData));
-      setUpcomingStreams(addBountyInfo(upcomingData));
-      setEndedStreams(addBountyInfo(endedData));
-    } catch (error) {
-      console.error('Error fetching streams:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const getFilteredStreams = () => {
-    let allStreams: LivestreamWithBounty[] = [];
+    if (!data) return [];
+    
+    const { liveStreams, upcomingStreams, endedStreams } = data;
+    let allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams];
     
     switch (activeFilter) {
       case 'live':
-        allStreams = liveStreams;
-        break;
+        return liveStreams;
       case 'upcoming':
-        allStreams = upcomingStreams;
-        break;
+        return upcomingStreams;
       case 'recent':
-        allStreams = endedStreams;
-        break;
+        return endedStreams;
       case 'with-bounty':
-        allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams].filter(s => s.hasBounty);
-        break;
+        return allStreams.filter(s => s.hasBounty);
       case 'without-bounty':
-        allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams].filter(s => !s.hasBounty);
-        break;
+        return allStreams.filter(s => !s.hasBounty);
       case 'trending':
-        allStreams = [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
-        break;
+        return [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
       default:
-        allStreams = [...liveStreams, ...upcomingStreams, ...endedStreams];
+        return allStreams;
     }
-    
-    return allStreams;
   };
 
   const filteredStreams = getFilteredStreams();

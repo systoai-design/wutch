@@ -117,35 +117,38 @@ const Home = () => {
         .order('created_at', { ascending: false })
         .limit(15);
 
-      // Fetch wutch videos (long-form) with separate profile query
-      const { data: wutchData } = await supabase
-        .from('wutch_videos')
-        .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(12);
+      // Fetch wutch videos and profiles in parallel
+      const [wutchResult, profilesResult] = await Promise.all([
+        supabase
+          .from('wutch_videos')
+          .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(12),
+        supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+      ]);
 
-      // Fetch profiles for wutch videos
-      const wutchUserIds = [...new Set((wutchData || []).map(v => v.user_id))];
-      const { data: wutchProfiles } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .in('id', wutchUserIds);
-
-      const profilesMap = new Map(wutchProfiles?.map(p => [p.id, p]) || []);
+      const wutchData = wutchResult.data || [];
+      
+      // Create profiles map
+      const profilesMap = new Map(
+        (profilesResult.data || []).map(p => [p.id, p])
+      );
 
       // Calculate trending score for wutch videos
       const now = Date.now();
-      const wutchWithScore = (wutchData || []).map((video) => {
+      const wutchWithScore = wutchData.map((video) => {
         const ageInDays = (now - new Date(video.created_at || '').getTime()) / (1000 * 60 * 60 * 24);
-        const recencyBonus = Math.max(0, 100 - ageInDays * 10); // Decay over 10 days
+        const recencyBonus = Math.max(0, 100 - ageInDays * 10);
         const trendingScore = 
           (video.view_count || 0) * 0.7 + 
           (video.like_count || 0) * 0.2 + 
           recencyBonus * 0.1;
         const profile = profilesMap.get(video.user_id);
         return { 
-          ...video, 
+          ...video,
           profiles: profile ? {
             username: profile.username,
             display_name: profile.display_name,

@@ -1,72 +1,27 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import { ShortCard } from '@/components/ShortCard';
 import { ShortVideoModal } from '@/components/ShortVideoModal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useShortsQuery } from '@/hooks/useShortsQuery';
+import type { Database } from '@/integrations/supabase/types';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
     'username' | 'display_name' | 'avatar_url' | 'public_wallet_address'>;
+  commentCount?: number;
 };
 
 const Shorts = () => {
-  const [shorts, setShorts] = useState<ShortVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedShort, setSelectedShort] = useState<ShortVideo | null>(null);
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+
+  const { data: shorts = [], isLoading } = useShortsQuery();
 
   useEffect(() => {
     document.title = 'Shorts | Wutch';
-    fetchShorts();
   }, []);
-
-  useEffect(() => {
-    if (shorts.length > 0) {
-      fetchCommentCounts();
-    }
-  }, [shorts]);
-
-  const fetchShorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles!short_videos_user_id_fkey (username, display_name, avatar_url, public_wallet_address)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setShorts(data || []);
-    } catch (error) {
-      console.error('Error fetching shorts:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCommentCounts = async () => {
-    try {
-      const counts: Record<string, number> = {};
-      for (const short of shorts) {
-        const { count } = await supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('content_id', short.id)
-          .eq('content_type', 'shortvideo');
-        
-        counts[short.id] = count || 0;
-      }
-      setCommentCounts(counts);
-    } catch (error) {
-      console.error('Error fetching comment counts:', error);
-    }
-  };
 
   const handleShortClick = (shortId: string) => {
     const short = shorts.find(s => s.id === shortId);
@@ -133,7 +88,7 @@ const Shorts = () => {
           short={selectedShort}
           onOpenDonation={() => setIsDonationModalOpen(true)}
           onOpenComments={() => setIsCommentsOpen(true)}
-          commentCount={commentCounts[selectedShort.id] || 0}
+          commentCount={selectedShort.commentCount || 0}
           canDelete={false}
         />
       )}

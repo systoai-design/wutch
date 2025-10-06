@@ -1,37 +1,24 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Circle, Coins } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface StreamCardProps {
-  stream: Livestream;
+  stream: Livestream & {
+    profiles?: {
+      username: string;
+      display_name: string | null;
+      avatar_url: string | null;
+    };
+  };
   compact?: boolean;
   hasBounty?: boolean;
 }
 
 const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardProps) => {
-  const [streamer, setStreamer] = useState<Profile | null>(null);
-
-  useEffect(() => {
-    const fetchStreamer = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', stream.user_id)
-        .single();
-      
-      if (data) {
-        setStreamer(data);
-      }
-    };
-
-    fetchStreamer();
-  }, [stream.user_id]);
+  const streamer = stream.profiles;
 
   return (
     <Link to={`/stream/${stream.id}`} className="group block touch-manipulation">

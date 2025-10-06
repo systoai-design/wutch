@@ -28,7 +28,16 @@ const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 const Search = lazy(() => import('./pages/Search'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds
+      gcTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();

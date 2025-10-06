@@ -1,26 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-import { WutchVideoCard } from '@/components/WutchVideoCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
-  profiles?: {
-    username: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
-};
+import { WutchVideoCard } from '@/components/WutchVideoCard';
+import { useWutchVideosQuery } from '@/hooks/useWutchVideosQuery';
 
 const WutchVideos = () => {
   const [searchParams] = useSearchParams();
   const filter = searchParams.get('filter') as FilterOption || 'all';
-  
-  const [videos, setVideos] = useState<WutchVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>(filter);
+
+  const { data: videos = [], isLoading } = useWutchVideosQuery(activeFilter);
 
   useEffect(() => {
     document.title = 'Wutch Videos | Wutch';
@@ -29,62 +19,6 @@ const WutchVideos = () => {
   useEffect(() => {
     setActiveFilter(filter);
   }, [filter]);
-
-  useEffect(() => {
-    fetchVideos();
-  }, [activeFilter]);
-
-  const fetchVideos = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase
-        .from('wutch_videos')
-        .select(`
-          *
-        `)
-        .eq('status', 'published');
-
-      // Apply sorting based on filter
-      switch (activeFilter) {
-        case 'trending':
-          query = query.order('view_count', { ascending: false });
-          break;
-        case 'recent':
-          query = query.order('created_at', { ascending: false });
-          break;
-        default:
-          query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error } = await query.limit(24);
-
-      if (error) throw error;
-      
-      // Fetch profiles separately
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(v => v.user_id))];
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', userIds);
-
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        
-        const videosWithProfiles = data.map(video => ({
-          ...video,
-          profiles: profilesMap.get(video.user_id),
-        }));
-        
-        setVideos(videosWithProfiles as WutchVideo[]);
-      } else {
-        setVideos([]);
-      }
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
