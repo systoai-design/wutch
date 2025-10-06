@@ -98,7 +98,8 @@ const Navigation = () => {
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="hidden sm:block">
+          {/* Wallet Connect - visible on mobile and desktop */}
+          <div className="block">
             <WalletConnect />
           </div>
           
@@ -119,6 +120,15 @@ const Navigation = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
+              {/* Mobile-only theme toggle */}
+              <DropdownMenuItem 
+                onClick={toggleTheme}
+                className="cursor-pointer py-3 min-h-[44px] sm:hidden"
+              >
+                {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                {isDark ? 'Light Mode' : 'Dark Mode'}
+              </DropdownMenuItem>
+              
               {isGuest ? (
                 <DropdownMenuItem 
                   onClick={() => openAuthDialog('signup')} 

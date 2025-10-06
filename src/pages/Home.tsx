@@ -404,21 +404,24 @@ const Home = () => {
                     </Button>
                   </Link>
                 </div>
-                <Carousel
-                  opts={{
-                    align: "start",
-                    dragFree: true,
-                  }}
-                  className="w-full"
-                >
-                  <CarouselContent className="-ml-2 sm:-ml-3">
-                    {shorts.map((short) => (
-                      <CarouselItem key={short.id} className="pl-2 sm:pl-3 basis-[45%] xs:basis-[38%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%]">
-                        <ShortCard short={short} />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                </Carousel>
+                {/* Carousel container with semi-rounded corners */}
+                <div className="carousel-container">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      dragFree: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 sm:-ml-3">
+                      {shorts.map((short) => (
+                        <CarouselItem key={short.id} className="pl-2 sm:pl-3 basis-[45%] xs:basis-[38%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%]">
+                          <ShortCard short={short} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                </div>
               </section>
             )}
 
@@ -433,10 +436,23 @@ const Home = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {wutchVideos.slice(0, 9).map((video) => (
-                    <WutchVideoCard key={video.id} video={video} />
-                  ))}
+                {/* Carousel container with semi-rounded corners */}
+                <div className="carousel-container">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      dragFree: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 sm:-ml-3">
+                      {wutchVideos.slice(0, 12).map((video) => (
+                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%]">
+                          <WutchVideoCard video={video} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
                 </div>
               </section>
             )}

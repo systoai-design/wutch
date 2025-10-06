@@ -182,3 +182,27 @@ div[class*="lovable-badge"],
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Carousel container styling */
+.carousel-container {
+  @apply relative bg-muted/20 rounded-2xl p-3 border border-border/30 shadow-sm overflow-hidden;
+  will-change: transform;
+}
+
+@media (min-width: 640px) {
+  .carousel-container {
+    @apply rounded-2xl p-4;
+  }
+}
+
+/* Smooth carousel scrolling */
+.carousel-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.carousel-scroll::-webkit-scrollbar {
+  display: none;
+}
