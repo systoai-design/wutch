@@ -1,22 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Flame, Clock, Video, PlaySquare, Upload, User, TrendingUp, Coins, Gamepad2, GraduationCap, Trophy, Bitcoin, CalendarClock, Zap } from 'lucide-react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Home, Flame, Clock, Video, PlaySquare, Upload, User, CalendarClock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-
-const categories = [
-  { name: 'Trading', icon: TrendingUp },
-  { name: 'NFTs', icon: Trophy },
-  { name: 'DeFi', icon: Bitcoin },
-  { name: 'Meme Coins', icon: Coins },
-  { name: 'Education', icon: GraduationCap },
-  { name: 'GameFi', icon: Gamepad2 },
-];
+import { CATEGORIES } from '@/constants/categories';
 
 const Sidebar = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { isCollapsed, isMobileOpen, setMobileOpen } = useSidebar();
+  const activeCategory = searchParams.get('category');
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/app' },
@@ -61,15 +55,25 @@ const Sidebar = () => {
           Categories
         </h3>
         <div className="space-y-1">
-          {categories.map((category) => (
-            <button
-              key={category.name}
-              className="w-full flex items-center gap-3 text-left px-4 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
-            >
-              <category.icon className="h-4 w-4 shrink-0" />
-              <span>{category.name}</span>
-            </button>
-          ))}
+          {CATEGORIES.slice(0, 8).map((category) => {
+            const isActive = activeCategory === category.name;
+            return (
+              <Link
+                key={category.name}
+                to={`/app?category=${encodeURIComponent(category.name)}`}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "w-full flex items-center gap-3 text-left px-4 py-2 rounded-lg transition-colors text-sm",
+                  isActive 
+                    ? 'bg-accent text-accent-foreground font-semibold'
+                    : 'hover:bg-accent/50 hover:text-accent-foreground'
+                )}
+              >
+                <category.icon className="h-4 w-4 shrink-0" />
+                <span>{category.name}</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -133,33 +137,53 @@ const Sidebar = () => {
                 Categories
               </h3>
               <div className="space-y-1">
-                {categories.map((category) => (
-                  <button
-                    key={category.name}
-                    className="w-full flex items-center gap-3 text-left px-4 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
-                  >
-                    <category.icon className="h-4 w-4 shrink-0" />
-                    <span>{category.name}</span>
-                  </button>
-                ))}
+                {CATEGORIES.slice(0, 8).map((category) => {
+                  const isActive = activeCategory === category.name;
+                  return (
+                    <Link
+                      key={category.name}
+                      to={`/app?category=${encodeURIComponent(category.name)}`}
+                      className={cn(
+                        "w-full flex items-center gap-3 text-left px-4 py-2 rounded-lg transition-colors text-sm",
+                        isActive 
+                          ? 'bg-accent text-accent-foreground font-semibold'
+                          : 'hover:bg-accent/50 hover:text-accent-foreground'
+                      )}
+                    >
+                      <category.icon className="h-4 w-4 shrink-0" />
+                      <span>{category.name}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {isCollapsed && (
             <div className="mt-8 space-y-1">
-              {categories.map((category) => (
-                <Tooltip key={category.name}>
-                  <TooltipTrigger asChild>
-                    <button className="w-full flex items-center justify-center px-2 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
-                      <category.icon className="h-5 w-5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{category.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+              {CATEGORIES.slice(0, 8).map((category) => {
+                const isActive = activeCategory === category.name;
+                return (
+                  <Tooltip key={category.name}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={`/app?category=${encodeURIComponent(category.name)}`}
+                        className={cn(
+                          "w-full flex items-center justify-center px-2 py-3 rounded-lg transition-colors",
+                          isActive 
+                            ? 'bg-accent text-accent-foreground'
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        <category.icon className="h-5 w-5" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{category.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
           )}
         </div>

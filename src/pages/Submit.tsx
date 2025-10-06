@@ -24,20 +24,7 @@ import { WutchVideoUpload } from '@/components/WutchVideoUpload';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 import ScheduleStreamPicker from '@/components/ScheduleStreamPicker';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
-
-const STREAM_CATEGORIES = [
-  "Gaming",
-  "Trading",
-  "NFTs",
-  "DeFi",
-  "Meme Coins",
-  "Education",
-  "Music",
-  "Art & Design",
-  "Technology",
-  "Just Chatting",
-  "Other",
-] as const;
+import { CATEGORY_NAMES } from '@/constants/categories';
 
 const Submit = () => {
   useEffect(() => {
@@ -480,7 +467,7 @@ const Submit = () => {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
-                    {STREAM_CATEGORIES.map((category) => (
+                    {CATEGORY_NAMES.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>

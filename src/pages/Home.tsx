@@ -7,13 +7,14 @@ import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type LivestreamWithBounty = Livestream & {
@@ -301,6 +302,25 @@ const Home = () => {
       <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
       
       <main className="p-3 sm:p-4 lg:p-6 max-w-[2000px] mx-auto">
+        {/* Category Filter Badge */}
+        {selectedCategory && (
+          <div className="mb-6 flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm px-4 py-2">
+              Showing: {selectedCategory}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedCategory(null);
+                window.history.pushState({}, '', '/app');
+              }}
+              className="h-8 px-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

@@ -10,11 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Video } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-
-const VIDEO_CATEGORIES = [
-  'Gaming', 'Music', 'Sports', 'Technology', 'Education',
-  'Entertainment', 'Comedy', 'News', 'Lifestyle', 'Other'
-];
+import { CATEGORY_NAMES } from '@/constants/categories';
 
 export const WutchVideoUpload = () => {
   const { user } = useAuth();
@@ -346,7 +342,7 @@ export const WutchVideoUpload = () => {
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
-            {VIDEO_CATEGORIES.map((cat) => (
+            {CATEGORY_NAMES.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>

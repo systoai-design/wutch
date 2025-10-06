@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, ThumbsUp } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateContentUrl } from '@/utils/urlHelpers';
+import { getCategoryIcon } from '@/constants/categories';
 
 interface WutchVideoCardProps {
   video: {
@@ -42,10 +43,12 @@ const formatViewCount = (count: number) => {
 };
 
 export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
+  const navigate = useNavigate();
   const [isHovering, setIsHovering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const CategoryIcon = video.category ? getCategoryIcon(video.category) : null;
   
   const videoUrl = generateContentUrl('wutch', {
     id: video.id,
@@ -164,7 +167,15 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
             </div>
 
             {video.category && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge 
+                variant="secondary" 
+                className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/app?category=${encodeURIComponent(video.category!)}`);
+                }}
+              >
+                {CategoryIcon && <CategoryIcon className="h-3 w-3 mr-1" />}
                 {video.category}
               </Badge>
             )}

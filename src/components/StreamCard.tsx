@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, Circle, Coins, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Database } from '@/integrations/supabase/types';
 import { generateContentUrl } from '@/utils/urlHelpers';
+import { getCategoryIcon } from '@/constants/categories';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -20,12 +21,14 @@ interface StreamCardProps {
 }
 
 const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampaign = false }: StreamCardProps) => {
+  const navigate = useNavigate();
   const streamUrl = generateContentUrl('stream', {
     id: stream.id,
     title: stream.title,
     profiles: stream.profiles ? { username: stream.profiles.username } : undefined
   });
   const streamer = stream.profiles;
+  const CategoryIcon = stream.category ? getCategoryIcon(stream.category) : null;
 
   return (
     <Link to={streamUrl} className="group block touch-manipulation">
@@ -81,7 +84,15 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
             </p>
             {stream.category && !compact && (
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant="secondary" className="text-xs font-semibold rounded-full px-2 py-0">
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs font-semibold rounded-full px-2 py-0 cursor-pointer hover:bg-secondary/80 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(`/app?category=${encodeURIComponent(stream.category!)}`);
+                  }}
+                >
+                  {CategoryIcon && <CategoryIcon className="h-3 w-3 mr-1" />}
                   {stream.category}
                 </Badge>
               </div>

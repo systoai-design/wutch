@@ -34,20 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { validatePromotionalLink, sanitizeUrl } from "@/utils/urlValidation";
-
-const STREAM_CATEGORIES = [
-  "Gaming",
-  "Trading",
-  "NFTs",
-  "DeFi",
-  "Meme Coins",
-  "Education",
-  "Music",
-  "Art & Design",
-  "Technology",
-  "Just Chatting",
-  "Other",
-] as const;
+import { CATEGORY_NAMES } from "@/constants/categories";
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -311,7 +298,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-popover z-50">
-                      {STREAM_CATEGORIES.map((category) => (
+                      {CATEGORY_NAMES.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>
