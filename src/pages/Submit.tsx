@@ -778,10 +778,6 @@ const Submit = () => {
         </Card>
           </TabsContent>
 
-          <TabsContent value="video" className="mt-6">
-            <WutchVideoUpload />
-          </TabsContent>
-
           <TabsContent value="video">
             <Card className="p-6">
               <WutchVideoUpload />
