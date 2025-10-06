@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { DollarSign, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,8 +27,8 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
-    rewardPerShare: '0.005',
-    totalBudget: '10',
+    rewardPerShare: '0.001',
+    totalBudget: '0.1',
     maxSharesPerUser: '5',
   });
 
@@ -43,8 +43,8 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
       const totalBudget = parseFloat(formData.totalBudget);
       const maxSharesPerUser = formData.maxSharesPerUser ? parseInt(formData.maxSharesPerUser) : null;
 
-      if (rewardPerShare < 0.005) {
-        throw new Error('Minimum reward per share is $0.005');
+      if (rewardPerShare < 0.0001) {
+        throw new Error('Minimum reward per share is 0.0001 SOL');
       }
 
       if (totalBudget <= 0) {
@@ -67,7 +67,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
       toast({
         title: 'Preparing Deposit',
-        description: `Please approve ${totalWithFee.toFixed(3)} SOL deposit (includes 5% platform fee)...`,
+        description: `Please approve ${totalWithFee.toFixed(4)} SOL deposit (includes 5% platform fee)...`,
       });
 
       // Step 2: Call charge-bounty-wallet to prepare deposit transaction
@@ -130,13 +130,13 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
       toast({
         title: 'Campaign Created & Funded! 🎉',
-        description: `${totalWithFee.toFixed(3)} SOL deposited. Users can now earn rewards by sharing!`,
+        description: `${totalWithFee.toFixed(4)} SOL deposited. Users can now earn rewards by sharing!`,
       });
 
       setIsOpen(false);
       setFormData({
-        rewardPerShare: '0.005',
-        totalBudget: '10',
+        rewardPerShare: '0.001',
+        totalBudget: '0.1',
         maxSharesPerUser: '5',
       });
     } catch (error: any) {
@@ -173,42 +173,34 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reward">Reward per Share (USD)</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="reward"
-                type="number"
-                step="0.001"
-                min="0.005"
-                placeholder="0.005"
-                value={formData.rewardPerShare}
-                onChange={(e) => setFormData({ ...formData, rewardPerShare: e.target.value })}
-                className="pl-9"
-                required
-              />
-            </div>
+            <Label htmlFor="reward">Reward per Share (SOL)</Label>
+            <Input
+              id="reward"
+              type="number"
+              step="0.0001"
+              min="0.0001"
+              placeholder="0.001"
+              value={formData.rewardPerShare}
+              onChange={(e) => setFormData({ ...formData, rewardPerShare: e.target.value })}
+              required
+            />
             <p className="text-xs text-muted-foreground">
-              Minimum: $0.005 per share
+              Minimum: 0.0001 SOL per share
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="budget">Total Campaign Budget (USD)</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="budget"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="10.00"
-                value={formData.totalBudget}
-                onChange={(e) => setFormData({ ...formData, totalBudget: e.target.value })}
-                className="pl-9"
-                required
-              />
-            </div>
+            <Label htmlFor="budget">Total Campaign Budget (SOL)</Label>
+            <Input
+              id="budget"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="0.1"
+              value={formData.totalBudget}
+              onChange={(e) => setFormData({ ...formData, totalBudget: e.target.value })}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -236,19 +228,19 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost per share:</span>
-                <span className="font-semibold">${formData.rewardPerShare}</span>
+                <span className="font-semibold">{formData.rewardPerShare} SOL</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Campaign budget:</span>
-                <span className="font-semibold">${formData.totalBudget}</span>
+                <span className="font-semibold">{formData.totalBudget} SOL</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Platform fee (5%):</span>
-                <span className="font-semibold">${platformFee.toFixed(2)}</span>
+                <span className="font-semibold">{platformFee.toFixed(4)} SOL</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-border font-semibold">
                 <span>Total Deposit:</span>
-                <span className="text-primary">{totalCost.toFixed(3)} SOL</span>
+                <span className="text-primary">{totalCost.toFixed(4)} SOL</span>
               </div>
               <div className="pt-2 mt-2 border-t border-border">
                 <p className="text-xs text-muted-foreground">

@@ -1,19 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Share2, Twitter, DollarSign, Wallet, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/hooks/useAdmin';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Share2, Wallet, Twitter, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +17,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAdmin } from "@/hooks/useAdmin";
+import { ClaimShareRewards } from "./ClaimShareRewards";
 
 interface ShareAndEarnProps {
   livestreamId: string;
@@ -32,11 +34,15 @@ interface ShareAndEarnProps {
   streamUrl: string;
 }
 
-export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndEarnProps) => {
+export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndEarnProps) {
   const [campaign, setCampaign] = useState<any>(null);
-  const [userShares, setUserShares] = useState<number>(0);
-  const [totalEarned, setTotalEarned] = useState<number>(0);
+  const [userShares, setUserShares] = useState(0);
+  const [totalEarned, setTotalEarned] = useState(0);
+  const [unclaimedEarnings, setUnclaimedEarnings] = useState(0);
   const [hasWallet, setHasWallet] = useState(false);
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+  const [twitterHandle, setTwitterHandle] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
@@ -44,259 +50,336 @@ export const ShareAndEarn = ({ livestreamId, streamTitle, streamUrl }: ShareAndE
   const handleDeleteCampaign = async () => {
     if (!campaign) return;
 
-    try {
-      const { error } = await supabase
-        .from('sharing_campaigns')
-        .delete()
-        .eq('id', campaign.id);
+    const { error } = await supabase
+      .from("sharing_campaigns")
+      .delete()
+      .eq("id", campaign.id);
 
-      if (error) throw error;
-
+    if (error) {
       toast({
-        title: 'Campaign deleted',
-        description: 'The sharing campaign has been removed successfully.',
+        title: "Error",
+        description: "Failed to delete campaign",
+        variant: "destructive",
       });
-
+    } else {
+      toast({
+        title: "Campaign Deleted",
+        description: "The sharing campaign has been removed",
+      });
       setCampaign(null);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete campaign',
-        variant: 'destructive',
-      });
     }
   };
 
   useEffect(() => {
-    if (!user) return;
-
-    // Load campaign details
-    const loadCampaign = async () => {
+    async function loadCampaign() {
       const { data, error } = await supabase
-        .from('sharing_campaigns')
-        .select('*')
-        .eq('livestream_id', livestreamId)
-        .eq('is_active', true)
-        .single();
+        .from("sharing_campaigns")
+        .select("*")
+        .eq("livestream_id", livestreamId)
+        .eq("is_active", true)
+        .maybeSingle();
 
       if (!error && data) {
         setCampaign(data);
       }
-    };
+    }
 
-    // Check if user has wallet
-    const checkWallet = async () => {
+    async function checkWallet() {
+      if (!user) return;
+      
       const { data } = await supabase
-        .from('profile_wallets')
-        .select('wallet_address')
-        .eq('user_id', user.id)
-        .single();
+        .from("profile_wallets")
+        .select("wallet_address")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       setHasWallet(!!data?.wallet_address);
-    };
+    }
 
-    // Load user's shares for this campaign
-    const loadUserShares = async () => {
-      if (!campaign) return;
+    async function loadUserShares() {
+      if (!user) return;
 
-      const { data, error } = await supabase
-        .from('user_shares')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('campaign_id', campaign.id);
+      const { data: activeCampaign } = await supabase
+        .from("sharing_campaigns")
+        .select("id")
+        .eq("livestream_id", livestreamId)
+        .eq("is_active", true)
+        .maybeSingle();
 
-      if (!error && data) {
-        setUserShares(data.length);
-        const earned = data.reduce((sum, share) => sum + Number(share.reward_amount), 0);
-        setTotalEarned(earned);
+      if (!activeCampaign) return;
+
+      const { data: shares, error: sharesError } = await supabase
+        .from("user_shares")
+        .select("reward_amount, is_claimed")
+        .eq("user_id", user.id)
+        .eq("campaign_id", activeCampaign.id);
+
+      if (!sharesError && shares) {
+        setUserShares(shares.length);
+        const total = shares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
+        const unclaimed = shares
+          .filter(share => !share.is_claimed)
+          .reduce((sum, share) => sum + Number(share.reward_amount), 0);
+        setTotalEarned(total);
+        setUnclaimedEarnings(unclaimed);
       }
-    };
+    }
 
     loadCampaign();
     checkWallet();
     loadUserShares();
-  }, [user, livestreamId, campaign?.id]);
+  }, [livestreamId, user]);
+
+  const handleVerifyShare = async () => {
+    if (!twitterHandle.trim()) {
+      toast({
+        title: "Twitter Handle Required",
+        description: "Please enter your Twitter/X handle",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user || !campaign) return;
+
+    setIsVerifying(true);
+
+    // Clean the Twitter handle (remove @ if present)
+    const cleanHandle = twitterHandle.replace("@", "").trim();
+
+    try {
+      const { error } = await supabase
+        .from("user_shares")
+        .insert({
+          user_id: user.id,
+          campaign_id: campaign.id,
+          share_platform: "twitter",
+          reward_amount: campaign.reward_per_share,
+          share_url: streamUrl,
+          status: "verified",
+          twitter_handle: cleanHandle,
+          verified_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast({
+            title: "Already Shared",
+            description: "This Twitter account has already shared this campaign. Each Twitter account can only share once.",
+            variant: "destructive",
+          });
+        } else {
+          console.error("Error recording share:", error);
+          toast({
+            title: "Error",
+            description: "Failed to verify your share. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Share Verified! 🎉",
+          description: `You've earned ${campaign.reward_per_share} SOL! You can claim your rewards anytime.`,
+        });
+        
+        setShowVerifyDialog(false);
+        setTwitterHandle("");
+
+        // Refresh user shares
+        const { data: shares } = await supabase
+          .from("user_shares")
+          .select("reward_amount, is_claimed")
+          .eq("user_id", user.id)
+          .eq("campaign_id", campaign.id);
+
+        if (shares) {
+          setUserShares(shares.length);
+          const total = shares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
+          const unclaimed = shares
+            .filter(share => !share.is_claimed)
+            .reduce((sum, share) => sum + Number(share.reward_amount), 0);
+          setTotalEarned(total);
+          setUnclaimedEarnings(unclaimed);
+        }
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleShare = async () => {
     if (!user) {
       toast({
-        title: 'Login Required',
-        description: 'Please login to earn rewards for sharing.',
-        variant: 'destructive',
+        title: "Login Required",
+        description: "Please login to earn rewards for sharing",
+        variant: "destructive",
       });
       return;
     }
 
     if (!hasWallet) {
       toast({
-        title: 'Wallet Required',
-        description: 'Connect your Solana wallet to earn rewards!',
-        variant: 'destructive',
+        title: "Wallet Required",
+        description: "Please connect your wallet first to receive rewards",
+        variant: "destructive",
       });
       return;
     }
 
     if (!campaign) {
       toast({
-        title: 'No Active Campaign',
-        description: 'This stream doesn\'t have an active sharing campaign.',
-        variant: 'destructive',
+        title: "No Active Campaign",
+        description: "There is no active sharing campaign for this stream",
+        variant: "destructive",
       });
       return;
     }
 
-    // Check if user exceeded max shares
     if (campaign.max_shares_per_user && userShares >= campaign.max_shares_per_user) {
       toast({
-        title: 'Share Limit Reached',
-        description: `You've reached the maximum of ${campaign.max_shares_per_user} shares for this stream.`,
-        variant: 'destructive',
+        title: "Share Limit Reached",
+        description: `You've reached the maximum of ${campaign.max_shares_per_user} shares for this campaign`,
+        variant: "destructive",
       });
       return;
     }
 
-    // Create Twitter share URL
-    const tweetText = encodeURIComponent(
-      `Check out this stream on Wutch: ${streamTitle}\n\n${streamUrl}`
-    );
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+    const text = `Watch "${streamTitle}" live on Wutch! 🔴 Earn crypto while watching amazing content!`;
+    const url = streamUrl;
+    const hashtags = "Wutch,Web3,Crypto,Livestream";
 
-    // Open Twitter in new window
-    const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
-
-    // Record the share after a short delay (assume they shared)
-    setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('user_shares')
-          .insert({
-            user_id: user.id,
-            campaign_id: campaign.id,
-            share_platform: 'twitter',
-            share_url: twitterUrl,
-            reward_amount: campaign.reward_per_share,
-            status: 'verified',
-          });
-
-        if (error) throw error;
-
-        setUserShares(prev => prev + 1);
-        setTotalEarned(prev => prev + Number(campaign.reward_per_share));
-
-        toast({
-          title: 'Share Recorded! 🎉',
-          description: `You've earned $${campaign.reward_per_share}! Rewards will be sent to your wallet.`,
-        });
-      } catch (error: any) {
-        console.error('Error recording share:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Could not record your share',
-          variant: 'destructive',
-        });
-      }
-    }, 3000);
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+    
+    window.open(twitterUrl, "_blank", "width=550,height=420");
+    
+    // Show verification dialog
+    setShowVerifyDialog(true);
   };
 
   if (!campaign) {
     return null;
   }
 
-  const remainingBudget = Number(campaign.total_budget) - Number(campaign.spent_budget);
-  const remainingShares = Math.floor(remainingBudget / Number(campaign.reward_per_share));
+  const remainingShares = campaign.max_shares_per_user ? campaign.max_shares_per_user - userShares : "Unlimited";
 
   return (
-    <div className="flex items-center gap-2">
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="gap-2">
-            <Share2 className="h-4 w-4" />
-            Share & Earn ${campaign.reward_per_share}
-          </Button>
-        </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Share & Earn Rewards</DialogTitle>
-          <DialogDescription>
-            Share this stream on Twitter/X and earn crypto rewards!
-          </DialogDescription>
-        </DialogHeader>
-
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Reward per share:</span>
-            <div className="flex items-center gap-1 font-semibold">
-              <DollarSign className="h-4 w-4" />
-              {campaign.reward_per_share}
+    <>
+      <Card className="w-full">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share & Earn Campaign
+            </CardTitle>
+            <CardDescription>
+              Earn {campaign.reward_per_share} SOL for each share
+            </CardDescription>
+          </div>
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Sharing Campaign?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this sharing campaign. Users will no longer be able to earn rewards for sharing this stream.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteCampaign} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Reward per Share</p>
+              <p className="text-2xl font-bold">{campaign.reward_per_share} SOL</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Your Shares</p>
+              <p className="text-2xl font-bold">{userShares}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Total Earned</p>
+              <p className="text-2xl font-bold">{totalEarned.toFixed(4)} SOL</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Remaining Shares</p>
+              <p className="text-2xl font-bold">{remainingShares}</p>
             </div>
           </div>
 
-          {campaign.max_shares_per_user && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Your shares:</span>
-              <span className="font-semibold">
-                {userShares} / {campaign.max_shares_per_user}
-              </span>
-            </div>
+          {unclaimedEarnings > 0 && (
+            <ClaimShareRewards 
+              campaignId={campaign.id}
+              unclaimedAmount={unclaimedEarnings}
+              onClaimSuccess={() => {
+                setUnclaimedEarnings(0);
+              }}
+            />
           )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Your total earned:</span>
-            <div className="flex items-center gap-1 font-semibold text-green-600">
-              <DollarSign className="h-4 w-4" />
-              {totalEarned.toFixed(3)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Shares remaining:</span>
-            <span className="font-semibold">{remainingShares}</span>
-          </div>
+          <Button 
+            onClick={handleShare} 
+            className="w-full"
+            disabled={!hasWallet || (campaign.max_shares_per_user && userShares >= campaign.max_shares_per_user)}
+          >
+            <Twitter className="mr-2 h-4 w-4" />
+            Share on Twitter/X
+          </Button>
 
           {!hasWallet && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <Wallet className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-600">
-                Connect wallet to receive rewards
-              </span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+              <Wallet className="h-4 w-4" />
+              <p>Connect your wallet to start earning rewards</p>
             </div>
           )}
-        </Card>
+        </CardContent>
+      </Card>
 
-        <Button
-          onClick={handleShare}
-          disabled={!hasWallet || (campaign.max_shares_per_user && userShares >= campaign.max_shares_per_user)}
-          className="w-full gap-2"
-        >
-          <Twitter className="h-4 w-4" />
-          Share on Twitter/X
-        </Button>
-      </DialogContent>
-    </Dialog>
-    
-    {isAdmin && (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this sharing campaign? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCampaign} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    )}
-  </div>
+      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Your Share</DialogTitle>
+            <DialogDescription>
+              Enter your Twitter/X handle to verify your share and earn rewards. Each Twitter account can only share once per campaign.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="twitterHandle">Twitter/X Handle</Label>
+              <Input
+                id="twitterHandle"
+                placeholder="@yourhandle or yourhandle"
+                value={twitterHandle}
+                onChange={(e) => setTwitterHandle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
+              />
+              <p className="text-xs text-muted-foreground">
+                This ensures you can only earn rewards once per campaign from each Twitter account.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowVerifyDialog(false)} disabled={isVerifying}>
+              Cancel
+            </Button>
+            <Button onClick={handleVerifyShare} disabled={isVerifying || !twitterHandle.trim()}>
+              {isVerifying ? "Verifying..." : "Verify & Earn"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-};
+}

@@ -807,6 +807,7 @@ export type Database = {
         Row: {
           campaign_id: string
           id: string
+          is_claimed: boolean
           paid_at: string | null
           reward_amount: number
           share_platform: string
@@ -814,11 +815,14 @@ export type Database = {
           shared_at: string
           status: string
           transaction_signature: string | null
+          twitter_handle: string | null
           user_id: string
+          verified_at: string | null
         }
         Insert: {
           campaign_id: string
           id?: string
+          is_claimed?: boolean
           paid_at?: string | null
           reward_amount: number
           share_platform?: string
@@ -826,11 +830,14 @@ export type Database = {
           shared_at?: string
           status?: string
           transaction_signature?: string | null
+          twitter_handle?: string | null
           user_id: string
+          verified_at?: string | null
         }
         Update: {
           campaign_id?: string
           id?: string
+          is_claimed?: boolean
           paid_at?: string | null
           reward_amount?: number
           share_platform?: string
@@ -838,7 +845,9 @@ export type Database = {
           shared_at?: string
           status?: string
           transaction_signature?: string | null
+          twitter_handle?: string | null
           user_id?: string
+          verified_at?: string | null
         }
         Relationships: [
           {
