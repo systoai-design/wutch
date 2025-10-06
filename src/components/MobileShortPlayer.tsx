@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
@@ -7,6 +7,7 @@ import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
+import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -129,14 +130,12 @@ export function MobileShortPlayer({
       />
 
       {/* Mute/Unmute Button - Top Right */}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-black/70 text-white"
+      <button
         onClick={onToggleMute}
+        className="absolute top-4 right-4 z-30 rounded-full p-2.5 bg-black/50 hover:bg-black/60 text-white backdrop-blur-sm transition-all shadow-lg"
       >
-        {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-      </Button>
+        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
@@ -175,20 +174,20 @@ export function MobileShortPlayer({
         </div>
       </div>
 
-      {/* Right Side Actions */}
-      <div className="absolute right-4 bottom-24 z-10 flex flex-col gap-6">
+      {/* Right Side Actions - Vertically Centered */}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-5">
         {/* Like */}
         <button
           onClick={toggleLike}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className={`p-3 rounded-full ${isLiked ? 'bg-red-500' : 'bg-black/50'}`}>
+          <div className={`p-3.5 rounded-full shadow-lg backdrop-blur-sm ${isLiked ? 'bg-primary/90 scale-105' : 'bg-black/50'}`}>
             <Heart
               className={`h-7 w-7 ${isLiked ? 'fill-white text-white' : 'text-white'}`}
             />
           </div>
-          <span className="text-white text-xs font-semibold">
-            {likeCount > 0 ? likeCount : ''}
+          <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            {likeCount > 0 ? formatNumber(likeCount) : ''}
           </span>
         </button>
 
@@ -197,11 +196,11 @@ export function MobileShortPlayer({
           onClick={onOpenComments}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-3 rounded-full bg-black/50">
+          <div className="p-3.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
             <MessageCircle className="h-7 w-7 text-white" />
           </div>
-          <span className="text-white text-xs font-semibold">
-            {short.commentCount && short.commentCount > 0 ? short.commentCount : ''}
+          <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
           </span>
         </button>
 
@@ -210,7 +209,7 @@ export function MobileShortPlayer({
           onClick={onShare}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-3 rounded-full bg-black/50">
+          <div className="p-3.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
             <Share2 className="h-7 w-7 text-white" />
           </div>
         </button>
@@ -221,8 +220,8 @@ export function MobileShortPlayer({
             onClick={onOpenDonation}
             className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
           >
-            <div className="p-3 rounded-full bg-primary">
-              <DollarSign className="h-7 w-7 text-primary-foreground" />
+            <div className="p-3.5 rounded-full bg-primary/90 hover:bg-primary shadow-lg backdrop-blur-sm">
+              <Wallet className="h-7 w-7 text-primary-foreground" />
             </div>
           </button>
         )}

@@ -39,12 +39,13 @@ export function ShortVideoModal({
 }: ShortVideoModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume] = useState(100);
+  const [volume, setVolume] = useState(0); // Start muted for autoplay
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(false);
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog: showLikeGuestDialog, setShowGuestDialog: setShowLikeGuestDialog } = useShortVideoLike(short?.id || '');
   const { isFollowing, isLoading: followLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = useFollow(short?.user_id || '');
@@ -77,10 +78,13 @@ export function ShortVideoModal({
     };
   }, [volume, short]);
 
-  // Auto-play when modal opens
+  // Auto-play when modal opens (muted for autoplay to work)
   useEffect(() => {
     if (isOpen && videoRef.current) {
-      videoRef.current.play().catch(e => console.log('Autoplay prevented:', e));
+      videoRef.current.muted = true;
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(e => console.log('Autoplay prevented:', e));
     }
   }, [isOpen, short]);
 
@@ -103,6 +107,7 @@ export function ShortVideoModal({
     setVolume(newVolume);
     if (videoRef.current) {
       videoRef.current.volume = newVolume / 100;
+      videoRef.current.muted = newVolume === 0;
     }
   };
 
@@ -160,95 +165,96 @@ export function ShortVideoModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] md:max-w-2xl h-[95vh] md:h-auto p-0 bg-black border-none">
-        <div className="relative w-full h-full flex items-center justify-center bg-black">
-          {/* Video Container */}
-          <div className="relative w-full h-full max-w-md mx-auto">
+      <DialogContent className="max-w-[95vw] md:max-w-4xl h-[95vh] p-0 bg-black border-none">
+        <div 
+          className="relative w-full h-full flex items-center justify-center bg-black"
+          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => setShowControls(false)}
+          onClick={togglePlayPause}
+        >
+          {/* Video Container - Centered */}
+          <div className="relative h-full max-w-md mx-auto flex items-center">
             <video
               ref={videoRef}
               src={short.video_url}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain max-h-[95vh]"
               loop
               playsInline
+              muted
             />
 
-            {/* Fullscreen & Menu - Top Right */}
-            <div className="hidden md:flex absolute top-4 right-4 items-start gap-2 z-20">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleFullscreen}
-                className="rounded-full h-10 w-10 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all"
-              >
-                <Maximize className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-10 w-10 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Video Controls - Top Left */}
-            <div className="absolute top-4 left-4 flex items-start gap-2 z-20">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={togglePlayPause}
-                className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
-              >
-                {isPlaying ? (
-                  <Pause className="h-7 w-7" />
-                ) : (
-                  <Play className="h-7 w-7 ml-0.5" />
-                )}
-              </Button>
-
+            {/* Play/Pause Overlay - Center (only when paused or on hover) */}
+            {(!isPlaying || showControls) && (
               <div 
-                className="relative flex items-center"
+                className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlayPause();
+                }}
+              >
+                <div className="pointer-events-auto">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={togglePlayPause}
+                    className="rounded-full h-20 w-20 bg-black/60 hover:bg-black/70 text-white backdrop-blur-md transition-all shadow-2xl"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-10 w-10" />
+                    ) : (
+                      <Play className="h-10 w-10 ml-1" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Volume Control - Top Left (on hover) */}
+            {showControls && (
+              <div 
+                className="absolute top-4 left-4 flex items-center gap-2 z-20"
                 onMouseEnter={() => setShowVolumeSlider(true)}
                 onMouseLeave={() => setShowVolumeSlider(false)}
+                onClick={(e) => e.stopPropagation()}
               >
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleVolumeChange(volume === 0 ? [100] : [0])}
-                  className="rounded-full h-14 w-14 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all shadow-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVolumeChange(volume === 0 ? [100] : [0]);
+                  }}
+                  className="rounded-full h-12 w-12 bg-black/60 hover:bg-black/70 text-white backdrop-blur-md transition-all"
                 >
                   {volume === 0 ? (
-                    <VolumeX className="h-7 w-7" />
+                    <VolumeX className="h-6 w-6" />
                   ) : (
-                    <Volume2 className="h-7 w-7" />
+                    <Volume2 className="h-6 w-6" />
                   )}
                 </Button>
                 
-                <div 
-                  className={`absolute left-16 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out ${
-                    showVolumeSlider ? 'opacity-100 w-28' : 'opacity-0 w-0 pointer-events-none'
-                  }`}
-                >
-                  <div className="bg-white/30 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
+                {showVolumeSlider && (
+                  <div className="bg-black/60 backdrop-blur-md rounded-full px-4 py-2">
                     <Slider
                       value={[volume]}
                       onValueChange={handleVolumeChange}
                       max={100}
                       step={1}
-                      className="w-full"
+                      className="w-24"
                     />
                   </div>
-                </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Progress Bar */}
+            {/* Progress Bar - Bottom */}
             <div 
               className="absolute bottom-0 left-0 right-0 z-20 transition-all duration-200"
               onMouseEnter={() => setIsHoveringProgress(true)}
               onMouseLeave={() => setIsHoveringProgress(false)}
+              onClick={(e) => e.stopPropagation()}
             >
-              {isHoveringProgress ? (
+              {isHoveringProgress || showControls ? (
                 <div className="bg-gradient-to-t from-black/80 to-transparent pt-8 pb-2 px-4">
                   <div className="max-w-md mx-auto">
                     <div className="flex items-center justify-between text-white text-xs mb-2 font-medium">
@@ -260,14 +266,14 @@ export function ShortVideoModal({
                       onValueChange={handleProgressChange}
                       max={duration || 100}
                       step={0.1}
-                      className="w-full [&_.bg-primary]:bg-red-500 cursor-pointer"
+                      className="w-full cursor-pointer"
                     />
                   </div>
                 </div>
               ) : (
-                <div className="relative w-full h-0.5 bg-white/30">
+                <div className="relative w-full h-1 bg-white/20">
                   <div 
-                    className="absolute top-0 left-0 h-full bg-red-500 transition-all"
+                    className="absolute top-0 left-0 h-full bg-primary transition-all"
                     style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
                   />
                 </div>
@@ -275,143 +281,137 @@ export function ShortVideoModal({
             </div>
           </div>
 
-          {/* Bottom Overlay - Info & Actions */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-            <div className="max-w-md mx-auto">
-              <div className="flex items-end justify-between gap-4">
-                {/* Creator Info */}
-                <div className="flex-1 text-white">
-                  <div className="flex items-center gap-3 mb-3 bg-black/60 backdrop-blur-md rounded-2xl p-3 md:p-4">
-                    {short.profiles?.avatar_url && (
-                      <img
-                        src={short.profiles.avatar_url}
-                        alt={short.profiles.username || 'User'}
-                        className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base md:text-lg truncate">
-                        {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
-                      </p>
-                      <p className="text-sm text-white/70 truncate">
-                        @{short.profiles?.username || 'anonymous'}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={toggleFollow}
-                      disabled={followLoading}
-                      size="sm"
-                      variant={isFollowing ? "outline" : "default"}
-                      className={`rounded-full px-4 md:px-6 font-semibold ${
-                        isFollowing 
-                          ? 'bg-white/20 text-white border-white/40 hover:bg-white/30' 
-                          : 'bg-white text-black hover:bg-white/90'
-                      }`}
-                    >
-                      {isFollowing ? 'Subscribed' : 'Subscribe'}
-                    </Button>
-                  </div>
-                  <h3 className="font-medium text-base mb-1 line-clamp-2">{short.title}</h3>
-                  {short.description && (
-                    <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-3 md:gap-5 items-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={toggleLike}
-                      className={`rounded-full h-12 w-12 md:h-14 md:w-14 backdrop-blur-sm transition-colors ${
-                        isLiked 
-                          ? 'bg-primary/90 hover:bg-primary text-white' 
-                          : 'bg-black/40 hover:bg-black/60 text-white'
-                      }`}
-                    >
-                      <Heart className={`h-6 w-6 md:h-7 md:w-7 ${isLiked ? 'fill-current' : ''}`} />
-                    </Button>
-                    <span className="text-xs md:text-sm text-white font-medium">{likeCount}</span>
-                    <span className="hidden md:block text-xs text-white/80">Like</span>
-                  </div>
-
-                  <div className="hidden md:flex flex-col items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="rounded-full h-14 w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
-                    >
-                      <ThumbsDown className="h-7 w-7" />
-                    </Button>
-                    <span className="text-xs text-white/80">Dislike</span>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={onOpenComments}
-                      className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
-                    >
-                      <MessageCircle className="h-6 w-6 md:h-7 md:w-7" />
-                    </Button>
-                    <span className="text-xs md:text-sm text-white font-medium">{commentCount}</span>
-                    <span className="hidden md:block text-xs text-white/80">Comment</span>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={handleShare}
-                      className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
-                    >
-                      <Share2 className="h-6 w-6 md:h-7 md:w-7" />
-                    </Button>
-                    <span className="hidden md:block text-xs text-white/80">Share</span>
-                  </div>
-
-                  {short.profiles?.public_wallet_address && (
-                    <div className="flex flex-col items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
-                        onClick={onOpenDonation}
-                      >
-                        <Wallet className="h-6 w-6 md:h-7 md:w-7" />
-                      </Button>
-                      <span className="hidden md:block text-xs text-white/80">Donate</span>
-                    </div>
-                  )}
-
-                  {short.promotional_link && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-accent/90 hover:bg-accent text-white backdrop-blur-sm"
-                      asChild
-                    >
-                      <a href={short.promotional_link} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-6 w-6 md:h-7 md:w-7" />
-                      </a>
-                    </Button>
-                  )}
-
-                  {canDelete && onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-destructive/90 hover:bg-destructive text-white backdrop-blur-sm"
-                      onClick={onDelete}
-                    >
-                      <Trash2 className="h-6 w-6 md:h-7 md:w-7" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+          {/* Right Side - Vertical Action Buttons */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-30" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleLike();
+                }}
+                className={`rounded-full h-14 w-14 backdrop-blur-sm transition-colors ${
+                  isLiked 
+                    ? 'bg-primary/90 hover:bg-primary text-white' 
+                    : 'bg-black/50 hover:bg-black/60 text-white'
+                }`}
+              >
+                <Heart className={`h-7 w-7 ${isLiked ? 'fill-current' : ''}`} />
+              </Button>
+              <span className="text-sm text-white font-bold drop-shadow-lg">{likeCount}</span>
             </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenComments();
+                }}
+                className="rounded-full h-14 w-14 bg-black/50 hover:bg-black/60 text-white backdrop-blur-sm"
+              >
+                <MessageCircle className="h-7 w-7" />
+              </Button>
+              <span className="text-sm text-white font-bold drop-shadow-lg">{commentCount}</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShare();
+                }}
+                className="rounded-full h-14 w-14 bg-black/50 hover:bg-black/60 text-white backdrop-blur-sm"
+              >
+                <Share2 className="h-7 w-7" />
+              </Button>
+            </div>
+
+            {short.profiles?.public_wallet_address && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDonation();
+                }}
+                className="rounded-full h-14 w-14 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
+              >
+                <Wallet className="h-7 w-7" />
+              </Button>
+            )}
+
+            {short.promotional_link && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-14 w-14 bg-accent/90 hover:bg-accent text-white backdrop-blur-sm"
+                asChild
+                onClick={(e) => e.stopPropagation()}
+              >
+                <a href={short.promotional_link} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-7 w-7" />
+                </a>
+              </Button>
+            )}
+
+            {canDelete && onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-full h-14 w-14 bg-destructive/90 hover:bg-destructive text-white backdrop-blur-sm"
+              >
+                <Trash2 className="h-7 w-7" />
+              </Button>
+            )}
+          </div>
+
+          {/* Bottom Left - Creator Info */}
+          <div 
+            className="absolute bottom-4 left-4 max-w-sm text-white z-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              {short.profiles?.avatar_url && (
+                <img
+                  src={short.profiles.avatar_url}
+                  alt={short.profiles.username || 'User'}
+                  className="w-10 h-10 rounded-full border-2 border-white"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-base truncate drop-shadow-lg">
+                  @{short.profiles?.username || 'anonymous'}
+                </p>
+              </div>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFollow();
+                }}
+                disabled={followLoading}
+                size="sm"
+                className={`rounded-full px-5 font-semibold ${
+                  isFollowing 
+                    ? 'bg-white/20 text-white hover:bg-white/30' 
+                    : 'bg-white text-black hover:bg-white/90'
+                }`}
+              >
+                {isFollowing ? 'Subscribed' : 'Subscribe'}
+              </Button>
+            </div>
+            <h3 className="font-semibold text-base mb-1 line-clamp-2 drop-shadow-lg">{short.title}</h3>
+            {short.description && (
+              <p className="text-sm text-white/90 line-clamp-2 drop-shadow-lg">{short.description}</p>
+            )}
           </div>
         </div>
       </DialogContent>
