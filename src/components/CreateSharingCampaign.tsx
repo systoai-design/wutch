@@ -51,9 +51,10 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         throw new Error('Total budget must be greater than 0');
       }
 
-      // Calculate platform fee (5%)
-      const platformFee = totalBudget * 0.05;
-      const totalWithFee = totalBudget + platformFee;
+      // Calculate platform fee (5%) - deducted FROM the total budget
+      const totalDeposit = totalBudget;
+      const platformFee = totalDeposit * 0.05;
+      const availableForRewards = totalDeposit - platformFee;
 
       // Step 1: Check for Phantom wallet
       const solana = (window as any).solana;
@@ -67,7 +68,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
       toast({
         title: 'Preparing Deposit',
-        description: `Please approve ${totalWithFee.toFixed(4)} SOL deposit (includes 5% platform fee)...`,
+        description: `Please approve ${totalDeposit.toFixed(4)} SOL deposit (5% platform fee will be deducted)...`,
       });
 
       // Step 2: Call charge-bounty-wallet to prepare deposit transaction
@@ -77,7 +78,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         'charge-bounty-wallet',
         {
           body: {
-            amount: totalWithFee,
+            amount: totalDeposit,
             fromWalletAddress: solana.publicKey.toString(),
             toWalletAddress: ESCROW_WALLET
           }
@@ -130,7 +131,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
 
       toast({
         title: 'Campaign Created & Funded! 🎉',
-        description: `${totalWithFee.toFixed(4)} SOL deposited. Users can now earn rewards by sharing!`,
+        description: `${totalDeposit.toFixed(4)} SOL deposited. Users can now earn rewards by sharing!`,
       });
 
       setIsOpen(false);
@@ -151,9 +152,10 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
     }
   };
 
-  const estimatedShares = parseFloat(formData.totalBudget) / parseFloat(formData.rewardPerShare);
-  const platformFee = parseFloat(formData.totalBudget) * 0.05;
-  const totalCost = parseFloat(formData.totalBudget) + platformFee;
+  const totalDeposit = parseFloat(formData.totalBudget);
+  const platformFee = totalDeposit * 0.05;
+  const availableForRewards = totalDeposit - platformFee;
+  const estimatedShares = availableForRewards / parseFloat(formData.rewardPerShare);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -221,26 +223,26 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
           <Card className="p-4 bg-muted/50">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Estimated shares:</span>
-                <span className="font-semibold">
-                  {isNaN(estimatedShares) ? '0' : Math.floor(estimatedShares)}
-                </span>
+                <span className="text-muted-foreground">Total Deposit:</span>
+                <span className="font-semibold text-primary">{totalDeposit.toFixed(4)} SOL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Cost per share:</span>
+                <span className="text-muted-foreground">Platform Fee (5%):</span>
+                <span className="font-semibold">-{platformFee.toFixed(4)} SOL</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-border">
+                <span className="text-muted-foreground">Available for Rewards:</span>
+                <span className="font-semibold">{availableForRewards.toFixed(4)} SOL</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Reward per Share:</span>
                 <span className="font-semibold">{formData.rewardPerShare} SOL</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Campaign budget:</span>
-                <span className="font-semibold">{formData.totalBudget} SOL</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Platform fee (5%):</span>
-                <span className="font-semibold">{platformFee.toFixed(4)} SOL</span>
-              </div>
               <div className="flex justify-between pt-2 border-t border-border font-semibold">
-                <span>Total Deposit:</span>
-                <span className="text-primary">{totalCost.toFixed(4)} SOL</span>
+                <span>Estimated Shares:</span>
+                <span className="text-primary">
+                  {isNaN(estimatedShares) ? '0' : Math.floor(estimatedShares)}
+                </span>
               </div>
               <div className="pt-2 mt-2 border-t border-border">
                 <p className="text-xs text-muted-foreground">
