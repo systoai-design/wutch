@@ -135,21 +135,68 @@ export const WutchVideoUpload = () => {
         .from('wutch-videos')
         .getPublicUrl(videoPath);
 
-      // Upload thumbnail if provided
+      // Generate thumbnail from video if not provided
       let thumbnailUrl = null;
-      if (thumbnailFile) {
-        const thumbnailPath = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+      let thumbnailToUpload = thumbnailFile;
+      
+      if (!thumbnailToUpload) {
+        // Generate thumbnail from first frame of video
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        thumbnailToUpload = await new Promise<File>((resolve, reject) => {
+          video.onloadeddata = () => {
+            video.currentTime = 1; // Capture at 1 second
+          };
+          
+          video.onseeked = () => {
+            if (ctx) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const file = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
+                  resolve(file);
+                } else {
+                  reject(new Error('Failed to generate thumbnail'));
+                }
+              }, 'image/jpeg', 0.85);
+            } else {
+              reject(new Error('Canvas context not available'));
+            }
+            
+            URL.revokeObjectURL(video.src);
+          };
+          
+          video.onerror = () => {
+            URL.revokeObjectURL(video.src);
+            reject(new Error('Failed to load video for thumbnail'));
+          };
+          
+          video.src = URL.createObjectURL(videoFile);
+        });
+      }
+      
+      // Upload thumbnail
+      if (thumbnailToUpload) {
+        const thumbnailPath = `${user.id}/${Date.now()}-${thumbnailToUpload.name}`;
         const { error: thumbnailError } = await supabase.storage
           .from('wutch-video-thumbnails')
-          .upload(thumbnailPath, thumbnailFile);
+          .upload(thumbnailPath, thumbnailToUpload);
 
-        if (thumbnailError) throw thumbnailError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('wutch-video-thumbnails')
-          .getPublicUrl(thumbnailPath);
-        
-        thumbnailUrl = publicUrl;
+        if (!thumbnailError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('wutch-video-thumbnails')
+            .getPublicUrl(thumbnailPath);
+          thumbnailUrl = publicUrl;
+        }
       }
 
       // Get video duration

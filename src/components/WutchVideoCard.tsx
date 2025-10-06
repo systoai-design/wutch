@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, ThumbsUp } from 'lucide-react';
@@ -10,6 +11,7 @@ interface WutchVideoCardProps {
     id: string;
     title: string;
     thumbnail_url?: string;
+    video_url: string;
     duration?: number;
     view_count: number;
     like_count: number;
@@ -39,16 +41,76 @@ const formatViewCount = (count: number) => {
 };
 
 export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (videoRef.current && video.video_url) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+        // Stop after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }, 10000);
+      }).catch(() => {
+        // Ignore autoplay failures
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setIsPlaying(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
   return (
-    <Link to={`/wutch/${video.id}`} className={cn("group block", className)}>
+    <Link 
+      to={`/wutch/${video.id}`} 
+      className={cn("group block", className)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <div className="space-y-3">
-        {/* Thumbnail */}
+        {/* Thumbnail/Video */}
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-          {video.thumbnail_url ? (
+          {!isPlaying && video.thumbnail_url ? (
             <img
               src={video.thumbnail_url}
               alt={video.title}
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            />
+          ) : video.video_url ? (
+            <video
+              ref={videoRef}
+              src={video.video_url}
+              className="h-full w-full object-cover"
+              preload={isHovering ? "metadata" : "none"}
+              playsInline
+              muted
+              loop={false}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
@@ -57,7 +119,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
           )}
           
           {/* Duration badge */}
-          {video.duration && (
+          {video.duration && !isPlaying && (
             <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
               {formatDuration(video.duration)}
             </div>

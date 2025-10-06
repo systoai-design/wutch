@@ -26,7 +26,9 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
     'username' | 'display_name' | 'avatar_url'>;
 };
 
-type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
+type WutchVideo = Pick<Database['public']['Tables']['wutch_videos']['Row'], 
+  'id' | 'title' | 'thumbnail_url' | 'video_url' | 'duration' | 'view_count' | 'like_count' | 'created_at' | 'category' | 'user_id' | 'status'
+> & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
     'username' | 'display_name' | 'avatar_url'>;
   trending_score?: number;
@@ -118,7 +120,7 @@ const Home = () => {
       // Fetch wutch videos (long-form) with separate profile query
       const { data: wutchData } = await supabase
         .from('wutch_videos')
-        .select('*')
+        .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(12);

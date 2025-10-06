@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/utils/formatters';
@@ -15,6 +16,51 @@ interface ShortCardProps {
 }
 
 export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) {
+  const [isHovering, setIsHovering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (videoRef.current && short.video_url) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+        // Stop after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }, 10000);
+      }).catch(() => {
+        // Ignore autoplay failures
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setIsPlaying(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
   const handleClick = () => {
     if (onClick) {
       onClick();
@@ -28,25 +74,29 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
     <Card 
       className="group relative overflow-hidden cursor-pointer transition-transform hover:scale-[1.02] bg-card"
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Aspect Ratio Container (9:16 for vertical video) */}
       <div className="relative aspect-[9/16] bg-muted">
         {/* Thumbnail or Video Preview */}
-        {short.thumbnail_url ? (
+        {!isPlaying && short.thumbnail_url ? (
           <img
             src={short.thumbnail_url}
             alt={short.title}
             className="w-full h-full object-cover"
           />
-        ) : (
+        ) : short.video_url ? (
           <video
+            ref={videoRef}
             src={short.video_url}
             className="w-full h-full object-cover"
-            muted
+            preload={isHovering ? "metadata" : "none"}
             playsInline
-            preload="metadata"
+            muted
+            loop={false}
           />
-        )}
+        ) : null}
         
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
