@@ -21,6 +21,8 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isHoveringVolume, setIsHoveringVolume] = useState(false);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -91,6 +93,26 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
     }
   };
 
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
@@ -106,7 +128,7 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
     <div
       ref={containerRef}
       className={cn("relative bg-black rounded-lg overflow-hidden group", className)}
-      onMouseEnter={() => setShowControls(true)}
+      onMouseMove={handleMouseMove}
       onMouseLeave={() => setShowControls(false)}
     >
       <video
@@ -116,55 +138,76 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
         onClick={togglePlay}
       />
 
+      {/* Center play/pause overlay */}
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-20 w-20 rounded-full bg-black/60 hover:bg-black/70 backdrop-blur-sm transition-all"
+            onClick={togglePlay}
+          >
+            <Play className="h-10 w-10 text-white ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Thin progress bar at bottom (always visible) */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-30">
+        <div 
+          className="h-full bg-primary transition-all"
+          style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+        />
+      </div>
+
       {/* Controls overlay */}
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent transition-opacity",
-          showControls || !isPlaying ? "opacity-100" : "opacity-0"
+          "absolute inset-0 transition-opacity pointer-events-none",
+          showControls ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Center play button */}
-        {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-16 w-16 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-              onClick={togglePlay}
-            >
-              <Play className="h-8 w-8 text-white fill-white" />
-            </Button>
-          </div>
-        )}
 
         {/* Bottom controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-          {/* Progress bar */}
-          <Slider
-            value={[currentTime]}
-            max={duration || 100}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="cursor-pointer"
-          />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 space-y-3 pointer-events-auto">
+          {/* Interactive progress bar */}
+          <div 
+            className="relative group/progress cursor-pointer"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pos = (e.clientX - rect.left) / rect.width;
+              handleSeek([pos * duration]);
+            }}
+          >
+            <div className="h-1 bg-white/30 rounded-full overflow-hidden group-hover/progress:h-1.5 transition-all">
+              <div 
+                className="h-full bg-primary"
+                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Play/Pause */}
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+              className="h-9 w-9 text-white hover:text-white hover:bg-white/20 shrink-0"
               onClick={togglePlay}
             >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
             </Button>
 
             {/* Volume */}
-            <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-2"
+              onMouseEnter={() => setIsHoveringVolume(true)}
+              onMouseLeave={() => setIsHoveringVolume(false)}
+            >
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+                className="h-9 w-9 text-white hover:text-white hover:bg-white/20 shrink-0"
                 onClick={toggleMute}
               >
                 {isMuted || volume === 0 ? (
@@ -173,17 +216,19 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
                   <Volume2 className="h-5 w-5" />
                 )}
               </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                max={1}
-                step={0.01}
-                onValueChange={handleVolumeChange}
-                className="w-20 cursor-pointer"
-              />
+              {isHoveringVolume && (
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={1}
+                  step={0.01}
+                  onValueChange={handleVolumeChange}
+                  className="w-20 cursor-pointer"
+                />
+              )}
             </div>
 
             {/* Time */}
-            <div className="text-white text-sm">
+            <div className="text-white text-sm font-medium">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
 
@@ -193,7 +238,7 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+              className="h-9 w-9 text-white hover:text-white hover:bg-white/20 shrink-0"
               onClick={toggleFullscreen}
             >
               {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}

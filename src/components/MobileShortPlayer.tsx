@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
@@ -175,15 +175,15 @@ export function MobileShortPlayer({
       </div>
 
       {/* Right Side Actions - Vertically Centered */}
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-5">
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
         {/* Like */}
         <button
           onClick={toggleLike}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className={`p-3.5 rounded-full shadow-lg backdrop-blur-sm ${isLiked ? 'bg-primary/90 scale-105' : 'bg-black/50'}`}>
+          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${isLiked ? 'bg-primary/90 scale-105' : 'bg-black/50'}`}>
             <Heart
-              className={`h-7 w-7 ${isLiked ? 'fill-white text-white' : 'text-white'}`}
+              className={`h-6 w-6 ${isLiked ? 'fill-white text-white' : 'text-white'}`}
             />
           </div>
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
@@ -196,8 +196,8 @@ export function MobileShortPlayer({
           onClick={onOpenComments}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-3.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
-            <MessageCircle className="h-7 w-7 text-white" />
+          <div className="p-2.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
+            <MessageCircle className="h-6 w-6 text-white" />
           </div>
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
@@ -209,10 +209,24 @@ export function MobileShortPlayer({
           onClick={onShare}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-3.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
-            <Share2 className="h-7 w-7 text-white" />
+          <div className="p-2.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
+            <Share2 className="h-6 w-6 text-white" />
           </div>
         </button>
+
+        {/* Promotional Link */}
+        {short.promotional_link && (
+          <a
+            href={short.promotional_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+          >
+            <div className="p-2.5 rounded-full bg-accent/90 hover:bg-accent shadow-lg backdrop-blur-sm">
+              <ExternalLink className="h-6 w-6 text-white" />
+            </div>
+          </a>
+        )}
 
         {/* Donate */}
         {short.profiles?.public_wallet_address && (
@@ -220,8 +234,8 @@ export function MobileShortPlayer({
             onClick={onOpenDonation}
             className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
           >
-            <div className="p-3.5 rounded-full bg-primary/90 hover:bg-primary shadow-lg backdrop-blur-sm">
-              <Wallet className="h-7 w-7 text-primary-foreground" />
+            <div className="p-2.5 rounded-full bg-primary/90 hover:bg-primary shadow-lg backdrop-blur-sm">
+              <Wallet className="h-6 w-6 text-primary-foreground" />
             </div>
           </button>
         )}

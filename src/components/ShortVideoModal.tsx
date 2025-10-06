@@ -130,6 +130,7 @@ export function ShortVideoModal({
       id: short.id,
       title: short.title,
       creatorName: short.profiles?.display_name || short.profiles?.username || 'Creator',
+      username: short.profiles?.username,
     });
     toast({
       title: "Opening Twitter",

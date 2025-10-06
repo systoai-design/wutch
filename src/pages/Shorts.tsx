@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useShortsQuery } from '@/hooks/useShortsQuery';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
+import { shareShortToTwitter } from '@/utils/shareUtils';
+import { generateContentUrl } from '@/utils/urlHelpers';
 import type { Database } from '@/integrations/supabase/types';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -76,24 +78,40 @@ const Shorts = () => {
     }
   };
 
-  const handleShare = (short: ShortVideo) => {
-    const shareUrl = `${window.location.origin}/shorts?id=${short.id}`;
-    const shareText = `Check out this short: ${short.title}`;
-    
+  const handleShare = async (short: ShortVideo) => {
     if (navigator.share) {
-      navigator.share({
-        title: short.title,
-        text: shareText,
-        url: shareUrl,
-      }).catch(() => {
-        // User cancelled or error
-      });
+      try {
+        const url = short.profiles?.username 
+          ? `${window.location.origin}${generateContentUrl('shorts', { 
+              id: short.id, 
+              title: short.title, 
+              profiles: { username: short.profiles.username } 
+            })}`
+          : `${window.location.origin}/shorts?id=${short.id}`;
+        
+        await navigator.share({
+          title: short.title,
+          text: short.description || `Check out this short by ${short.profiles?.display_name || short.profiles?.username}`,
+          url,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          // Fallback to Twitter share
+          shareShortToTwitter({
+            id: short.id,
+            title: short.title,
+            creatorName: short.profiles?.display_name || short.profiles?.username || 'Creator',
+            username: short.profiles?.username,
+          });
+        }
+      }
     } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: 'Link copied!',
-        description: 'Share link copied to clipboard',
+      // Fallback to Twitter share
+      shareShortToTwitter({
+        id: short.id,
+        title: short.title,
+        creatorName: short.profiles?.display_name || short.profiles?.username || 'Creator',
+        username: short.profiles?.username,
       });
     }
   };

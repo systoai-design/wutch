@@ -28,6 +28,7 @@ const WutchVideoDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
+  const [channelVideos, setChannelVideos] = useState<any[]>([]);
   const [relatedShorts, setRelatedShorts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [watchTime, setWatchTime] = useState(0);
@@ -69,12 +70,37 @@ const WutchVideoDetail = () => {
 
       setCreator(profileData);
 
-      // Fetch related videos
+      // Fetch videos from the same channel
+      const { data: channelData } = await supabase
+        .from('wutch_videos')
+        .select('*')
+        .eq('user_id', videoData.user_id)
+        .neq('id', id)
+        .eq('status', 'published')
+        .limit(10);
+
+      if (channelData) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .eq('id', videoData.user_id);
+
+        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        const videosWithProfiles = channelData.map((v: any) => ({
+          ...v,
+          profiles: profilesMap.get(v.user_id),
+        }));
+        
+        setChannelVideos(videosWithProfiles);
+      }
+
+      // Fetch related videos (same category)
       const { data: relatedData } = await supabase
         .from('wutch_videos')
         .select('*')
         .neq('id', id)
         .eq('status', 'published')
+        .eq('category', videoData.category || '')
         .limit(10);
 
       if (relatedData) {
@@ -340,17 +366,27 @@ const WutchVideoDetail = () => {
               </TabsContent>
               
               <TabsContent value="channel" className="space-y-4 mt-4">
-                {relatedVideos
-                  .filter((v) => v.user_id === video.user_id)
-                  .map((video) => (
+                {channelVideos.length > 0 ? (
+                  channelVideos.map((video) => (
                     <WutchVideoCard key={video.id} video={video} className="w-full" />
-                  ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No other videos from this channel
+                  </p>
+                )}
               </TabsContent>
               
               <TabsContent value="related" className="space-y-4 mt-4">
-                {relatedVideos.map((video) => (
-                  <WutchVideoCard key={video.id} video={video} className="w-full" />
-                ))}
+                {relatedVideos.length > 0 ? (
+                  relatedVideos.map((video) => (
+                    <WutchVideoCard key={video.id} video={video} className="w-full" />
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No related videos found
+                  </p>
+                )}
               </TabsContent>
             </Tabs>
           </div>
