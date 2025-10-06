@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX, X, Maximize, MoreVertical, ThumbsDown } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, ExternalLink, Play, Pause, Volume2, VolumeX, X, Maximize, MoreVertical, ThumbsDown, Trash2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
@@ -14,8 +14,9 @@ import { useFollow } from '@/hooks/useFollow';
 import { useAdmin } from '@/hooks/useAdmin';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { toast } from '@/hooks/use-toast';
-import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ShortCard } from '@/components/ShortCard';
+import { ShortVideoModal } from '@/components/ShortVideoModal';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -32,10 +33,23 @@ const Shorts = () => {
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [selectedShort, setSelectedShort] = useState<ShortVideo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   const touchStartRef = useRef(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     document.title = 'Shorts - Quick Videos | Wutch';
@@ -199,7 +213,7 @@ const Shorts = () => {
   }, [shorts]);
 
   const handleDeleteShort = async () => {
-    const short = shorts[currentIndex];
+    const short = isMobile ? shorts[currentIndex] : selectedShort;
     if (!short) return;
 
     try {
@@ -215,13 +229,19 @@ const Shorts = () => {
         description: "Short video deleted successfully",
       });
 
-      // Remove from local state and navigate
+      // Remove from local state
       const newShorts = shorts.filter(s => s.id !== short.id);
       setShorts(newShorts);
       
-      // Stay on shorts page, adjust index if needed
-      if (newShorts.length > 0 && currentIndex >= newShorts.length) {
-        setCurrentIndex(newShorts.length - 1);
+      // Close modal if in desktop mode
+      if (!isMobile) {
+        setIsModalOpen(false);
+        setSelectedShort(null);
+      } else {
+        // Adjust index if needed on mobile
+        if (newShorts.length > 0 && currentIndex >= newShorts.length) {
+          setCurrentIndex(newShorts.length - 1);
+        }
       }
     } catch (error: any) {
       toast({
@@ -232,6 +252,11 @@ const Shorts = () => {
     }
     
     setDeleteDialogOpen(false);
+  };
+
+  const handleCardClick = (short: ShortVideo) => {
+    setSelectedShort(short);
+    setIsModalOpen(true);
   };
 
   const navigateShort = (direction: number) => {
@@ -277,10 +302,25 @@ const Shorts = () => {
 
   return (
     <div className="relative w-full">
+      {/* Desktop Grid Layout */}
+      <div className="hidden md:block container mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {shorts.map((short) => (
+            <ShortCard
+              key={short.id}
+              short={short}
+              commentCount={commentCounts[short.id] || 0}
+              onClick={() => handleCardClick(short)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile Vertical Scroll Layout */}
       <div 
         ref={containerRef}
-        className={`h-[calc(100vh-4rem)] overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scrollbar-hide w-full transition-all duration-300 ease-in-out ${
-          isCommentsOpen ? 'md:pr-[400px]' : ''
+        className={`md:hidden h-[calc(100vh-4rem)] overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scrollbar-hide w-full transition-all duration-300 ease-in-out ${
+          isCommentsOpen ? 'pr-0' : ''
         }`}
         style={{ scrollBehavior: 'smooth' }}
       >
@@ -307,9 +347,10 @@ const Shorts = () => {
           />
         );
       })}
+      </div>
 
-      {/* Mobile Comments Sheet - Only on mobile */}
-      {shorts[currentIndex] && (
+      {/* Mobile Comments Sheet */}
+      {isMobile && shorts[currentIndex] && (
         <>
           <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen} modal={false}>
             <SheetContent side="bottom" className="h-[65vh] md:hidden pointer-events-auto">
@@ -325,9 +366,41 @@ const Shorts = () => {
             </SheetContent>
           </Sheet>
 
-          {/* Desktop Comments Sidebar - Only on desktop */}
+          {/* Mobile Donation Modal */}
+          {shorts[currentIndex].profiles?.public_wallet_address && (
+            <DonationModal
+              isOpen={isDonationModalOpen}
+              onClose={() => setIsDonationModalOpen(false)}
+              streamerName={shorts[currentIndex].profiles?.display_name || shorts[currentIndex].profiles?.username || 'Creator'}
+              walletAddress={shorts[currentIndex].profiles.public_wallet_address}
+              contentId={shorts[currentIndex].id}
+              contentType="shortvideo"
+              recipientUserId={shorts[currentIndex].user_id}
+            />
+          )}
+        </>
+      )}
+
+      {/* Desktop Modal & Comments Sidebar */}
+      {!isMobile && selectedShort && (
+        <>
+          <ShortVideoModal
+            short={selectedShort}
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedShort(null);
+            }}
+            onOpenDonation={() => setIsDonationModalOpen(true)}
+            onOpenComments={() => setIsCommentsOpen(true)}
+            onDelete={() => setDeleteDialogOpen(true)}
+            commentCount={commentCounts[selectedShort.id] || 0}
+            canDelete={user?.id === selectedShort.user_id || isAdmin}
+          />
+
+          {/* Desktop Comments Sidebar */}
           <div 
-            className={`hidden md:block fixed right-0 top-16 bottom-0 w-[400px] bg-background border-l shadow-2xl z-40 transition-transform duration-300 ease-in-out ${
+            className={`fixed right-0 top-16 bottom-0 w-[400px] bg-background border-l shadow-2xl z-50 transition-transform duration-300 ease-in-out ${
               isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
@@ -343,22 +416,22 @@ const Shorts = () => {
             </div>
             <div className="h-[calc(100%-64px)]">
               <CommentsSection
-                contentId={shorts[currentIndex].id}
+                contentId={selectedShort.id}
                 contentType="shortvideo"
               />
             </div>
           </div>
 
-          {/* Donation Modal */}
-          {shorts[currentIndex].profiles?.public_wallet_address && (
+          {/* Desktop Donation Modal */}
+          {selectedShort.profiles?.public_wallet_address && (
             <DonationModal
               isOpen={isDonationModalOpen}
               onClose={() => setIsDonationModalOpen(false)}
-              streamerName={shorts[currentIndex].profiles?.display_name || shorts[currentIndex].profiles?.username || 'Creator'}
-              walletAddress={shorts[currentIndex].profiles.public_wallet_address}
-              contentId={shorts[currentIndex].id}
+              streamerName={selectedShort.profiles?.display_name || selectedShort.profiles?.username || 'Creator'}
+              walletAddress={selectedShort.profiles.public_wallet_address}
+              contentId={selectedShort.id}
               contentType="shortvideo"
-              recipientUserId={shorts[currentIndex].user_id}
+              recipientUserId={selectedShort.user_id}
             />
           )}
         </>
@@ -371,7 +444,8 @@ const Shorts = () => {
             <AlertDialogTitle>Delete Short Video</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this short? This action cannot be undone.
-              {shorts[currentIndex] && isAdmin && user?.id !== shorts[currentIndex].user_id && " (Admin delete)"}
+              {((isMobile && shorts[currentIndex] && isAdmin && user?.id !== shorts[currentIndex].user_id) ||
+                (!isMobile && selectedShort && isAdmin && user?.id !== selectedShort.user_id)) && " (Admin delete)"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -380,7 +454,6 @@ const Shorts = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, Loader2 } from "lucide-react";
 import StreamCard from "@/components/StreamCard";
-import ShortCard from "@/components/ShortCard";
+import { ShortCard } from "@/components/ShortCard";
 import { CreatorCard } from "@/components/CreatorCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";

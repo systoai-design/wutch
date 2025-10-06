@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import StreamCard from '@/components/StreamCard';
-import ShortCard from '@/components/ShortCard';
+import { ShortCard } from '@/components/ShortCard';
 import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
