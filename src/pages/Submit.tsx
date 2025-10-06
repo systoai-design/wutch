@@ -399,9 +399,10 @@ const Submit = () => {
         </div>
 
         <Tabs defaultValue="livestream" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="livestream">Submit Livestream</TabsTrigger>
-            <TabsTrigger value="short">Upload Short Video</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="livestream">Submit Stream</TabsTrigger>
+            <TabsTrigger value="video">Upload Video</TabsTrigger>
+            <TabsTrigger value="short">Upload Short</TabsTrigger>
           </TabsList>
 
           <TabsContent value="livestream">
@@ -757,6 +758,16 @@ const Submit = () => {
             </div>
           </form>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="video" className="mt-6">
+            <WutchVideoUpload />
+          </TabsContent>
+
+          <TabsContent value="video">
+            <Card className="p-6">
+              <WutchVideoUpload />
+            </Card>
           </TabsContent>
 
           <TabsContent value="short">

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Flame, Clock, Video, Upload, User, TrendingUp, Coins, Gamepad2, GraduationCap, Trophy, Bitcoin, CalendarClock } from 'lucide-react';
+import { Home, Flame, Clock, Video, PlaySquare, Upload, User, TrendingUp, Coins, Gamepad2, GraduationCap, Trophy, Bitcoin, CalendarClock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,11 +20,13 @@ const Sidebar = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/app' },
+    { icon: Video, label: 'Streams', path: '/streams' },
+    { icon: PlaySquare, label: 'Wutch', path: '/wutch' },
+    { icon: Zap, label: 'Shorts', path: '/shorts' },
     { icon: Flame, label: 'Trending', path: '/trending' },
     { icon: CalendarClock, label: 'Upcoming', path: '/upcoming' },
     { icon: Clock, label: 'Recently Ended', path: '/recent' },
-    { icon: Video, label: 'Shorts', path: '/shorts' },
-    { icon: Upload, label: 'Submit Stream', path: '/submit' },
+    { icon: Upload, label: 'Upload', path: '/submit' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 

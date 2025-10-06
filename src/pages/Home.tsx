@@ -257,33 +257,11 @@ const Home = () => {
                     </span>
                   </h2>
                 </div>
-                {isMobile ? (
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      dragFree: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent className="-ml-2 sm:-ml-4">
-                      {liveStreams.map((stream) => (
-                        <CarouselItem key={stream.id} className="pl-2 sm:pl-4 basis-[60%] xs:basis-[55%] sm:basis-1/2">
-                          <StreamCard stream={stream} compact hasBounty={stream.has_active_bounty} />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
-                ) : (
-                  <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex gap-4 pb-4">
-                      {liveStreams.map((stream) => (
-                        <div key={stream.id} className="flex-shrink-0 w-80">
-                          <StreamCard stream={stream} hasBounty={stream.has_active_bounty} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {liveStreams.slice(0, 9).map((stream) => (
+                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                  ))}
+                </div>
               </section>
             )}
 
@@ -327,9 +305,9 @@ const Home = () => {
                     </span>
                   </h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 lg:gap-5">
-                  {upcomingStreams.map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} compact hasBounty={stream.has_active_bounty} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {upcomingStreams.slice(0, 9).map((stream) => (
+                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
                   ))}
                 </div>
               </section>
@@ -346,9 +324,9 @@ const Home = () => {
                     </span>
                   </h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 lg:gap-5">
-                  {endedStreams.slice(0, 20).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} compact hasBounty={stream.has_active_bounty} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {endedStreams.slice(0, 9).map((stream) => (
+                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
                   ))}
                 </div>
                 {endedStreams.length > 20 && (
