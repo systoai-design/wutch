@@ -68,7 +68,7 @@ const StreamDetail = () => {
   });
 
   // Track stream likes
-  const { isLiked, likeCount, toggleLike, setLikeCount } = useStreamLike(id || '');
+  const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = useStreamLike(id || '');
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -492,6 +492,12 @@ const StreamDetail = () => {
         </div>
       </div>
     </div>
+    
+    <GuestPromptDialog
+      open={showGuestDialog}
+      onOpenChange={setShowGuestDialog}
+      action="like"
+    />
     </>
   );
 };

@@ -4,9 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 export function useFollow(profileUserId: string) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   useEffect(() => {
     if (user && profileUserId) {
@@ -33,6 +34,11 @@ export function useFollow(profileUserId: string) {
   };
 
   const toggleFollow = async () => {
+    if (isGuest) {
+      setShowGuestDialog(true);
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Sign in required",
@@ -88,5 +94,5 @@ export function useFollow(profileUserId: string) {
     }
   };
 
-  return { isFollowing, isLoading, toggleFollow };
+  return { isFollowing, isLoading, toggleFollow, showGuestDialog, setShowGuestDialog };
 }

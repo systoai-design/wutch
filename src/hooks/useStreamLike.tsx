@@ -4,10 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export const useStreamLike = (livestreamId: string) => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   useEffect(() => {
     if (user && livestreamId) {
@@ -34,6 +35,11 @@ export const useStreamLike = (livestreamId: string) => {
   };
 
   const toggleLike = async () => {
+    if (isGuest) {
+      setShowGuestDialog(true);
+      return;
+    }
+
     if (!user) {
       toast.error('Please sign in to like streams');
       return;
@@ -87,5 +93,7 @@ export const useStreamLike = (livestreamId: string) => {
     likeCount,
     toggleLike,
     setLikeCount,
+    showGuestDialog,
+    setShowGuestDialog,
   };
 };

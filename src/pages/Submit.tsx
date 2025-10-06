@@ -23,6 +23,7 @@ import { ShortVideoUpload } from '@/components/ShortVideoUpload';
 import { WutchVideoUpload } from '@/components/WutchVideoUpload';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 import ScheduleStreamPicker from '@/components/ScheduleStreamPicker';
+import GuestPromptDialog from '@/components/GuestPromptDialog';
 
 const STREAM_CATEGORIES = [
   "Gaming",
@@ -44,7 +45,8 @@ const Submit = () => {
   }, []);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
@@ -390,6 +392,20 @@ const Submit = () => {
 
   return (
     <div className="min-h-screen p-4 lg:p-8">
+      {isGuest && (
+        <Card className="max-w-3xl mx-auto mb-6 p-6 border-destructive bg-destructive/10">
+          <p className="text-center">
+            You need to sign up to submit content.{' '}
+            <Button 
+              variant="link" 
+              className="p-0 h-auto" 
+              onClick={() => setShowGuestDialog(true)}
+            >
+              Sign up now
+            </Button>
+          </p>
+        </Card>
+      )}
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Submit Content</h1>
@@ -408,6 +424,7 @@ const Submit = () => {
           <TabsContent value="livestream">
             <Card className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
+            <fieldset disabled={isGuest} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="streamUrl">
                 Pump.fun Stream URL <span className="text-destructive">*</span>
@@ -756,6 +773,7 @@ const Submit = () => {
                 {isSubmitting ? 'Submitting...' : 'Submit Stream'}
               </Button>
             </div>
+            </fieldset>
           </form>
         </Card>
           </TabsContent>
@@ -775,6 +793,12 @@ const Submit = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <GuestPromptDialog
+        open={showGuestDialog}
+        onOpenChange={setShowGuestDialog}
+        action="submit"
+      />
     </div>
   );
 };

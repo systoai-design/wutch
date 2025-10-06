@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 export function useShortVideoLike(shortVideoId: string) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -34,6 +35,11 @@ export function useShortVideoLike(shortVideoId: string) {
   };
 
   const toggleLike = async () => {
+    if (isGuest) {
+      setShowGuestDialog(true);
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Sign in required",
@@ -94,5 +100,7 @@ export function useShortVideoLike(shortVideoId: string) {
     likeCount,
     toggleLike,
     setLikeCount, // Allow external updates
+    showGuestDialog,
+    setShowGuestDialog,
   };
 }

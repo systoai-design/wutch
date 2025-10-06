@@ -155,10 +155,26 @@ const Landing = () => {
         0
       );
 
-      // Count active creators (those with earnings)
-      const activeCreators = (profilesData || []).filter(
-        (profile) => (parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0')) > 0
-      ).length;
+      // Count active creators (those with any content)
+      const { data: livestreamCreators } = await supabase
+        .from('livestreams')
+        .select('user_id');
+      
+      const { data: shortCreators } = await supabase
+        .from('short_videos')
+        .select('user_id');
+      
+      const { data: wutchCreators } = await supabase
+        .from('wutch_videos')
+        .select('user_id');
+
+      const uniqueCreatorIds = new Set([
+        ...(livestreamCreators || []).map(c => c.user_id),
+        ...(shortCreators || []).map(c => c.user_id),
+        ...(wutchCreators || []).map(c => c.user_id)
+      ]);
+      
+      const activeCreators = uniqueCreatorIds.size;
 
       // Calculate average earnings
       const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;

@@ -9,6 +9,7 @@ import { useVideoView } from '@/hooks/useVideoView';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect, useRef } from 'react';
+import GuestPromptDialog from '@/components/GuestPromptDialog';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -45,8 +46,8 @@ export function ShortVideoModal({
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short?.id || '');
-  const { isFollowing, isLoading: followLoading, toggleFollow } = useFollow(short?.user_id || '');
+  const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog: showLikeGuestDialog, setShowGuestDialog: setShowLikeGuestDialog } = useShortVideoLike(short?.id || '');
+  const { isFollowing, isLoading: followLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = useFollow(short?.user_id || '');
   
   // Track view when modal is open
   useVideoView(short?.id || '', isOpen && !!short);
@@ -414,6 +415,18 @@ export function ShortVideoModal({
           </div>
         </div>
       </DialogContent>
+      
+      <GuestPromptDialog
+        open={showLikeGuestDialog}
+        onOpenChange={setShowLikeGuestDialog}
+        action="like"
+      />
+      
+      <GuestPromptDialog
+        open={showFollowGuestDialog}
+        onOpenChange={setShowFollowGuestDialog}
+        action="like"
+      />
     </Dialog>
   );
 }
