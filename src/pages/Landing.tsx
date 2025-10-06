@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
@@ -215,6 +215,12 @@ const Landing = () => {
               How It Works
             </button>
             <button
+              onClick={() => document.getElementById('share-campaigns')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Share Campaigns
+            </button>
+            <button
               onClick={() => document.getElementById('bounties')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -366,8 +372,181 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Share Campaigns Section */}
+      <section id="share-campaigns" className="py-20 md:py-28 bg-background scroll-mt-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Share2 className="h-4 w-4" />
+              Viral Marketing Meets Crypto Rewards
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Share Campaigns - Earn & Advertise with SOLANA</h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              The ultimate win-win: Users earn SOL for sharing content, Creators get viral reach for their streams
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* For Users */}
+            <Card className="p-8 space-y-6 border-primary/20 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
+                  <Coins className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">For Users: Get Paid to Share</h3>
+                  <p className="text-muted-foreground text-sm">Turn your social influence into SOLANA earnings</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Find Active Campaigns</h4>
+                    <p className="text-sm text-muted-foreground">Browse livestreams with active share campaigns and rewards you can earn</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Share on Twitter/X</h4>
+                    <p className="text-sm text-muted-foreground">Click share, post to your Twitter/X account, and verify with your handle</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Claim Your SOL Rewards</h4>
+                    <p className="text-sm text-muted-foreground">Instant rewards sent directly to your connected wallet after verification</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 rounded-lg bg-primary/5">
+                    <div className="text-xl font-bold text-primary">0.001+ SOL</div>
+                    <div className="text-xs text-muted-foreground">Per Share</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-primary/5">
+                    <div className="text-xl font-bold text-primary">Instant</div>
+                    <div className="text-xs text-muted-foreground">Payouts</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* For Creators */}
+            <Card className="p-8 space-y-6 border-primary/20 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">For Creators: Viral Advertising</h3>
+                  <p className="text-muted-foreground text-sm">Fund campaigns and watch your reach explode</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Set Your Campaign Budget</h4>
+                    <p className="text-sm text-muted-foreground">Choose total budget and reward per share (min 0.001 SOL). Your funds are held in escrow.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Users Share Your Stream</h4>
+                    <p className="text-sm text-muted-foreground">Verified users share to their Twitter/X and get instant rewards from your campaign</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary font-bold text-xs">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">Get Viral Reach & Views</h4>
+                    <p className="text-sm text-muted-foreground">Each share brings new viewers, growing your audience organically</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 rounded-lg bg-primary/5">
+                    <div className="text-xl font-bold text-primary">0.1+ SOL</div>
+                    <div className="text-xs text-muted-foreground">Min Budget</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-primary/5">
+                    <div className="text-xl font-bold text-primary">5%</div>
+                    <div className="text-xs text-muted-foreground">Platform Fee</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* How Share Campaigns Work */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <Card className="p-8 bg-gradient-to-br from-muted/50 to-muted/30 border-primary/10">
+              <h3 className="text-2xl font-bold text-foreground mb-6 text-center">How Share Campaigns Work</h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                    <Wallet className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground">Secure Escrow</h4>
+                  <p className="text-sm text-muted-foreground">Campaign funds held safely in escrow until shares are verified</p>
+                </div>
+                <div className="text-center space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                    <Shield className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground">Anti-Abuse Protection</h4>
+                  <p className="text-sm text-muted-foreground">Each Twitter account can only share once per campaign to prevent fraud</p>
+                </div>
+                <div className="text-center space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground">Instant Payouts</h4>
+                  <p className="text-sm text-muted-foreground">Users claim rewards immediately after share verification</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button asChild size="lg" className="gap-2 hover:scale-105 transition-transform">
+              <Link to="/app">
+                <Share2 className="h-5 w-5" />
+                Start Earning from Shares
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Available Bounties */}
-      <section id="bounties" className="py-16 md:py-20 bg-background scroll-mt-20">
+      <section id="bounties" className="py-16 md:py-20 bg-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
