@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Eye, Circle, Coins } from 'lucide-react';
+import { Eye, Circle, Coins, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Database } from '@/integrations/supabase/types';
+import { generateContentUrl } from '@/utils/urlHelpers';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -15,13 +16,19 @@ interface StreamCardProps {
   };
   compact?: boolean;
   hasBounty?: boolean;
+  hasShareCampaign?: boolean;
 }
 
-const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardProps) => {
+const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampaign = false }: StreamCardProps) => {
+  const streamUrl = generateContentUrl('stream', {
+    id: stream.id,
+    title: stream.title,
+    profiles: stream.profiles ? { username: stream.profiles.username } : undefined
+  });
   const streamer = stream.profiles;
 
   return (
-    <Link to={`/stream/${stream.id}`} className="group block touch-manipulation">
+    <Link to={streamUrl} className="group block touch-manipulation">
       <div className={compact ? 'space-y-2' : 'space-y-3'}>
         <div className={`relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500 ${compact ? 'rounded-lg' : ''} ${hasBounty ? 'ring-1 ring-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : ''}`}>
           <img
@@ -37,14 +44,21 @@ const StreamCard = ({ stream, compact = false, hasBounty = false }: StreamCardPr
               </Badge>
             </div>
           )}
-          {hasBounty && (
-            <div className={compact ? 'absolute top-1.5 right-1.5' : 'absolute top-2 right-2'}>
-              <Badge className={`bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold flex items-center gap-1 shadow-md shadow-yellow-500/20 border-0 ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
-                <Coins className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-                Bounty
+          {/* Badges */}
+          <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+            {hasShareCampaign && (
+              <Badge className={`bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold flex items-center gap-1 shadow-lg border-0 ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
+                <Share2 className={compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} />
+                {!compact && 'Share'}
               </Badge>
-            </div>
-          )}
+            )}
+            {hasBounty && (
+              <Badge className={`bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold flex items-center gap-1 shadow-md shadow-yellow-500/20 border-0 ml-auto ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
+                <Coins className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+                {!compact && 'Bounty'}
+              </Badge>
+            )}
+          </div>
           <div className={`absolute bottom-2 right-2 bg-background/95 backdrop-blur-sm rounded-md font-bold flex items-center gap-1.5 shadow-md ${compact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'}`}>
             <Eye className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
             {(stream.viewer_count || 0).toLocaleString()}

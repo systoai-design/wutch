@@ -20,6 +20,12 @@ type LivestreamWithBounty = Livestream & {
   bounty_count?: number;
   total_available_rewards?: number;
   has_active_bounty?: boolean;
+  has_active_share_campaign?: boolean;
+  profiles?: {
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
 };
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -82,25 +88,29 @@ const Home = () => {
         return baseQuery;
       };
 
-      // Fetch live streams with bounty info
+      // Fetch live streams with bounty and share campaign info
       let liveQuery = supabase
         .from('livestreams')
         .select(`
           *,
-          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+          profiles!livestreams_user_id_fkey(username, display_name, avatar_url),
+          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
+          sharing_campaigns!livestream_id(id, is_active)
         `)
         .eq('is_live', true)
         .order('viewer_count', { ascending: false });
       liveQuery = buildQuery(liveQuery);
       const { data: liveData } = await liveQuery;
       
-      // Process bounty data
+      // Process bounty and share campaign data
       const processedLiveData: LivestreamWithBounty[] = (liveData || []).map(stream => {
         const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        const activeCampaigns = (stream.sharing_campaigns as any[] || []).filter((c: any) => c.is_active);
         return {
           ...stream,
           bounty_count: activeBounties.length,
           has_active_bounty: activeBounties.length > 0,
+          has_active_share_campaign: activeCampaigns.length > 0,
           total_available_rewards: activeBounties.reduce((sum: number, b: any) => 
             sum + (b.reward_per_participant * (b.participant_limit - b.claimed_count)), 0
           )
@@ -263,6 +273,11 @@ const Home = () => {
           streams: [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0)).slice(0, 9),
           videos: wutchVideos.slice(0, 9)
         };
+      case 'with-rewards':
+        return {
+          streams: allStreams.filter(stream => stream.has_active_bounty || stream.has_active_share_campaign),
+          videos: []
+        };
       case 'with-bounty':
         return { 
           streams: allStreams.filter(stream => stream.has_active_bounty),
@@ -304,13 +319,19 @@ const Home = () => {
                           {activeFilter === 'recent' && 'Recently Ended'}
                           {activeFilter === 'trending' && 'Trending Streams'}
                           {activeFilter === 'upcoming' && 'Upcoming Streams'}
+                          {activeFilter === 'with-rewards' && 'Streams with Rewards 💰'}
                           {activeFilter === 'with-bounty' && 'Streams with Bounties'}
                           {activeFilter === 'without-bounty' && 'Streams without Bounties'}
                         </h2>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         {filteredContent.streams.map((stream) => (
-                          <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                          <StreamCard 
+                            key={stream.id} 
+                            stream={stream} 
+                            hasBounty={stream.has_active_bounty} 
+                            hasShareCampaign={stream.has_active_share_campaign}
+                          />
                         ))}
                       </div>
                     </section>
@@ -361,7 +382,12 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {liveStreams.slice(0, 9).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                    <StreamCard 
+                      key={stream.id} 
+                      stream={stream} 
+                      hasBounty={stream.has_active_bounty}
+                      hasShareCampaign={stream.has_active_share_campaign}
+                    />
                   ))}
                 </div>
               </section>

@@ -15,9 +15,12 @@ import { ThumbsUp, Share2, ExternalLink, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from '@/components/CommentsSection';
 import { useToast } from '@/hooks/use-toast';
+import { parseContentUrl } from '@/utils/urlHelpers';
 
 const WutchVideoDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  // Handle both new SEO format and legacy UUID-only format
+  const id = params.id || parseContentUrl(window.location.pathname);
   const { user } = useAuth();
   const { toast } = useToast();
   const [video, setVideo] = useState<any>(null);

@@ -33,6 +33,8 @@ const Streams = () => {
         return upcomingStreams;
       case 'recent':
         return endedStreams;
+      case 'with-rewards':
+        return allStreams.filter(s => s.hasBounty || s.hasShareCampaign);
       case 'with-bounty':
         return allStreams.filter(s => s.hasBounty);
       case 'without-bounty':
@@ -78,7 +80,12 @@ const Streams = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredStreams.map((stream) => (
-              <StreamCard key={stream.id} stream={stream} hasBounty={stream.hasBounty} />
+              <StreamCard 
+                key={stream.id} 
+                stream={stream} 
+                hasBounty={stream.hasBounty} 
+                hasShareCampaign={stream.hasShareCampaign}
+              />
             ))}
           </div>
         )}

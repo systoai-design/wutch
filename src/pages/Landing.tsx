@@ -280,7 +280,7 @@ const Landing = () => {
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed px-2" style={{ animationDelay: '0.2s' }}>
-            The first platform to reward both users and creators with SOLANA
+            The first platform to reward both users and creators with SOLANA through bounties, views, and shares
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in px-2" style={{ animationDelay: '0.3s' }}>

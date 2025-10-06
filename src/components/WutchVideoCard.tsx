@@ -5,6 +5,7 @@ import { Eye, ThumbsUp } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { generateContentUrl } from '@/utils/urlHelpers';
 
 interface WutchVideoCardProps {
   video: {
@@ -45,6 +46,12 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  
+  const videoUrl = generateContentUrl('wutch', {
+    id: video.id,
+    title: video.title,
+    profiles: video.profiles ? { username: video.profiles.username } : undefined
+  });
 
   useEffect(() => {
     return () => {
@@ -88,7 +95,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
 
   return (
     <Link 
-      to={`/wutch/${video.id}`} 
+      to={videoUrl}
       className={cn("group block", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -100,6 +107,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
             <img
               src={video.thumbnail_url}
               alt={video.title}
+              loading="lazy"
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
             />
           ) : video.video_url ? (

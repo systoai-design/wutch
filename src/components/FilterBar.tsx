@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Circle, Coins } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-export type FilterOption = 'all' | 'live' | 'recent' | 'trending' | 'upcoming' | 'with-bounty' | 'without-bounty';
+export type FilterOption = 'all' | 'live' | 'recent' | 'trending' | 'upcoming' | 'with-bounty' | 'without-bounty' | 'with-rewards';
 
 interface FilterBarProps {
   activeFilter: FilterOption;
@@ -17,6 +17,7 @@ const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
   const filters: { label: string; value: FilterOption; icon?: typeof Circle }[] = [
     { label: 'All', value: 'all' },
     { label: 'Live Now', value: 'live', icon: Circle },
+    { label: 'With Rewards 💰', value: 'with-rewards' },
     { label: 'With Bounty', value: 'with-bounty', icon: Coins },
     { label: 'Without Bounty', value: 'without-bounty' },
     { label: 'Upcoming', value: 'upcoming' },

@@ -6,6 +6,7 @@ type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
 interface LivestreamWithBounty extends Livestream {
   hasBounty?: boolean;
+  hasShareCampaign?: boolean;
   profiles?: {
     username: string;
     display_name: string | null;
@@ -18,7 +19,7 @@ export const useStreamsQuery = () => {
     queryKey: ['streams'],
     queryFn: async () => {
       // Fetch all streams in parallel
-      const [liveResult, upcomingResult, endedResult, bountiesResult] = await Promise.all([
+      const [liveResult, upcomingResult, endedResult, bountiesResult, campaignsResult] = await Promise.all([
         supabase
           .from('livestreams')
           .select('*, profiles!livestreams_user_id_fkey (username, display_name, avatar_url)')
@@ -42,20 +43,26 @@ export const useStreamsQuery = () => {
           .from('stream_bounties')
           .select('livestream_id')
           .eq('is_active', true),
+        supabase
+          .from('sharing_campaigns')
+          .select('livestream_id')
+          .eq('is_active', true),
       ]);
 
       const bountyStreamIds = new Set(bountiesResult.data?.map(b => b.livestream_id) || []);
+      const campaignStreamIds = new Set(campaignsResult.data?.map(c => c.livestream_id) || []);
 
-      const addBountyInfo = (streams: any[]): LivestreamWithBounty[] =>
+      const addRewardInfo = (streams: any[]): LivestreamWithBounty[] =>
         streams?.map(stream => ({
           ...stream,
           hasBounty: bountyStreamIds.has(stream.id),
+          hasShareCampaign: campaignStreamIds.has(stream.id),
         })) || [];
 
       return {
-        liveStreams: addBountyInfo(liveResult.data || []),
-        upcomingStreams: addBountyInfo(upcomingResult.data || []),
-        endedStreams: addBountyInfo(endedResult.data || []),
+        liveStreams: addRewardInfo(liveResult.data || []),
+        upcomingStreams: addRewardInfo(upcomingResult.data || []),
+        endedStreams: addRewardInfo(endedResult.data || []),
       };
     },
     staleTime: 30000, // 30 seconds

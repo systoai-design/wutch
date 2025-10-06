@@ -92,10 +92,18 @@ function AppContent() {
         <Route element={<AppLayout />}>
           <Route path="/app" element={<Home />} />
           <Route path="/streams" element={<Streams />} />
+          
+          {/* SEO-friendly routes */}
+          <Route path="/stream/:username/:titleSlug/:id" element={<StreamDetail />} />
+          <Route path="/wutch/:username/:titleSlug/:id" element={<WutchVideoDetail />} />
+          <Route path="/shorts/:username/:titleSlug/:id" element={<Shorts />} />
+          
+          {/* Legacy routes for backward compatibility */}
+          <Route path="/stream/:id" element={<StreamDetail />} />
           <Route path="/wutch" element={<WutchVideos />} />
           <Route path="/wutch/:id" element={<WutchVideoDetail />} />
-          <Route path="/stream/:id" element={<StreamDetail />} />
           <Route path="/shorts" element={<Shorts />} />
+          
           <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
           <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<Search />} />
