@@ -74,18 +74,18 @@ function AppContent() {
         
         {/* App routes with Navigation and Sidebar */}
         <Route element={<AppLayout />}>
-          <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/streams" element={<ProtectedRoute><Streams /></ProtectedRoute>} />
-          <Route path="/wutch" element={<ProtectedRoute><WutchVideos /></ProtectedRoute>} />
-          <Route path="/wutch/:id" element={<ProtectedRoute><WutchVideoDetail /></ProtectedRoute>} />
-          <Route path="/stream/:id" element={<ProtectedRoute><StreamDetail /></ProtectedRoute>} />
-          <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
+          <Route path="/app" element={<Home />} />
+          <Route path="/streams" element={<Streams />} />
+          <Route path="/wutch" element={<WutchVideos />} />
+          <Route path="/wutch/:id" element={<WutchVideoDetail />} />
+          <Route path="/stream/:id" element={<StreamDetail />} />
+          <Route path="/shorts" element={<Shorts />} />
           <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
           <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-          <Route path="/trending" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/upcoming" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/recent" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/trending" element={<Home />} />
+          <Route path="/upcoming" element={<Home />} />
+          <Route path="/recent" element={<Home />} />
         </Route>
         
         <Route path="*" element={<NotFound />} />

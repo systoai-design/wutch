@@ -255,7 +255,7 @@ const Landing = () => {
               )}
             </Button>
             <Button asChild size="default" className="transition-all hover:scale-105 text-sm sm:text-base h-10 sm:h-11 px-4 sm:px-6 touch-manipulation">
-              <Link to="/auth">Launch App</Link>
+              <Link to="/app">Launch App</Link>
             </Button>
           </div>
         </div>
@@ -279,7 +279,7 @@ const Landing = () => {
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in px-2" style={{ animationDelay: '0.3s' }}>
             <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
-              <Link to="/auth">Start Earning Now</Link>
+              <Link to="/app">Start Earning Now</Link>
             </Button>
             <Button asChild size="default" variant="outline" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
               <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
