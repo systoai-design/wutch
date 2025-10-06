@@ -20,6 +20,7 @@ import { Upload, DollarSign, Users, Clock, Key, X, ExternalLink } from 'lucide-r
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
+import { WutchVideoUpload } from '@/components/WutchVideoUpload';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 import ScheduleStreamPicker from '@/components/ScheduleStreamPicker';
 

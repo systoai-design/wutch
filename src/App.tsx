@@ -8,11 +8,15 @@ import { useThemeStore } from '@/store/themeStore';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import Sidebar from '@/components/Sidebar';
+import BottomNavigation from '@/components/BottomNavigation';
 
 // Lazy load pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
 const Bounties = lazy(() => import('./pages/Bounties'));
 const Home = lazy(() => import('./pages/Home'));
+const Streams = lazy(() => import('./pages/Streams'));
+const WutchVideos = lazy(() => import('./pages/WutchVideos'));
+const WutchVideoDetail = lazy(() => import('./pages/WutchVideoDetail'));
 const StreamDetail = lazy(() => import('./pages/StreamDetail'));
 const Shorts = lazy(() => import('./pages/Shorts'));
 const Submit = lazy(() => import('./pages/Submit'));
@@ -71,6 +75,9 @@ function AppContent() {
         {/* App routes with Navigation and Sidebar */}
         <Route element={<AppLayout />}>
           <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/streams" element={<ProtectedRoute><Streams /></ProtectedRoute>} />
+          <Route path="/wutch" element={<ProtectedRoute><WutchVideos /></ProtectedRoute>} />
+          <Route path="/wutch/:id" element={<ProtectedRoute><WutchVideoDetail /></ProtectedRoute>} />
           <Route path="/stream/:id" element={<ProtectedRoute><StreamDetail /></ProtectedRoute>} />
           <Route path="/shorts" element={<ProtectedRoute><Shorts /></ProtectedRoute>} />
           <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
@@ -93,10 +100,11 @@ function AppLayout() {
       <Navigation />
       <div className="flex w-full">
         <Sidebar />
-        <main className="flex-1 w-full min-w-0">
+        <main className="flex-1 w-full min-w-0 pb-16 lg:pb-0">
           <Outlet />
         </main>
       </div>
+      <BottomNavigation />
     </div>
   );
 }

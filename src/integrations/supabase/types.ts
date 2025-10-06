@@ -945,6 +945,92 @@ export type Database = {
           },
         ]
       }
+      wutch_video_likes: {
+        Row: {
+          created_at: string | null
+          user_id: string
+          wutch_video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          user_id: string
+          wutch_video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          user_id?: string
+          wutch_video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wutch_video_likes_wutch_video_id_fkey"
+            columns: ["wutch_video_id"]
+            isOneToOne: false
+            referencedRelation: "wutch_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wutch_videos: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          id: string
+          like_count: number | null
+          promotional_link: string | null
+          promotional_link_text: string | null
+          status: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          total_donations: number | null
+          updated_at: string | null
+          user_id: string
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          like_count?: number | null
+          promotional_link?: string | null
+          promotional_link_text?: string | null
+          status?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          total_donations?: number | null
+          updated_at?: string | null
+          user_id: string
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          like_count?: number | null
+          promotional_link?: string | null
+          promotional_link_text?: string | null
+          status?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          total_donations?: number | null
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -994,6 +1080,10 @@ export type Database = {
         Args: { donation_amount: number; user_id: string }
         Returns: undefined
       }
+      increment_wutch_video_views: {
+        Args: { video_id: string }
+        Returns: undefined
+      }
       process_payout: {
         Args: { p_payout_id: string; p_transaction_signature: string }
         Returns: undefined
@@ -1001,7 +1091,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      content_type: "livestream" | "shortvideo"
+      content_type: "livestream" | "shortvideo" | "wutch_video"
       donation_status: "pending" | "confirmed" | "failed"
       livestream_status: "pending" | "approved" | "live" | "ended" | "removed"
     }
@@ -1132,7 +1222,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      content_type: ["livestream", "shortvideo"],
+      content_type: ["livestream", "shortvideo", "wutch_video"],
       donation_status: ["pending", "confirmed", "failed"],
       livestream_status: ["pending", "approved", "live", "ended", "removed"],
     },
