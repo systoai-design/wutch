@@ -415,10 +415,10 @@ const Submit = () => {
         </div>
 
         <Tabs defaultValue="livestream" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="livestream">Submit Stream</TabsTrigger>
-            <TabsTrigger value="video">Upload Video</TabsTrigger>
-            <TabsTrigger value="short">Upload Short</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 gap-2 p-1.5 mb-6">
+            <TabsTrigger value="livestream" className="text-xs sm:text-sm">Submit Stream</TabsTrigger>
+            <TabsTrigger value="video" className="text-xs sm:text-sm">Upload Video</TabsTrigger>
+            <TabsTrigger value="short" className="text-xs sm:text-sm">Upload Short</TabsTrigger>
           </TabsList>
 
           <TabsContent value="livestream">

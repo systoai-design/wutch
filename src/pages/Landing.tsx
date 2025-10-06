@@ -759,7 +759,7 @@ const Landing = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
-                <Link to="/auth">Launch App Now</Link>
+                <Link to="/app">Launch App Now</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
                 <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
