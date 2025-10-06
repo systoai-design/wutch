@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Eye, ExternalLink, Play, Pause, Volume2, VolumeX, X, Maximize, MoreVertical, ThumbsDown } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import DonationModal from '@/components/DonationModal';
 import CommentsSection from '@/components/CommentsSection';
@@ -10,6 +10,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useVideoView } from '@/hooks/useVideoView';
 import { useAuth } from '@/hooks/useAuth';
+import { useFollow } from '@/hooks/useFollow';
 import { useAdmin } from '@/hooks/useAdmin';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { toast } from '@/hooks/use-toast';
@@ -413,12 +414,14 @@ function ShortVideoItem({
   isCommentsOpen?: boolean;
 }) {
   const { isLiked, likeCount, toggleLike, setLikeCount } = useShortVideoLike(short.id);
+  const { isFollowing, isLoading: followLoading, toggleFollow } = useFollow(short.user_id);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(100);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Track view when video becomes active
   useVideoView(short.id, isActive);
@@ -503,6 +506,32 @@ function ShortVideoItem({
     });
   };
 
+  const toggleFullscreen = async () => {
+    const videoContainer = videoRefs.current[index]?.parentElement;
+    if (!videoContainer) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await videoContainer.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Error toggling fullscreen:', error);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
     <div 
       className={`snap-start snap-always relative flex items-center justify-center bg-black overflow-hidden transition-all duration-300 ease-in-out ${
@@ -519,6 +548,25 @@ function ShortVideoItem({
           playsInline
           preload={Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'}
         />
+
+        {/* Fullscreen & Menu - Top Right */}
+        <div className="hidden md:flex absolute top-4 right-4 items-start gap-2 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleFullscreen}
+            className="rounded-full h-10 w-10 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all"
+          >
+            <Maximize className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-10 w-10 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Video Controls - Top Left */}
         <div className="absolute top-4 left-4 flex items-start gap-2 z-20">
@@ -625,121 +673,146 @@ function ShortVideoItem({
       </div>
 
       {/* Bottom Overlay - Info & Actions */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
         <div className="max-w-md mx-auto">
           <div className="flex items-end justify-between gap-4">
             {/* Creator Info */}
             <div className="flex-1 text-white">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-3 mb-3 bg-black/60 backdrop-blur-md rounded-2xl p-3 md:p-4">
                 {short.profiles?.avatar_url && (
                   <img
                     src={short.profiles.avatar_url}
                     alt={short.profiles.username || 'User'}
-                    className="w-10 h-10 rounded-full border-2 border-white"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white"
                   />
                 )}
-                <div>
-                  <p className="font-semibold">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-base md:text-lg truncate">
                     {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
                   </p>
+                  <p className="text-sm text-white/70 truncate">
+                    @{short.profiles?.username || 'anonymous'}
+                  </p>
                 </div>
+                <Button
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                  size="sm"
+                  variant={isFollowing ? "outline" : "default"}
+                  className={`rounded-full px-4 md:px-6 font-semibold ${
+                    isFollowing 
+                      ? 'bg-white/20 text-white border-white/40 hover:bg-white/30' 
+                      : 'bg-white text-black hover:bg-white/90'
+                  }`}
+                >
+                  {isFollowing ? 'Subscribed' : 'Subscribe'}
+                </Button>
               </div>
               <h3 className="font-medium text-base mb-1 line-clamp-2">{short.title}</h3>
               {short.description && (
                 <p className="text-sm text-white/80 line-clamp-2">{short.description}</p>
               )}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full">
-                  <Eye className="h-3 w-3" />
-                  <span className="text-xs font-medium">{(short.view_count || 0).toLocaleString()}</span>
-                </div>
-              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-4 items-center">
-              <div className="flex flex-col items-center">
+            <div className="flex flex-col gap-3 md:gap-5 items-center">
+              {/* Like Button */}
+              <div className="flex flex-col items-center gap-1">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={toggleLike}
-                  className={`rounded-full h-12 w-12 backdrop-blur-sm transition-colors ${
+                  className={`rounded-full h-12 w-12 md:h-14 md:w-14 backdrop-blur-sm transition-colors ${
                     isLiked 
                       ? 'bg-primary/90 hover:bg-primary text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white'
+                      : 'bg-black/40 hover:bg-black/60 text-white'
                   }`}
                 >
-                  <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`h-6 w-6 md:h-7 md:w-7 ${isLiked ? 'fill-current' : ''}`} />
                 </Button>
-                <span className="text-xs text-white font-medium mt-1">
+                <span className="text-xs md:text-sm text-white font-medium">
                   {likeCount}
                 </span>
+                <span className="hidden md:block text-xs text-white/80">Like</span>
               </div>
 
-              <div className="flex flex-col items-center">
+              {/* Dislike Button */}
+              <div className="hidden md:flex flex-col items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="rounded-full h-14 w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
+                >
+                  <ThumbsDown className="h-7 w-7" />
+                </Button>
+                <span className="text-xs text-white/80">Dislike</span>
+              </div>
+
+              {/* Comment Button */}
+              <div className="flex flex-col items-center gap-1">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   onClick={onOpenComments}
-                  className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                  className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
                 >
-                  <MessageCircle className="h-6 w-6" />
+                  <MessageCircle className="h-6 w-6 md:h-7 md:w-7" />
                 </Button>
-                <span className="text-xs text-white font-medium mt-1">{commentCount}</span>
+                <span className="text-xs md:text-sm text-white font-medium">{commentCount}</span>
+                <span className="hidden md:block text-xs text-white/80">Comment</span>
               </div>
 
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleShare}
-                className="rounded-full h-12 w-12 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
-              >
-                <Share2 className="h-6 w-6" />
-              </Button>
-
-              {short.profiles?.public_wallet_address && (
-                <Button
-                  variant="ghost"
+              {/* Share Button */}
+              <div className="flex flex-col items-center gap-1">
+                <Button 
+                  variant="ghost" 
                   size="icon"
-                  className="rounded-full h-12 w-12 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
-                  onClick={onOpenDonation}
+                  onClick={handleShare}
+                  className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
                 >
-                  <Wallet className="h-6 w-6" />
+                  <Share2 className="h-6 w-6 md:h-7 md:w-7" />
                 </Button>
+                <span className="hidden md:block text-xs text-white/80">Share</span>
+              </div>
+
+              {/* Donate Button */}
+              {short.profiles?.public_wallet_address && (
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm"
+                    onClick={onOpenDonation}
+                  >
+                    <Wallet className="h-6 w-6 md:h-7 md:w-7" />
+                  </Button>
+                  <span className="hidden md:block text-xs text-white/80">Donate</span>
+                </div>
               )}
 
+              {/* External Link Button */}
               {short.promotional_link && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full h-12 w-12 bg-accent/90 hover:bg-accent text-white backdrop-blur-sm"
+                  className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-accent/90 hover:bg-accent text-white backdrop-blur-sm"
                   asChild
                 >
                   <a href={short.promotional_link} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-6 w-6" />
+                    <ExternalLink className="h-6 w-6 md:h-7 md:w-7" />
                   </a>
                 </Button>
               )}
 
-              <div className="flex flex-col items-center">
-                <div className="rounded-full h-12 w-12 bg-white/10 text-white backdrop-blur-sm flex items-center justify-center">
-                  <Eye className="h-6 w-6" />
-                </div>
-                <span className="text-xs text-white font-medium mt-1">
-                  {short.view_count >= 1000 
-                    ? `${(short.view_count / 1000).toFixed(1)}K` 
-                    : short.view_count}
-                </span>
-              </div>
-
+              {/* Delete Button */}
               {canDelete && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full h-12 w-12 bg-destructive/90 hover:bg-destructive text-white backdrop-blur-sm"
+                  className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-destructive/90 hover:bg-destructive text-white backdrop-blur-sm"
                   onClick={onDelete}
                 >
-                  <Trash2 className="h-6 w-6" />
+                  <Trash2 className="h-6 w-6 md:h-7 md:w-7" />
                 </Button>
               )}
             </div>
