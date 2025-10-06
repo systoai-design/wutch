@@ -1,0 +1,244 @@
+import { useState, useRef, useEffect } from 'react';
+import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
+import { useVideoView } from '@/hooks/useVideoView';
+import { useShortVideoLike } from '@/hooks/useShortVideoLike';
+import { useFollow } from '@/hooks/useFollow';
+import { useAuth } from '@/hooks/useAuth';
+import GuestPromptDialog from '@/components/GuestPromptDialog';
+import type { Database } from '@/integrations/supabase/types';
+
+type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
+  profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
+    'username' | 'display_name' | 'avatar_url' | 'public_wallet_address'>;
+  commentCount?: number;
+};
+
+interface MobileShortPlayerProps {
+  short: ShortVideo;
+  isActive: boolean;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  onOpenComments: () => void;
+  onOpenDonation: () => void;
+  onShare: () => void;
+}
+
+export function MobileShortPlayer({
+  short,
+  isActive,
+  isMuted,
+  onToggleMute,
+  onOpenComments,
+  onOpenDonation,
+  onShare,
+}: MobileShortPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const { user } = useAuth();
+  
+  const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
+    useShortVideoLike(short.id);
+  
+  const { isFollowing, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
+    useFollow(short.user_id);
+
+  // Track views when active
+  useVideoView(short.id, isActive);
+
+  // Auto-play management
+  useAutoPlayShort({
+    videoRef,
+    shortId: short.id,
+    isActive,
+    onBecomeActive: () => {
+      // Fetch like count when video becomes active
+      if (short.like_count !== undefined) {
+        setLikeCount(short.like_count);
+      }
+    }
+  });
+
+  // Update isPlaying state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+    };
+  }, []);
+
+  // Sync mute state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  };
+
+  const handleDoubleTap = () => {
+    toggleLike();
+  };
+
+  let lastTap = 0;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    
+    if (tapLength < 300 && tapLength > 0) {
+      e.preventDefault();
+      handleDoubleTap();
+    } else {
+      handleVideoClick();
+    }
+    
+    lastTap = currentTime;
+  };
+
+  return (
+    <div className="mobile-short-item relative w-full h-[100dvh] bg-black overflow-hidden">
+      {/* Video */}
+      <video
+        ref={videoRef}
+        src={short.video_url}
+        className="mobile-short-video absolute inset-0 w-full h-full object-contain"
+        playsInline
+        loop
+        muted={isMuted}
+        preload="metadata"
+        onTouchEnd={handleTouchEnd}
+      />
+
+      {/* Mute/Unmute Button - Top Right */}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-black/70 text-white"
+        onClick={onToggleMute}
+      >
+        {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+      </Button>
+
+      {/* Bottom Overlay - Creator Info & Title */}
+      <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
+        <div className="flex items-center gap-3 mb-3">
+          <Avatar className="h-10 w-10 border-2 border-white">
+            <AvatarImage src={short.profiles?.avatar_url || ''} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm truncate">
+              @{short.profiles?.username || 'Unknown'}
+            </p>
+            {short.profiles?.display_name && (
+              <p className="text-white/80 text-xs truncate">{short.profiles.display_name}</p>
+            )}
+          </div>
+          {user && user.id !== short.user_id && (
+            <Button
+              size="sm"
+              variant={isFollowing ? "secondary" : "default"}
+              onClick={toggleFollow}
+              className="shrink-0"
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </Button>
+          )}
+        </div>
+        
+        <div className="space-y-1">
+          <h3 className="text-white font-semibold text-base line-clamp-2">{short.title}</h3>
+          {short.description && (
+            <p className="text-white/90 text-sm line-clamp-3">{short.description}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Right Side Actions */}
+      <div className="absolute right-4 bottom-24 z-10 flex flex-col gap-6">
+        {/* Like */}
+        <button
+          onClick={toggleLike}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className={`p-3 rounded-full ${isLiked ? 'bg-red-500' : 'bg-black/50'}`}>
+            <Heart
+              className={`h-7 w-7 ${isLiked ? 'fill-white text-white' : 'text-white'}`}
+            />
+          </div>
+          <span className="text-white text-xs font-semibold">
+            {likeCount > 0 ? likeCount : ''}
+          </span>
+        </button>
+
+        {/* Comment */}
+        <button
+          onClick={onOpenComments}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className="p-3 rounded-full bg-black/50">
+            <MessageCircle className="h-7 w-7 text-white" />
+          </div>
+          <span className="text-white text-xs font-semibold">
+            {short.commentCount && short.commentCount > 0 ? short.commentCount : ''}
+          </span>
+        </button>
+
+        {/* Share */}
+        <button
+          onClick={onShare}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className="p-3 rounded-full bg-black/50">
+            <Share2 className="h-7 w-7 text-white" />
+          </div>
+        </button>
+
+        {/* Donate */}
+        {short.profiles?.public_wallet_address && (
+          <button
+            onClick={onOpenDonation}
+            className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+          >
+            <div className="p-3 rounded-full bg-primary">
+              <DollarSign className="h-7 w-7 text-primary-foreground" />
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Guest Dialogs */}
+      <GuestPromptDialog
+        open={showGuestDialog}
+        onOpenChange={setShowGuestDialog}
+        action="like"
+      />
+      <GuestPromptDialog
+        open={showFollowGuestDialog}
+        onOpenChange={setShowFollowGuestDialog}
+        action="like"
+      />
+    </div>
+  );
+}

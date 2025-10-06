@@ -121,7 +121,7 @@ All colors MUST be HSL.
     scroll-behavior: smooth;
   }
   
-  /* Better touch handling on mobile */
+/* Better touch handling on mobile */
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -141,6 +141,24 @@ All colors MUST be HSL.
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
+}
+
+/* Mobile Shorts Styling */
+.mobile-shorts-container {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.mobile-short-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.mobile-short-video {
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Hide Lovable badge */

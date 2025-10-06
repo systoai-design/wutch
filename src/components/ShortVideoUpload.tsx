@@ -90,10 +90,10 @@ export const ShortVideoUpload = () => {
       return;
     }
 
-    if (!formData.title.trim() || !formData.description.trim()) {
+    if (!formData.title.trim()) {
       toast({
-        title: 'Required Fields',
-        description: 'Please provide both title and description',
+        title: 'Title Required',
+        description: 'Please provide a title for your short',
         variant: 'destructive',
       });
       return;
@@ -304,13 +304,12 @@ export const ShortVideoUpload = () => {
 
         <div className="space-y-2">
           <Label htmlFor="description">
-            Description <span className="text-destructive">*</span>
+            Description (Optional)
           </Label>
           <Textarea
             id="description"
-            placeholder="Describe your short video"
+            placeholder="Describe your short video (optional)"
             rows={3}
-            required
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
