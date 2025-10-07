@@ -20,10 +20,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+
+        // Ensure profile exists after successful sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(async () => {
+            try {
+              const { data: existingProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', session.user.id)
+                .single();
+
+              if (!existingProfile) {
+                const username = session.user.user_metadata?.username || 
+                                session.user.email?.split('@')[0] || 
+                                `user_${session.user.id.slice(0, 8)}`;
+                
+                const displayName = session.user.user_metadata?.full_name || 
+                                   session.user.user_metadata?.name || 
+                                   'User';
+
+                await supabase
+                  .from('profiles')
+                  .upsert({
+                    id: session.user.id,
+                    username,
+                    display_name: displayName,
+                    avatar_url: session.user.user_metadata?.avatar_url || null
+                  });
+              }
+            } catch (error) {
+              console.error('Error ensuring profile:', error);
+            }
+          }, 0);
+        }
       }
     );
 

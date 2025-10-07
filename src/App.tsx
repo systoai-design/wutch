@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
@@ -69,6 +70,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const { isDark } = useThemeStore();
+  const location = useLocation();
 
   useEffect(() => {
     if (isDark) {
@@ -77,6 +79,19 @@ function AppContent() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Detect OAuth callback errors
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get('error');
+    const errorDescription = params.get('error_description');
+
+    if (error) {
+      toast.error('Authentication Error', {
+        description: errorDescription || 'Failed to sign in with Google. Please try again.'
+      });
+    }
+  }, [location.search]);
 
   return (
     <Suspense fallback={
