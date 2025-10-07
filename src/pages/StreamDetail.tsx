@@ -15,6 +15,7 @@ import { EditStreamDialog } from '@/components/EditStreamDialog';
 import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
+import { PumpFunPlayer } from '@/components/PumpFunPlayer';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useViewingSession } from '@/hooks/useViewingSession';
@@ -69,13 +70,13 @@ const StreamDetail = () => {
   // Track stream likes
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = useStreamLike(id || '');
 
-  // Auto-start watch time tracking on mobile
-  useEffect(() => {
-    if (isMobile && stream && user && !isGuest && stream.user_id !== user.id && !hasStartedWatching) {
-      console.log('Auto-starting watch session for mobile');
+  // Auto-start watch time tracking when player loads (for non-owners)
+  const handlePlayerLoadStart = () => {
+    if (user && !isGuest && stream && stream.user_id !== user.id && !hasStartedWatching) {
+      console.log('Auto-starting watch session for embedded player');
       setHasStartedWatching(true);
     }
-  }, [isMobile, stream, user, isGuest, hasStartedWatching]);
+  };
 
   const fetchStreamData = async () => {
       if (!id) return;
@@ -210,52 +211,20 @@ const StreamDetail = () => {
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           {/* Video Player */}
           <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-background">
-              <div className="text-center space-y-3 sm:space-y-6 p-3 sm:p-8">
-                {stream.is_live && (
-                  <Badge variant="destructive" className="bg-live text-live-foreground text-sm sm:text-lg px-2.5 sm:px-4 py-1 sm:py-2">
-                    <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
-                    LIVE
-                  </Badge>
-                )}
-                
-                <div className="space-y-1.5 sm:space-y-3">
-                  <h3 className="text-base sm:text-xl font-semibold">Watch on Pump.fun</h3>
-                  <p className="text-muted-foreground text-xs sm:text-sm max-w-md mx-auto px-4">
-                    {isMobile ? 'Tap to watch' : 'This stream is hosted on Pump.fun. Click the button below to watch.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 items-center justify-center px-4">
-                  <Button 
-                    size={isMobile ? "default" : "lg"}
-                    className="gap-2 w-full sm:w-auto"
-                    onClick={() => {
-                      // Start timer for non-owners
-                      if (!isOwner && user) {
-                        console.log('Starting watch session');
-                        setHasStartedWatching(true);
-                      }
-                      window.open(stream.pump_fun_url, '_blank');
-                    }}
-                  >
-                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="text-sm sm:text-base">Watch Stream on Pump.fun</span>
-                  </Button>
-                  
-                  {isOwner && (
-                    <EditStreamDialog stream={stream} onUpdate={fetchStreamData} />
-                  )}
-                </div>
-
-                {!isMobile && (
-                  <p className="text-xs text-muted-foreground font-mono opacity-50 break-all px-4">
-                    {stream.pump_fun_url}
-                  </p>
-                )}
-              </div>
-            </div>
+            <PumpFunPlayer 
+              pumpFunUrl={stream.pump_fun_url}
+              isLive={stream.is_live || false}
+              onLoadStart={handlePlayerLoadStart}
+              showExternalLink={true}
+            />
           </div>
+
+          {/* Owner Controls */}
+          {isOwner && (
+            <div className="flex justify-end">
+              <EditStreamDialog stream={stream} onUpdate={fetchStreamData} />
+            </div>
+          )}
 
           {/* Stream Info */}
           <div className="space-y-3 sm:space-y-4">
@@ -371,19 +340,12 @@ const StreamDetail = () => {
             {/* Watch Time Tracker - Only show for non-owners */}
             {!isOwner && user && (
               <>
-                {!isSessionStarted ? (
-                  <Alert className="border-primary/20 bg-primary/5">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      <strong>Click "Watch Stream"</strong> above to {isMobile ? 'start earning rewards' : 'start tracking your watch time and qualify for rewards'}.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
+                {isSessionStarted ? (
                   <>
                     <Alert className="border-primary/20 bg-primary/5">
                       <Timer className="h-4 w-4" />
                       <AlertDescription className="text-sm">
-                        <strong>Watch time tracking active!</strong> Keep this tab open to earn rewards. The timer tracks as long as this page is visible.
+                        <strong>Watch time tracking active!</strong> Keep this tab visible and focused to earn rewards.
                       </AlertDescription>
                     </Alert>
                     <WatchTimeIndicator
@@ -393,7 +355,7 @@ const StreamDetail = () => {
                       meetsMinimumWatchTime={meetsMinimumWatchTime}
                     />
                   </>
-                )}
+                ) : null}
               </>
             )}
 
