@@ -982,14 +982,14 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">About</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <a href="/privacy-policy" className="hover:text-foreground transition-colors">
+                  <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/terms-of-service" className="hover:text-foreground transition-colors">
+                  <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1009,9 +1009,9 @@ const Landing = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="/bounties" className="hover:text-foreground transition-colors">
+                  <Link to="/bounties" className="hover:text-foreground transition-colors">
                     Bounties
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1021,14 +1021,14 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">Community</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <a href="/app" className="hover:text-foreground transition-colors">
+                  <Link to="/app" className="hover:text-foreground transition-colors">
                     Explore Streams
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/shorts" className="hover:text-foreground transition-colors">
+                  <Link to="/shorts" className="hover:text-foreground transition-colors">
                     Watch Shorts
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
