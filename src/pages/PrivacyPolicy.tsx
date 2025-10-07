@@ -184,7 +184,7 @@ const PrivacyPolicy = () => {
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
               <p className="text-muted-foreground">
-                Email: privacy@wutch.com
+                Email: wutch.fun@gmail.com
               </p>
             </section>
           </div>

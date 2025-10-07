@@ -236,7 +236,7 @@ const TermsOfService = () => {
                 If you have any questions about these Terms of Service, please contact us at:
               </p>
               <p className="text-muted-foreground">
-                Email: legal@wutch.com
+                Email: wutch.fun@gmail.com
               </p>
             </section>
           </div>
