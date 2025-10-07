@@ -93,14 +93,26 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Register service worker for caching -->
-    <script>
+    <!-- Register service worker only in production; clean up in dev to avoid cache conflicts -->
+    <script type="module">
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('Service Worker registered'))
-            .catch(err => console.log('Service Worker registration failed:', err));
-        });
+        if (import.meta.env.PROD) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+              .then(reg => console.log('Service Worker registered'))
+              .catch(err => console.log('Service Worker registration failed:', err));
+          });
+        } else {
+          // In development, ensure any existing service workers are removed to prevent stale caches
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            for (const reg of regs) {
+              reg.unregister().then(() => console.log('Service Worker unregistered (dev)'));
+            }
+          }).catch(() => {});
+          if ('caches' in window) {
+            caches.keys().then(keys => keys.forEach(key => caches.delete(key))).catch(() => {});
+          }
+        }
       }
     </script>
   </body>
