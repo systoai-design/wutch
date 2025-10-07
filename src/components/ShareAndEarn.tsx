@@ -72,11 +72,14 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
 
   useEffect(() => {
     async function loadCampaign() {
+      // Fetch the most recent active campaign if multiple exist
       const { data, error } = await supabase
         .from("sharing_campaigns")
         .select("*")
         .eq("livestream_id", livestreamId)
         .eq("is_active", true)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!error && data) {
@@ -99,11 +102,14 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
     async function loadUserShares() {
       if (!user) return;
 
+      // Fetch the most recent active campaign
       const { data: activeCampaign } = await supabase
         .from("sharing_campaigns")
         .select("id")
         .eq("livestream_id", livestreamId)
         .eq("is_active", true)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!activeCampaign) return;

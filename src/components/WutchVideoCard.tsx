@@ -113,7 +113,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
               srcSet={generateSrcSet(video.thumbnail_url)}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={video.title}
-              loading="lazy"
+              loading="eager"
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
             />
           ) : video.video_url ? (

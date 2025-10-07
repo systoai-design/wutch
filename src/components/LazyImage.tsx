@@ -8,6 +8,7 @@ interface LazyImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   rootMargin?: string;
   threshold?: number;
   placeholderClassName?: string;
+  eager?: boolean;
 }
 
 export const LazyImage = ({
@@ -17,6 +18,7 @@ export const LazyImage = ({
   rootMargin = '50px',
   threshold = 0.01,
   placeholderClassName,
+  eager = false,
   ...props
 }: LazyImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -47,7 +49,7 @@ export const LazyImage = ({
   return (
     <img
       ref={imgRef}
-      src={isInView ? src : undefined}
+      src={eager || isInView ? src : undefined}
       alt={alt}
       className={cn(
         className,
@@ -55,7 +57,7 @@ export const LazyImage = ({
         !isLoaded && placeholderClassName
       )}
       onLoad={() => setIsLoaded(true)}
-      loading="lazy"
+      loading={eager ? "eager" : "lazy"}
       decoding="async"
       {...props}
     />

@@ -29,11 +29,7 @@ export const OptimizedBountySection = ({ bounties, isLoading }: OptimizedBountyS
   }
 
   if (!bounties?.length) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No active bounties at the moment. Check back soon!</p>
-      </div>
-    );
+    return null;
   }
 
   return (

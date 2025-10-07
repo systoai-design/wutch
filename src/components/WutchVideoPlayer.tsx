@@ -101,15 +101,35 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    if (isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
+    // Auto-hide controls after 3 seconds
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) {
         setShowControls(false);
-      }, 3000);
+      }
+    }, 3000);
+  };
+
+  const handleMouseEnter = () => {
+    if (!isMobile) {
+      handleInteraction();
     }
   };
 
-  const handleTouchStart = () => {
-    handleInteraction();
+  const handleMouseLeave = () => {
+    if (!isMobile && !isHoveringVolume) {
+      setShowControls(false);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    }
+  };
+
+  const handleClick = () => {
+    if (isMobile) {
+      handleInteraction();
+    } else {
+      togglePlay();
+    }
   };
 
   useEffect(() => {
@@ -135,16 +155,16 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     <div
       ref={containerRef}
       className={cn("relative bg-black rounded-lg overflow-hidden group", className)}
-      onMouseMove={isMobile ? undefined : handleInteraction}
-      onMouseLeave={isMobile ? undefined : () => setShowControls(false)}
-      onTouchStart={isMobile ? handleTouchStart : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={isMobile ? handleInteraction : undefined}
     >
       <video
         ref={videoRef}
         src={videoUrl}
         poster={thumbnailUrl}
         className="w-full h-full object-contain max-h-[100dvh]"
-        onClick={togglePlay}
+        onClick={handleClick}
         playsInline
       />
 

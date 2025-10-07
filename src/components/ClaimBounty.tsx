@@ -41,14 +41,22 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
 
       try {
         // Fetch active bounty for this stream using secure public view
+        // Fetch the most recent active bounty if multiple exist
         const { data: bountyData, error: bountyError } = await supabase
           .from('public_stream_bounties')
           .select('*')
           .eq('livestream_id', livestreamId)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (bountyError) {
           console.error('Error fetching bounty:', bountyError);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!bountyData) {
           setIsLoading(false);
           return;
         }

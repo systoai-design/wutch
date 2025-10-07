@@ -20,7 +20,16 @@ import { parseContentUrl } from '@/utils/urlHelpers';
 const WutchVideoDetail = () => {
   const params = useParams<{ id: string }>();
   // Handle both new SEO format and legacy UUID-only format
-  const id = params.id || parseContentUrl(window.location.pathname);
+  // Fallback: Extract UUID from URL pathname if parseContentUrl fails
+  let id = params.id || parseContentUrl(window.location.pathname);
+  
+  // Final fallback: Extract UUID from pathname directly
+  if (!id) {
+    const pathParts = window.location.pathname.split('/');
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    id = pathParts.find(part => uuidPattern.test(part)) || '';
+  }
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const [video, setVideo] = useState<any>(null);
@@ -47,7 +56,10 @@ const WutchVideoDetail = () => {
   }, [user, id]);
 
   const fetchVideo = async () => {
-    if (!id) return;
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     
     try {
@@ -57,7 +69,11 @@ const WutchVideoDetail = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching video:', error);
+        setIsLoading(false);
+        return;
+      }
       setVideo(videoData);
       setLikeCount(videoData.like_count || 0);
 
