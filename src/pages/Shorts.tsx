@@ -9,7 +9,8 @@ import DonationModal from '@/components/DonationModal';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from '@/components/ui/carousel';
+import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useShortsQuery } from '@/hooks/useShortsQuery';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
@@ -28,7 +29,7 @@ const Shorts = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [selectedShort, setSelectedShort] = useState<ShortVideo | null>(null);
@@ -37,8 +38,10 @@ const Shorts = () => {
     const saved = localStorage.getItem('shorts-muted');
     return saved === null ? true : saved === 'true';
   });
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const hasInitializedRef = useRef(false);
+  const desktopScrollRef = useRef<HTMLDivElement>(null);
+  const lastScrollTime = useRef(0);
+  const isScrollingRef = useRef(false);
 
   const { data: shorts = [], isLoading } = useShortsQuery();
 
@@ -58,29 +61,43 @@ const Shorts = () => {
         console.log('[Shorts] Deep-linking to short at index:', targetIndex);
         setActiveShortIndex(targetIndex);
         
-        // Scroll carousel to target if on desktop
-        if (carouselApi && !isMobile) {
-          carouselApi.scrollTo(targetIndex, true);
+        // Scroll to target if on desktop
+        if (desktopScrollRef.current && !isMobile) {
+          const targetElement = desktopScrollRef.current.children[targetIndex] as HTMLElement;
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'instant', block: 'start' });
+          }
         }
       }
     }
 
     hasInitializedRef.current = true;
-  }, [shorts, location, carouselApi, isMobile]);
+  }, [shorts, location, isMobile]);
 
-  // Sync carousel index with activeShortIndex (Desktop only)
+  // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
-    if (!carouselApi || isMobile) return;
+    if (isMobile || !desktopScrollRef.current) return;
 
-    const onSelect = () => {
-      setActiveShortIndex(carouselApi.selectedScrollSnap());
-    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            const index = parseInt(entry.target.getAttribute('data-index') || '0');
+            setActiveShortIndex(index);
+          }
+        });
+      },
+      {
+        threshold: 0.5,
+        root: desktopScrollRef.current,
+      }
+    );
 
-    carouselApi.on('select', onSelect);
-    return () => {
-      carouselApi.off('select', onSelect);
-    };
-  }, [carouselApi, isMobile]);
+    const shortElements = desktopScrollRef.current.querySelectorAll('.desktop-short-item');
+    shortElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [isMobile, shorts.length]);
 
   // Save mute preference
   useEffect(() => {
@@ -120,9 +137,61 @@ const Shorts = () => {
     const short = shorts.find(s => s.id === shortId);
     if (short) {
       setSelectedShort(short);
-      setIsModalOpen(true);
+      setIsCommentsOpen(true);
     }
   };
+
+  const scrollToShort = useCallback((direction: 'up' | 'down') => {
+    if (!desktopScrollRef.current || isScrollingRef.current) return;
+
+    const now = Date.now();
+    if (now - lastScrollTime.current < 300) return; // Debounce 300ms
+
+    isScrollingRef.current = true;
+    lastScrollTime.current = now;
+
+    const nextIndex = direction === 'down' 
+      ? Math.min(activeShortIndex + 1, shorts.length - 1)
+      : Math.max(activeShortIndex - 1, 0);
+
+    const targetElement = desktopScrollRef.current.children[nextIndex] as HTMLElement;
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 500);
+  }, [activeShortIndex, shorts.length]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    if (isScrollingRef.current) return;
+
+    if (e.deltaY > 0) {
+      scrollToShort('down');
+    } else if (e.deltaY < 0) {
+      scrollToShort('up');
+    }
+  }, [scrollToShort]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (isMobile) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        scrollToShort('down');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        scrollToShort('up');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile, scrollToShort]);
 
   const handleShare = async (short: ShortVideo) => {
     if (navigator.share) {
@@ -267,40 +336,65 @@ const Shorts = () => {
     );
   }
 
-  // Desktop: Carousel with full-screen auto-play
+  // Desktop: Vertical scroll with snap
   return (
-    <div className="h-screen overflow-hidden bg-background">
-      <Carousel
-        opts={{ loop: true, align: "center" }}
-        className="h-full"
-        setApi={setCarouselApi}
+    <div className="relative h-screen overflow-hidden bg-background">
+      <div 
+        ref={desktopScrollRef}
+        className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
+        onWheel={handleWheel}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        <CarouselContent className="h-full">
-          {shorts.map((short, index) => (
-            <CarouselItem key={short.id} className="h-full">
-              <DesktopShortPlayer
-                short={short}
-                isActive={index === activeShortIndex}
-                isMuted={isMuted}
-                onToggleMute={() => setIsMuted(!isMuted)}
-                onOpenComments={() => {
-                  setSelectedShort(short);
-                  setIsCommentsOpen(true);
-                }}
-                onOpenDonation={() => {
-                  setSelectedShort(short);
-                  setIsDonationModalOpen(true);
-                }}
-                onShare={() => handleShare(short)}
-              />
-            </CarouselItem>
-          ))}
-        </CarouselContent>
+        <style>{`
+          .desktop-scroll-container::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         
-        {/* Navigation Arrows */}
-        <CarouselPrevious className="left-4 h-12 w-12" />
-        <CarouselNext className="right-4 h-12 w-12" />
-      </Carousel>
+        {shorts.map((short, index) => (
+          <div
+            key={short.id}
+            data-index={index}
+            className="desktop-short-item h-screen snap-start snap-always"
+          >
+            <DesktopShortPlayer
+              short={short}
+              isActive={index === activeShortIndex}
+              isMuted={isMuted}
+              onToggleMute={() => setIsMuted(!isMuted)}
+              onOpenComments={() => {
+                setSelectedShort(short);
+                setIsCommentsOpen(true);
+              }}
+              onOpenDonation={() => {
+                setSelectedShort(short);
+                setIsDonationModalOpen(true);
+              }}
+              onShare={() => handleShare(short)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Fixed Navigation Arrows */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+        <Button
+          onClick={() => scrollToShort('up')}
+          disabled={activeShortIndex === 0}
+          size="icon"
+          className="h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg disabled:opacity-30"
+        >
+          <ChevronUp className="h-6 w-6 text-white" />
+        </Button>
+        <Button
+          onClick={() => scrollToShort('down')}
+          disabled={activeShortIndex === shorts.length - 1}
+          size="icon"
+          className="h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg disabled:opacity-30"
+        >
+          <ChevronDown className="h-6 w-6 text-white" />
+        </Button>
+      </div>
 
       {/* Comments Dialog for Desktop */}
       {selectedShort && isCommentsOpen && (

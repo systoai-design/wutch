@@ -133,21 +133,20 @@ export function DesktopShortPlayer({
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-6 items-center w-16">
         {/* Creator Avatar */}
         <div className="flex flex-col items-center gap-2">
-          <Avatar className="h-14 w-14 border-2 border-primary cursor-pointer hover:scale-105 transition-transform">
+          <Avatar className="h-14 w-14 border-2 border-white cursor-pointer hover:scale-105 transition-transform">
             <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          {user && user.id !== short.user_id && (
-            <Button
-              size="sm"
-              variant={isFollowing ? "secondary" : "default"}
+          {user && user.id !== short.user_id && !isFollowing && (
+            <button
               onClick={toggleFollow}
-              className="text-xs px-2 py-1 h-auto"
+              className="w-6 h-6 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center shadow-lg transition-all"
+              aria-label="Follow"
             >
-              {isFollowing ? 'Following' : 'Follow'}
-            </Button>
+              <span className="text-primary-foreground text-xl font-bold leading-none">+</span>
+            </button>
           )}
         </div>
 
@@ -156,12 +155,12 @@ export function DesktopShortPlayer({
           onClick={toggleLike}
           className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
         >
-          <div className={`p-3 rounded-full shadow-lg ${isLiked ? 'bg-primary' : 'bg-muted hover:bg-muted/80'}`}>
+          <div className={`p-3 rounded-full backdrop-blur-sm shadow-lg ${isLiked ? 'bg-white/90' : 'bg-black/60 hover:bg-black/80'}`}>
             <Heart
-              className={`h-6 w-6 ${isLiked ? 'fill-primary-foreground text-primary-foreground' : 'text-foreground'}`}
+              className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`}
             />
           </div>
-          <span className="text-foreground text-sm font-semibold">
+          <span className="text-white text-xs font-medium">
             {likeCount > 0 ? formatNumber(likeCount) : ''}
           </span>
         </button>
@@ -171,10 +170,10 @@ export function DesktopShortPlayer({
           onClick={onOpenComments}
           className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
         >
-          <div className="p-3 rounded-full bg-muted hover:bg-muted/80 shadow-lg">
-            <MessageCircle className="h-6 w-6 text-foreground" />
+          <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+            <MessageCircle className="h-6 w-6 text-white" />
           </div>
-          <span className="text-foreground text-sm font-semibold">
+          <span className="text-white text-xs font-medium">
             {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
           </span>
         </button>
@@ -184,8 +183,8 @@ export function DesktopShortPlayer({
           onClick={onShare}
           className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
         >
-          <div className="p-3 rounded-full bg-muted hover:bg-muted/80 shadow-lg">
-            <Share2 className="h-6 w-6 text-foreground" />
+          <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+            <Share2 className="h-6 w-6 text-white" />
           </div>
         </button>
 
@@ -197,8 +196,8 @@ export function DesktopShortPlayer({
             rel="noopener noreferrer"
             className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
           >
-            <div className="p-3 rounded-full bg-accent hover:bg-accent/80 shadow-lg">
-              <ExternalLink className="h-6 w-6 text-accent-foreground" />
+            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+              <ExternalLink className="h-6 w-6 text-white" />
             </div>
           </a>
         )}
@@ -209,29 +208,29 @@ export function DesktopShortPlayer({
             onClick={onOpenDonation}
             className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
           >
-            <div className="p-3 rounded-full bg-primary hover:bg-primary/90 shadow-lg">
-              <Wallet className="h-6 w-6 text-primary-foreground" />
+            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+              <Wallet className="h-6 w-6 text-white" />
             </div>
           </button>
         )}
       </div>
 
       {/* Bottom Info Panel */}
-      <div className="absolute bottom-0 left-0 right-24 p-6 bg-gradient-to-t from-background/95 via-background/70 to-transparent">
+      <div className="absolute bottom-0 left-0 right-24 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none">
         <div className="max-w-[600px]">
           <div className="flex items-center gap-3 mb-3">
-            <p className="text-foreground font-semibold">
+            <p className="text-white font-semibold">
               @{short.profiles?.username || 'Unknown'}
             </p>
             {short.profiles?.display_name && (
-              <p className="text-muted-foreground text-sm">{short.profiles.display_name}</p>
+              <p className="text-white/80 text-sm">{short.profiles.display_name}</p>
             )}
           </div>
           
           <div className="space-y-1">
-            <h3 className="text-foreground font-bold text-lg line-clamp-2">{short.title}</h3>
+            <h3 className="text-white font-bold text-lg line-clamp-2">{short.title}</h3>
             {short.description && (
-              <p className="text-muted-foreground line-clamp-2">{short.description}</p>
+              <p className="text-white/80 line-clamp-2">{short.description}</p>
             )}
           </div>
         </div>
