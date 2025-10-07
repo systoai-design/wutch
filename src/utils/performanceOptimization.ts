@@ -1,0 +1,94 @@
+/**
+ * Performance optimization utilities for mobile devices
+ */
+
+/**
+ * Debounce function to limit function calls
+ */
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
+/**
+ * Throttle function to limit function call rate
+ */
+export const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): ((...args: Parameters<T>) => void) => {
+  let inThrottle: boolean = false;
+
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+};
+
+/**
+ * Check if device is low-end based on hardware concurrency
+ */
+export const isLowEndDevice = (): boolean => {
+  return navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false;
+};
+
+/**
+ * Preload critical resources
+ */
+export const preloadImage = (src: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
+/**
+ * Get optimal image quality based on connection
+ */
+export const getOptimalImageQuality = (): number => {
+  if ('connection' in navigator) {
+    const connection = (navigator as any).connection;
+    if (connection) {
+      const effectiveType = connection.effectiveType;
+      switch (effectiveType) {
+        case 'slow-2g':
+        case '2g':
+          return 50;
+        case '3g':
+          return 70;
+        case '4g':
+        default:
+          return 85;
+      }
+    }
+  }
+  return 85;
+};
+
+/**
+ * Request idle callback polyfill
+ */
+export const requestIdleCallback =
+  typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? window.requestIdleCallback
+    : (callback: IdleRequestCallback) => {
+        const start = Date.now();
+        return setTimeout(() => {
+          callback({
+            didTimeout: false,
+            timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
+          });
+        }, 1);
+      };

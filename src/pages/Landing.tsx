@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
@@ -6,10 +6,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { BountyCard } from '@/components/BountyCard';
+import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
 import wutchLogo from '@/assets/wutch-logo.png';
+
+// Memoized stat card component
+const StatCard = memo(({ value, label, delay }: { value: string; label: string; delay: string }) => (
+  <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: delay }}>
+    <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
+      {value}
+    </div>
+    <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">{label}</div>
+  </div>
+));
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
@@ -29,13 +39,58 @@ const Landing = () => {
     activeCreators: 0,
     averageEarnings: 0
   });
+  const [sectionsVisible, setSectionsVisible] = useState({
+    bounties: false,
+    leaderboard: false,
+    creator: false,
+  });
+
+  // Intersection Observer for lazy loading sections
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const observeSection = useCallback((sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (!element || !observerRef.current) return;
+    observerRef.current.observe(element);
+  }, []);
 
   useEffect(() => {
     document.title = 'Wutch - Earn SOLANA | 4 Ways to Get Crypto Rewards | Watch, Create, Share';
-    fetchFeaturedBounties();
-    fetchLeaderboard();
+    
+    // Setup Intersection Observer for lazy loading
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const sectionId = entry.target.id;
+            if (sectionId === 'bounties' && !sectionsVisible.bounties) {
+              setSectionsVisible(prev => ({ ...prev, bounties: true }));
+              fetchFeaturedBounties();
+            } else if (sectionId === 'leaderboard' && !sectionsVisible.leaderboard) {
+              setSectionsVisible(prev => ({ ...prev, leaderboard: true }));
+              fetchLeaderboard();
+            } else if (sectionId === 'creator-rewards' && !sectionsVisible.creator) {
+              setSectionsVisible(prev => ({ ...prev, creator: true }));
+              fetchCreatorStats();
+            }
+            observerRef.current?.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: '100px' }
+    );
+
+    // Load critical data immediately
     fetchStats();
-    fetchCreatorStats();
+    
+    // Observe sections for lazy loading
+    setTimeout(() => {
+      observeSection('bounties');
+      observeSection('leaderboard');
+      observeSection('creator-rewards');
+    }, 100);
+
+    return () => observerRef.current?.disconnect();
   }, []);
 
   const fetchStats = async () => {
@@ -197,11 +252,12 @@ const Landing = () => {
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group touch-manipulation">
             <img 
               src={wutchLogo} 
-              alt="Wutch" 
+              alt="Wutch Logo" 
               className="h-8 w-8 sm:h-10 sm:w-10 transition-transform group-hover:scale-110"
               width="40"
               height="40"
-              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
             <span className="text-xl sm:text-2xl font-bold text-foreground">Wutch</span>
           </Link>
@@ -296,24 +352,21 @@ const Landing = () => {
 
           {/* Stats with subtle background */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 pt-8 sm:pt-12 md:pt-16 max-w-3xl mx-auto px-2">
-            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-                ${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Total Paid Out</div>
-            </div>
-            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-                {stats.activeWatchers.toLocaleString()}+
-              </div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Active Earners</div>
-            </div>
-            <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-                {stats.liveStreams.toLocaleString()}
-              </div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">Live Now</div>
-            </div>
+            <StatCard 
+              value={`$${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+              label="Total Paid Out"
+              delay="0.4s"
+            />
+            <StatCard 
+              value={`${stats.activeWatchers.toLocaleString()}+`}
+              label="Active Earners"
+              delay="0.5s"
+            />
+            <StatCard 
+              value={stats.liveStreams.toLocaleString()}
+              label="Live Now"
+              delay="0.6s"
+            />
           </div>
         </div>
       </section>
@@ -564,23 +617,10 @@ const Landing = () => {
             </Button>
           </div>
 
-          {isLoadingBounties ? (
-            <div className="grid md:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-64 bg-accent/20 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : featuredBounties.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6">
-              {featuredBounties.map((bounty) => (
-                <BountyCard key={bounty.id} bounty={bounty} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              No active bounties at the moment. Check back soon!
-            </div>
-          )}
+          <OptimizedBountySection 
+            bounties={featuredBounties}
+            isLoading={isLoadingBounties}
+          />
         </div>
       </section>
 
