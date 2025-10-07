@@ -22,37 +22,58 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerSt
   const lastCreditedMinuteRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const lastWatchTimeRef = useRef<number>(0);
+  const initializedRef = useRef<boolean>(false);
 
-  // Use Page Visibility API for both mobile and desktop
+  // Use Page Visibility API + Window Focus for both mobile and desktop
   useEffect(() => {
     if (!shouldStart) {
       setIsTracking(false);
       return;
     }
 
-    // Start timer immediately
-    setIsTracking(true);
-    setIsSessionStarted(true);
-    startTimeRef.current = Date.now();
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Tab hidden, pause timer
+    const checkActiveState = () => {
+      const isVisible = !document.hidden;
+      const hasFocus = document.hasFocus();
+      const isActive = isVisible && hasFocus;
+      
+      console.log('[Watch Time] State change:', { isVisible, hasFocus, isActive });
+      
+      if (!isActive && isTracking) {
+        // Pausing: accumulate time
         const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
         accumulatedTimeRef.current += currentSessionTime;
         setIsTracking(false);
-      } else {
-        // Tab visible, resume timer
+      } else if (isActive && !isTracking) {
+        // Resuming: reset start time
         setIsTracking(true);
         startTimeRef.current = Date.now();
       }
     };
 
+    const handleVisibilityChange = () => {
+      console.log('[Watch Time] Visibility change:', !document.hidden);
+      checkActiveState();
+    };
+
+    const handleFocus = () => {
+      console.log('[Watch Time] Window focus gained');
+      checkActiveState();
+    };
+
+    const handleBlur = () => {
+      console.log('[Watch Time] Window focus lost');
+      checkActiveState();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
 
     // Update watch time display
     const updateDisplay = () => {
-      if (!document.hidden) {
+      const isActive = !document.hidden && document.hasFocus();
+      
+      if (isActive) {
         const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
         const newWatchTime = accumulatedTimeRef.current + currentSessionTime;
         
@@ -68,16 +89,20 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerSt
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [shouldStart]);
+  }, [shouldStart, isTracking]);
 
   // Create or resume viewing session
   useEffect(() => {
     if (!user || !livestreamId || !shouldStart) return;
-    if (isSessionStarted) return; // Prevent duplicate initialization
+    if (initializedRef.current) return; // Prevent duplicate initialization
+
+    initializedRef.current = true;
 
     const initSession = async () => {
       try {
@@ -137,14 +162,16 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerSt
 
         startTimeRef.current = Date.now();
         setIsSessionStarted(true);
+        setIsTracking(true);
         onTimerStart?.();
       } catch (error) {
         console.error('Error initializing viewing session:', error);
+        initializedRef.current = false;
       }
     };
 
     initSession();
-  }, [user, livestreamId, shouldStart, isSessionStarted]);
+  }, [user, livestreamId, shouldStart]);
 
   // Optimized: Cache livestream owner on session start
   useEffect(() => {
@@ -176,7 +203,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerSt
         .update({
           last_active_at: new Date().toISOString(),
           total_watch_time: totalTime,
-          tab_visible: true,
+          tab_visible: isTracking,
         })
         .eq('id', sessionId);
 

@@ -67,8 +67,8 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep this tab open to earn watch time.
-            {!isTracking && " (Timer paused - tab not visible)"}
+            Keep this tab visible and focused to earn watch time.
+            {!isTracking && " (Timer paused - tab not active)"}
           </p>
         )}
       </div>
