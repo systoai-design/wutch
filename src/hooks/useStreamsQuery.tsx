@@ -40,9 +40,8 @@ export const useStreamsQuery = () => {
           .order('ended_at', { ascending: false })
           .limit(12),
         supabase
-          .from('stream_bounties')
-          .select('livestream_id')
-          .eq('is_active', true),
+          .from('public_stream_bounties')
+          .select('livestream_id'),
         supabase
           .from('sharing_campaigns')
           .select('livestream_id')

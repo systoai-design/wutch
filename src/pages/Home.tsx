@@ -90,12 +90,13 @@ const Home = () => {
       };
 
       // Fetch live streams with bounty and share campaign info
+      // Use public_stream_bounties view for security (excludes secret_word)
       let liveQuery = supabase
         .from('livestreams')
         .select(`
           *,
           profiles!livestreams_user_id_fkey(username, display_name, avatar_url),
-          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
+          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
           sharing_campaigns!livestream_id(id, is_active)
         `)
         .eq('is_live', true)
@@ -105,7 +106,7 @@ const Home = () => {
       
       // Process bounty and share campaign data
       const processedLiveData: LivestreamWithBounty[] = (liveData || []).map(stream => {
-        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        const activeBounties = (stream.public_stream_bounties as any[] || []).filter((b: any) => b.is_active);
         const activeCampaigns = (stream.sharing_campaigns as any[] || []).filter((c: any) => c.is_active);
         return {
           ...stream,
@@ -174,7 +175,7 @@ const Home = () => {
         .from('livestreams')
         .select(`
           *,
-          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
@@ -182,7 +183,7 @@ const Home = () => {
       const { data: upcomingData } = await upcomingQuery;
       
       const processedUpcomingData: LivestreamWithBounty[] = (upcomingData || []).map(stream => {
-        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        const activeBounties = (stream.public_stream_bounties as any[] || []).filter((b: any) => b.is_active);
         return {
           ...stream,
           bounty_count: activeBounties.length,
@@ -198,7 +199,7 @@ const Home = () => {
         .from('livestreams')
         .select(`
           *,
-          stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
         `)
         .eq('status', 'ended')
         .order('ended_at', { ascending: false })
@@ -207,7 +208,7 @@ const Home = () => {
       const { data: endedData } = await endedQuery;
       
       const processedEndedData: LivestreamWithBounty[] = (endedData || []).map(stream => {
-        const activeBounties = (stream.stream_bounties as any[] || []).filter((b: any) => b.is_active);
+        const activeBounties = (stream.public_stream_bounties as any[] || []).filter((b: any) => b.is_active);
         return {
           ...stream,
           bounty_count: activeBounties.length,

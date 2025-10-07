@@ -44,6 +44,13 @@ export type Database = {
             foreignKeyName: "bounty_claim_shares_bounty_id_fkey"
             columns: ["bounty_id"]
             isOneToOne: false
+            referencedRelation: "public_stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_claim_shares_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
             referencedRelation: "stream_bounties"
             referencedColumns: ["id"]
           },
@@ -97,6 +104,13 @@ export type Database = {
           watch_time_seconds?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bounty_claims_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "public_stream_bounties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bounty_claims_bounty_id_fkey"
             columns: ["bounty_id"]
@@ -1042,7 +1056,66 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_stream_bounties: {
+        Row: {
+          claimed_count: number | null
+          created_at: string | null
+          creator_id: string | null
+          expires_at: string | null
+          id: string | null
+          is_active: boolean | null
+          livestream_id: string | null
+          participant_limit: number | null
+          platform_fee_amount: number | null
+          reward_per_participant: number | null
+          total_deposit: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          claimed_count?: number | null
+          created_at?: string | null
+          creator_id?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          livestream_id?: string | null
+          participant_limit?: number | null
+          platform_fee_amount?: number | null
+          reward_per_participant?: number | null
+          total_deposit?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          claimed_count?: number | null
+          created_at?: string | null
+          creator_id?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          livestream_id?: string | null
+          participant_limit?: number | null
+          platform_fee_amount?: number | null
+          reward_per_participant?: number | null
+          total_deposit?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_bounties_livestream_id_fkey"
+            columns: ["livestream_id"]
+            isOneToOne: false
+            referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_to_revenue_pool: {

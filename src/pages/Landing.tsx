@@ -136,14 +136,14 @@ const Landing = () => {
 
   const fetchFeaturedBounties = async () => {
     try {
+      // Use the secure public view that excludes secret_word
       const { data, error } = await supabase
-        .from('stream_bounties')
+        .from('public_stream_bounties')
         .select(`
           *,
           livestream:livestreams(title, thumbnail_url),
-          creator:profiles!stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+          creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
         `)
-        .eq('is_active', true)
         .order('reward_per_participant', { ascending: false })
         .limit(3);
 
