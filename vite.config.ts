@@ -50,12 +50,6 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: 'assets/js/[name]-[hash].js',
       },
     },
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        pure_funcs: mode === 'production' ? ['console.log'] : [],
-      },
-    },
+    minify: mode === 'production' ? 'esbuild' : false,
   },
 }));
