@@ -106,7 +106,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     >
       <div className="space-y-3">
         {/* Thumbnail/Video */}
-        <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+        <div className="relative aspect-video overflow-hidden rounded-xl bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500">
           {!isPlaying && video.thumbnail_url ? (
             <img
               src={optimizeImage(video.thumbnail_url, imagePresets.thumbnail)}

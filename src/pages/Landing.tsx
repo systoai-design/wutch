@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Twitter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
@@ -23,7 +22,6 @@ const StatCard = memo(({ value, label, delay }: { value: string; label: string; 
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
-  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [featuredBounties, setFeaturedBounties] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -136,14 +134,14 @@ const Landing = () => {
 
   const fetchFeaturedBounties = async () => {
     try {
+      // Use the secure public view that excludes secret_word
       const { data, error } = await supabase
-        .from('stream_bounties')
+        .from('public_stream_bounties')
         .select(`
           *,
           livestream:livestreams(title, thumbnail_url),
-          creator:profiles!stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+          creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
         `)
-        .eq('is_active', true)
         .order('reward_per_participant', { ascending: false })
         .limit(3);
 
@@ -198,38 +196,14 @@ const Landing = () => {
 
   const fetchCreatorStats = async () => {
     try {
-      // Fetch total earnings paid to creators
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('total_earnings, pending_earnings');
+      // Fetch aggregated earnings stats using secure function
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_platform_earnings_stats');
 
-      if (profilesError) throw profilesError;
+      if (statsError) throw statsError;
 
-      const totalPaidToCreators = (profilesData || []).reduce(
-        (sum, profile) => sum + parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0'),
-        0
-      );
-
-      // Count active creators (those with any content)
-      const { data: livestreamCreators } = await supabase
-        .from('livestreams')
-        .select('user_id');
-      
-      const { data: shortCreators } = await supabase
-        .from('short_videos')
-        .select('user_id');
-      
-      const { data: wutchCreators } = await supabase
-        .from('wutch_videos')
-        .select('user_id');
-
-      const uniqueCreatorIds = new Set([
-        ...(livestreamCreators || []).map(c => c.user_id),
-        ...(shortCreators || []).map(c => c.user_id),
-        ...(wutchCreators || []).map(c => c.user_id)
-      ]);
-      
-      const activeCreators = uniqueCreatorIds.size;
+      const totalPaidToCreators = statsData?.[0]?.total_paid_to_creators || 0;
+      const activeCreators = Number(statsData?.[0]?.active_creators || 0);
 
       // Calculate average earnings
       const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;
@@ -303,6 +277,15 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
+              aria-label="Follow us on X"
+              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
+            >
+              <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -993,20 +976,20 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-12 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
             {/* About Column */}
             <div>
               <h3 className="font-semibold mb-4">About</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <a href="/privacy-policy" className="hover:text-foreground transition-colors">
+                  <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/terms-of-service" className="hover:text-foreground transition-colors">
+                  <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1026,9 +1009,9 @@ const Landing = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="/bounties" className="hover:text-foreground transition-colors">
+                  <Link to="/bounties" className="hover:text-foreground transition-colors">
                     Bounties
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1038,13 +1021,31 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">Community</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <a href="/app" className="hover:text-foreground transition-colors">
+                  <Link to="/app" className="hover:text-foreground transition-colors">
                     Explore Streams
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/shorts" className="hover:text-foreground transition-colors">
+                  <Link to="/shorts" className="hover:text-foreground transition-colors">
                     Watch Shorts
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Social Column */}
+            <div>
+              <h3 className="font-semibold mb-4">Social</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a 
+                    href="https://x.com/wutchdotfun" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors flex items-center gap-2"
+                  >
+                    <Twitter className="h-4 w-4" />
+                    X (Twitter)
                   </a>
                 </li>
               </ul>
