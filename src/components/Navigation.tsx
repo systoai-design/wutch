@@ -15,6 +15,7 @@ import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
+import xLogo from '@/assets/x-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -137,13 +138,11 @@ const Navigation = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => window.open('https://twitter.com', '_blank')}
+            onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
             className="hidden sm:inline-flex min-h-[44px] min-w-[44px]"
-            aria-label="Twitter"
+            aria-label="Follow us on X"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
+            <img src={xLogo} alt="X" className="h-5 w-5" />
           </Button>
 
           {/* Create Button */}

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, X } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
 import wutchLogo from '@/assets/wutch-logo.png';
+import xLogo from '@/assets/x-logo.png';
 
 // Memoized stat card component
 const StatCard = memo(({ value, label, delay }: { value: string; label: string; delay: string }) => (
@@ -284,7 +285,7 @@ const Landing = () => {
               aria-label="Follow us on X"
               className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
             >
-              <X className="h-4 w-4 sm:h-5 sm:w-5" />
+              <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             <Button
               variant="ghost"
@@ -1044,7 +1045,7 @@ const Landing = () => {
                     rel="noopener noreferrer"
                     className="hover:text-foreground transition-colors flex items-center gap-2"
                   >
-                    <X className="h-4 w-4" />
+                    <img src={xLogo} alt="X" className="h-4 w-4" />
                     X (Twitter)
                   </a>
                 </li>
