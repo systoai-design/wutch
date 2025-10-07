@@ -202,7 +202,7 @@ const Home = () => {
         `)
         .eq('status', 'ended')
         .order('ended_at', { ascending: false })
-        .limit(50);
+        .limit(12);
       endedQuery = buildQuery(endedQuery);
       const { data: endedData } = await endedQuery;
       

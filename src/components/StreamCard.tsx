@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Database } from '@/integrations/supabase/types';
 import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
+import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimization';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -35,8 +36,11 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
       <div className={compact ? 'space-y-2' : 'space-y-3'}>
         <div className={`relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500 ${compact ? 'rounded-lg' : ''} ${hasBounty ? 'ring-1 ring-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : ''}`}>
           <img
-            src={stream.thumbnail_url || '/placeholder.svg'}
+            src={optimizeImage(stream.thumbnail_url, imagePresets.thumbnail)}
+            srcSet={generateSrcSet(stream.thumbnail_url)}
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             alt={stream.title}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {stream.is_live && (
@@ -71,8 +75,9 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
 
         <div className={`flex ${compact ? 'gap-2' : 'gap-3'}`}>
           <img
-            src={streamer?.avatar_url || '/placeholder.svg'}
+            src={optimizeImage(streamer?.avatar_url, imagePresets.avatarSmall)}
             alt={streamer?.username || 'Streamer'}
+            loading="lazy"
             className={`rounded-full flex-shrink-0 ring-2 ring-background ${compact ? 'w-8 h-8' : 'w-9 h-9'}`}
           />
           <div className="flex-1 min-w-0">

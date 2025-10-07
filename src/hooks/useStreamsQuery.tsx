@@ -65,7 +65,7 @@ export const useStreamsQuery = () => {
         endedStreams: addRewardInfo(endedResult.data || []),
       };
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 10000, // 10 seconds for live data
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
   });

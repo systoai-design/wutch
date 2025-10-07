@@ -3,6 +3,7 @@ import { Heart, MessageCircle, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/utils/formatters';
 import { Database } from '@/integrations/supabase/types';
+import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -95,8 +96,9 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         {/* Thumbnail Overlay - Show when not playing */}
         {!isPlaying && short.thumbnail_url && (
           <img
-            src={short.thumbnail_url}
+            src={optimizeImage(short.thumbnail_url, { width: 400, quality: 80 })}
             alt={short.title}
+            loading="lazy"
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
@@ -120,8 +122,9 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
           <div className="flex items-center gap-2 mb-2">
             {short.profiles?.avatar_url && (
               <img
-                src={short.profiles.avatar_url}
+                src={optimizeImage(short.profiles.avatar_url, imagePresets.avatarSmall)}
                 alt={short.profiles.username || 'User'}
+                loading="lazy"
                 className="w-8 h-8 rounded-full border border-white/30"
               />
             )}

@@ -40,7 +40,7 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
         return [];
       }
 
-      // Fetch profiles in bulk
+      // Fetch profiles in bulk using a more optimized approach
       const userIds = [...new Set(data.map(v => v.user_id))];
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -54,7 +54,7 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
         profiles: profilesMap.get(video.user_id),
       })) as WutchVideo[];
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes for videos
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 };

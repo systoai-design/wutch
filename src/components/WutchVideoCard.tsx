@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
+import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimization';
 
 interface WutchVideoCardProps {
   video: {
@@ -108,7 +109,9 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
           {!isPlaying && video.thumbnail_url ? (
             <img
-              src={video.thumbnail_url}
+              src={optimizeImage(video.thumbnail_url, imagePresets.thumbnail)}
+              srcSet={generateSrcSet(video.thumbnail_url)}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={video.title}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
@@ -141,7 +144,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
         <div className="flex gap-3">
           {/* Avatar */}
           <Avatar className="h-9 w-9 flex-shrink-0">
-            <AvatarImage src={video.profiles?.avatar_url} />
+            <AvatarImage src={optimizeImage(video.profiles?.avatar_url, imagePresets.avatarSmall)} />
             <AvatarFallback>
               {video.profiles?.display_name?.[0] || video.profiles?.username?.[0] || 'U'}
             </AvatarFallback>

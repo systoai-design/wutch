@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
+import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -125,7 +126,7 @@ export function MobileShortPlayer({
         playsInline
         loop
         muted={isMuted}
-        preload="metadata"
+        preload={isActive ? "auto" : "none"}
         onTouchEnd={handleTouchEnd}
       />
 
@@ -141,7 +142,7 @@ export function MobileShortPlayer({
       <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-10 w-10 border-2 border-white">
-            <AvatarImage src={short.profiles?.avatar_url || ''} />
+            <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
