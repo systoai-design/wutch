@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, Wallet, ExternalLink, Play, Pause, Volume2, VolumeX, X, Maximize, MoreVertical, ThumbsDown, Trash2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -38,14 +38,16 @@ export function ShortVideoModal({
   canDelete,
 }: ShortVideoModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0); // Start muted for autoplay
+  const [isMuted, setIsMuted] = useState(true);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog: showLikeGuestDialog, setShowGuestDialog: setShowLikeGuestDialog } = useShortVideoLike(short?.id || '');
   const { isFollowing, isLoading: followLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = useFollow(short?.user_id || '');
@@ -59,32 +61,69 @@ export function ShortVideoModal({
     if (!video) return;
 
     const handleTimeUpdate = () => setCurrentTime(video.currentTime);
-    const handleLoadedMetadata = () => setDuration(video.duration);
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      setVideoReady(true);
+    };
+    const handleCanPlay = () => setVideoReady(true);
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
     video.volume = volume / 100;
+    video.muted = isMuted;
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [volume, short]);
+  }, [volume, isMuted, short]);
 
   // Auto-play when modal opens (muted for autoplay to work)
   useEffect(() => {
-    if (isOpen && videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(e => console.log('Autoplay prevented:', e));
+    const video = videoRef.current;
+    if (!isOpen || !video) return;
+
+    // Reset states when modal opens
+    setVideoReady(false);
+    setIsPlaying(false);
+    setIsMuted(true);
+    video.muted = true;
+    video.currentTime = 0;
+
+    const attemptPlay = () => {
+      video.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((e) => {
+          console.log('Autoplay prevented:', e);
+          setIsPlaying(false);
+        });
+    };
+
+    // Wait for video to be ready before playing
+    if (video.readyState >= 3) {
+      // HAVE_FUTURE_DATA or greater
+      attemptPlay();
+    } else {
+      const handleCanPlay = () => {
+        attemptPlay();
+        video.removeEventListener('canplay', handleCanPlay);
+      };
+      video.addEventListener('canplay', handleCanPlay);
+      
+      return () => {
+        video.removeEventListener('canplay', handleCanPlay);
+      };
     }
   }, [isOpen, short]);
 
@@ -105,9 +144,11 @@ export function ShortVideoModal({
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
+    const shouldMute = newVolume === 0;
+    setIsMuted(shouldMute);
     if (videoRef.current) {
       videoRef.current.volume = newVolume / 100;
-      videoRef.current.muted = newVolume === 0;
+      videoRef.current.muted = shouldMute;
     }
   };
 
@@ -167,6 +208,10 @@ export function ShortVideoModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] md:max-w-4xl h-[95vh] p-0 bg-black border-none">
+        <DialogTitle className="sr-only">{short?.title || 'Short video'}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Short video by @{short?.profiles?.username || 'anonymous'}
+        </DialogDescription>
         <div 
           className="relative w-full h-full flex items-center justify-center bg-black"
           onMouseEnter={() => setShowControls(true)}
@@ -181,7 +226,7 @@ export function ShortVideoModal({
               className="w-full h-full object-contain max-h-[95vh]"
               loop
               playsInline
-              muted
+              preload="auto"
             />
 
             {/* Play/Pause Overlay - Center (only when paused or on hover) */}
@@ -223,11 +268,11 @@ export function ShortVideoModal({
                   size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleVolumeChange(volume === 0 ? [100] : [0]);
+                    handleVolumeChange(isMuted ? [100] : [0]);
                   }}
                   className="rounded-full h-12 w-12 bg-black/60 hover:bg-black/70 text-white backdrop-blur-md transition-all"
                 >
-                  {volume === 0 ? (
+                  {isMuted ? (
                     <VolumeX className="h-6 w-6" />
                   ) : (
                     <Volume2 className="h-6 w-6" />

@@ -32,21 +32,39 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
 
   const handleMouseEnter = () => {
     setIsHovering(true);
-    if (videoRef.current && short.video_url) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        // Stop after 10 seconds
-        timeoutRef.current = setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-            setIsPlaying(false);
-          }
-        }, 10000);
-      }).catch(() => {
-        // Ignore autoplay failures
-      });
+    const video = videoRef.current;
+    if (!video || !short.video_url) return;
+
+    video.currentTime = 0;
+    
+    const attemptPlay = () => {
+      video.play()
+        .then(() => {
+          setIsPlaying(true);
+          // Stop after 10 seconds
+          timeoutRef.current = setTimeout(() => {
+            if (video) {
+              video.pause();
+              video.currentTime = 0;
+              setIsPlaying(false);
+            }
+          }, 10000);
+        })
+        .catch(() => {
+          // Ignore autoplay failures
+        });
+    };
+
+    // Wait for video to be ready before playing
+    if (video.readyState >= 2) {
+      // HAVE_CURRENT_DATA or greater
+      attemptPlay();
+    } else {
+      const handleCanPlay = () => {
+        attemptPlay();
+        video.removeEventListener('loadeddata', handleCanPlay);
+      };
+      video.addEventListener('loadeddata', handleCanPlay);
     }
   };
 
@@ -86,7 +104,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             ref={videoRef}
             src={short.video_url}
             className="w-full h-full object-cover"
-            preload={isHovering ? "metadata" : "none"}
+            preload="metadata"
             playsInline
             muted
             loop={false}
