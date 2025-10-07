@@ -111,7 +111,14 @@ const StreamDetail = () => {
         // Fetch related streams
         const { data: relatedData } = await supabase
           .from('livestreams')
-          .select('*')
+          .select(`
+            *,
+            profiles:user_id (
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
           .neq('id', id)
           .eq('is_live', true)
           .limit(4);
