@@ -72,8 +72,8 @@ export function PumpFunPlayer({
         return;
       }
       
-      // Use pumpembed.com for embedding
-      const newEmbedUrl = `https://pumpembed.com/${tokenAddress}`;
+      // Use direct pump.fun URL for embedding (more reliable than pumpembed)
+      const newEmbedUrl = `https://pump.fun/coin/${tokenAddress}`;
       setEmbedUrl(newEmbedUrl);
       console.log('[PumpFunPlayer] Extracted embed URL:', newEmbedUrl);
       console.log('[PumpFunPlayer] Token address:', tokenAddress);

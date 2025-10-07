@@ -2,17 +2,20 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ShortCard } from '@/components/ShortCard';
 import { ShortVideoModal } from '@/components/ShortVideoModal';
 import { MobileShortPlayer } from '@/components/MobileShortPlayer';
+import { DesktopShortPlayer } from '@/components/DesktopShortPlayer';
 import ShortsHeader from '@/components/ShortsHeader';
 import CommentsSection from '@/components/CommentsSection';
 import DonationModal from '@/components/DonationModal';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from '@/components/ui/carousel';
 import { useShortsQuery } from '@/hooks/useShortsQuery';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import { shareShortToTwitter } from '@/utils/shareUtils';
-import { generateContentUrl } from '@/utils/urlHelpers';
+import { generateContentUrl, parseContentUrl } from '@/utils/urlHelpers';
+import { useLocation } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -23,6 +26,7 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 
 const Shorts = () => {
   const isMobile = useIsMobile();
+  const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
@@ -33,8 +37,50 @@ const Shorts = () => {
     const saved = localStorage.getItem('shorts-muted');
     return saved === null ? true : saved === 'true';
   });
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const hasInitializedRef = useRef(false);
 
   const { data: shorts = [], isLoading } = useShortsQuery();
+
+  // Handle deep-linking: Check URL for specific short ID
+  useEffect(() => {
+    if (!shorts || shorts.length === 0 || hasInitializedRef.current) return;
+
+    // Check for ?id=xxx or pathname-based ID
+    const params = new URLSearchParams(location.search);
+    const shortIdFromQuery = params.get('id');
+    const shortIdFromPath = parseContentUrl(location.pathname);
+    const targetShortId = shortIdFromQuery || shortIdFromPath;
+
+    if (targetShortId) {
+      const targetIndex = shorts.findIndex(s => s.id === targetShortId);
+      if (targetIndex !== -1) {
+        console.log('[Shorts] Deep-linking to short at index:', targetIndex);
+        setActiveShortIndex(targetIndex);
+        
+        // Scroll carousel to target if on desktop
+        if (carouselApi && !isMobile) {
+          carouselApi.scrollTo(targetIndex, true);
+        }
+      }
+    }
+
+    hasInitializedRef.current = true;
+  }, [shorts, location, carouselApi, isMobile]);
+
+  // Sync carousel index with activeShortIndex (Desktop only)
+  useEffect(() => {
+    if (!carouselApi || isMobile) return;
+
+    const onSelect = () => {
+      setActiveShortIndex(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on('select', onSelect);
+    return () => {
+      carouselApi.off('select', onSelect);
+    };
+  }, [carouselApi, isMobile]);
 
   // Save mute preference
   useEffect(() => {
@@ -221,66 +267,66 @@ const Shorts = () => {
     );
   }
 
-  // Desktop: Grid layout
+  // Desktop: Carousel with full-screen auto-play
   return (
-    <div className="p-4 pb-20 lg:pb-6">
-      <h1 className="text-3xl font-bold mb-6">Shorts</h1>
-      
-      {/* Grid layout for desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
-        {shorts.map((short) => (
-          <ShortCard 
-            key={short.id} 
-            short={short} 
-            commentCount={short.commentCount}
-            onClick={() => handleShortClick(short.id)}
-          />
-        ))}
-      </div>
+    <div className="h-screen overflow-hidden bg-background">
+      <Carousel
+        opts={{ loop: true, align: "center" }}
+        className="h-full"
+        setApi={setCarouselApi}
+      >
+        <CarouselContent className="h-full">
+          {shorts.map((short, index) => (
+            <CarouselItem key={short.id} className="h-full">
+              <DesktopShortPlayer
+                short={short}
+                isActive={index === activeShortIndex}
+                isMuted={isMuted}
+                onToggleMute={() => setIsMuted(!isMuted)}
+                onOpenComments={() => {
+                  setSelectedShort(short);
+                  setIsCommentsOpen(true);
+                }}
+                onOpenDonation={() => {
+                  setSelectedShort(short);
+                  setIsDonationModalOpen(true);
+                }}
+                onShare={() => handleShare(short)}
+              />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        
+        {/* Navigation Arrows */}
+        <CarouselPrevious className="left-4 h-12 w-12" />
+        <CarouselNext className="right-4 h-12 w-12" />
+      </Carousel>
 
-      {/* Modal for fullscreen playback */}
-      {selectedShort && (
-        <>
-          <ShortVideoModal
-            isOpen={isModalOpen && !isCommentsOpen}
-            onClose={() => {
-              setIsModalOpen(false);
-              setSelectedShort(null);
-            }}
-            short={selectedShort}
-            onOpenDonation={() => setIsDonationModalOpen(true)}
-            onOpenComments={() => setIsCommentsOpen(true)}
-            commentCount={selectedShort.commentCount || 0}
-            canDelete={false}
-          />
+      {/* Comments Dialog for Desktop */}
+      {selectedShort && isCommentsOpen && (
+        <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+          <DialogContent className="max-w-md h-[90vh] p-0">
+            <div className="h-full overflow-y-auto p-4">
+              <CommentsSection
+                contentId={selectedShort.id}
+                contentType="shortvideo"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-          {/* Comments Side Panel for Desktop */}
-          {isCommentsOpen && (
-            <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-              <DialogContent className="max-w-md h-[90vh] p-0">
-                <div className="h-full overflow-y-auto p-4">
-                  <CommentsSection
-                    contentId={selectedShort.id}
-                    contentType="shortvideo"
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          {/* Donation Modal */}
-          {selectedShort.profiles?.public_wallet_address && (
-            <DonationModal
-              isOpen={isDonationModalOpen}
-              onClose={() => setIsDonationModalOpen(false)}
-              streamerName={selectedShort.profiles.username || 'creator'}
-              walletAddress={selectedShort.profiles.public_wallet_address}
-              contentId={selectedShort.id}
-              contentType="shortvideo"
-              recipientUserId={selectedShort.user_id}
-            />
-          )}
-        </>
+      {/* Donation Modal */}
+      {selectedShort && selectedShort.profiles?.public_wallet_address && (
+        <DonationModal
+          isOpen={isDonationModalOpen}
+          onClose={() => setIsDonationModalOpen(false)}
+          streamerName={selectedShort.profiles.username || 'creator'}
+          walletAddress={selectedShort.profiles.public_wallet_address}
+          contentId={selectedShort.id}
+          contentType="shortvideo"
+          recipientUserId={selectedShort.user_id}
+        />
       )}
     </div>
   );
