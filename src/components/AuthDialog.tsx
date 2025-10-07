@@ -238,7 +238,7 @@ export const AuthDialog = () => {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/app`,
+            redirectTo: 'https://wutch.fun/app',
             skipBrowserRedirect: true
           }
         });
@@ -271,7 +271,7 @@ export const AuthDialog = () => {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/app`
+            redirectTo: 'https://wutch.fun/app'
           }
         });
 
