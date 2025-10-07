@@ -25,10 +25,10 @@ const WutchVideos = () => {
       <div className="min-h-screen pb-20 lg:pb-6">
         <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
         <div className="p-4 md:p-6">
-          	<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[...Array(9)].map((_, i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="aspect-video w-full rounded-xl shadow-sm" />
+                <Skeleton className="aspect-video w-full rounded-lg" />
                 <div className="flex gap-3">
                   <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-2">

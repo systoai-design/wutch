@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Twitter } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
@@ -22,6 +23,7 @@ const StatCard = memo(({ value, label, delay }: { value: string; label: string; 
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [featuredBounties, setFeaturedBounties] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -277,15 +279,6 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
-              aria-label="Follow us on X"
-              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
-            >
-              <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -976,20 +969,20 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-12 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* About Column */}
             <div>
               <h3 className="font-semibold mb-4">About</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
+                  <a href="/privacy-policy" className="hover:text-foreground transition-colors">
                     Privacy Policy
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
+                  <a href="/terms-of-service" className="hover:text-foreground transition-colors">
                     Terms of Service
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -1009,9 +1002,9 @@ const Landing = () => {
                   </a>
                 </li>
                 <li>
-                  <Link to="/bounties" className="hover:text-foreground transition-colors">
+                  <a href="/bounties" className="hover:text-foreground transition-colors">
                     Bounties
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -1021,31 +1014,13 @@ const Landing = () => {
               <h3 className="font-semibold mb-4">Community</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <Link to="/app" className="hover:text-foreground transition-colors">
+                  <a href="/app" className="hover:text-foreground transition-colors">
                     Explore Streams
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="/shorts" className="hover:text-foreground transition-colors">
+                  <a href="/shorts" className="hover:text-foreground transition-colors">
                     Watch Shorts
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Social Column */}
-            <div>
-              <h3 className="font-semibold mb-4">Social</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <a 
-                    href="https://x.com/wutchdotfun" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:text-foreground transition-colors flex items-center gap-2"
-                  >
-                    <Twitter className="h-4 w-4" />
-                    X (Twitter)
                   </a>
                 </li>
               </ul>
