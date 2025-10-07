@@ -136,14 +136,14 @@ const Landing = () => {
 
   const fetchFeaturedBounties = async () => {
     try {
-      // Use the secure public view that excludes secret_word
       const { data, error } = await supabase
-        .from('public_stream_bounties')
+        .from('stream_bounties')
         .select(`
           *,
           livestream:livestreams(title, thumbnail_url),
-          creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+          creator:profiles!stream_bounties_creator_id_fkey(username, display_name, avatar_url)
         `)
+        .eq('is_active', true)
         .order('reward_per_participant', { ascending: false })
         .limit(3);
 
@@ -198,14 +198,38 @@ const Landing = () => {
 
   const fetchCreatorStats = async () => {
     try {
-      // Fetch aggregated earnings stats using secure function
-      const { data: statsData, error: statsError } = await supabase
-        .rpc('get_platform_earnings_stats');
+      // Fetch total earnings paid to creators
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('total_earnings, pending_earnings');
 
-      if (statsError) throw statsError;
+      if (profilesError) throw profilesError;
 
-      const totalPaidToCreators = statsData?.[0]?.total_paid_to_creators || 0;
-      const activeCreators = Number(statsData?.[0]?.active_creators || 0);
+      const totalPaidToCreators = (profilesData || []).reduce(
+        (sum, profile) => sum + parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0'),
+        0
+      );
+
+      // Count active creators (those with any content)
+      const { data: livestreamCreators } = await supabase
+        .from('livestreams')
+        .select('user_id');
+      
+      const { data: shortCreators } = await supabase
+        .from('short_videos')
+        .select('user_id');
+      
+      const { data: wutchCreators } = await supabase
+        .from('wutch_videos')
+        .select('user_id');
+
+      const uniqueCreatorIds = new Set([
+        ...(livestreamCreators || []).map(c => c.user_id),
+        ...(shortCreators || []).map(c => c.user_id),
+        ...(wutchCreators || []).map(c => c.user_id)
+      ]);
+      
+      const activeCreators = uniqueCreatorIds.size;
 
       // Calculate average earnings
       const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;

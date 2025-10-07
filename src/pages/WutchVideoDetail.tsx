@@ -61,9 +61,9 @@ const WutchVideoDetail = () => {
       setVideo(videoData);
       setLikeCount(videoData.like_count || 0);
 
-      // Fetch creator profile using public view (hides financial data)
+      // Fetch creator profile
       const { data: profileData } = await supabase
-        .from('public_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', videoData.user_id)
         .single();
@@ -81,7 +81,7 @@ const WutchVideoDetail = () => {
 
       if (channelData) {
         const { data: profiles } = await supabase
-          .from('public_profiles')
+          .from('profiles')
           .select('id, username, display_name, avatar_url')
           .eq('id', videoData.user_id);
 
@@ -106,7 +106,7 @@ const WutchVideoDetail = () => {
       if (relatedData) {
         const userIds = [...new Set(relatedData.map((v: any) => v.user_id))];
         const { data: profiles } = await supabase
-          .from('public_profiles')
+          .from('profiles')
           .select('id, username, display_name, avatar_url')
           .in('id', userIds);
 
@@ -128,7 +128,7 @@ const WutchVideoDetail = () => {
       if (shortsData) {
         const userIds = [...new Set(shortsData.map((s: any) => s.user_id))];
         const { data: profiles } = await supabase
-          .from('public_profiles')
+          .from('profiles')
           .select('id, username, display_name, avatar_url')
           .in('id', userIds);
 

@@ -30,7 +30,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
 
 const StreamDetail = () => {
   const params = useParams();
@@ -40,7 +39,7 @@ const StreamDetail = () => {
   const { isAdmin } = useAdmin();
   const isMobile = useIsMobile();
   const [stream, setStream] = useState<Livestream | null>(null);
-  const [streamer, setStreamer] = useState<PublicProfile | null>(null);
+  const [streamer, setStreamer] = useState<Profile | null>(null);
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
@@ -106,9 +105,9 @@ const StreamDetail = () => {
           setLikeCount(streamData.like_count);
         }
 
-        // Fetch streamer profile using public view (hides financial data)
+        // Fetch streamer profile
         const { data: streamerData } = await supabase
-          .from('public_profiles')
+          .from('profiles')
           .select('*')
           .eq('id', streamData.user_id)
           .single();

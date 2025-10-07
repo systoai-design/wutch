@@ -22,8 +22,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatDistanceToNow } from 'date-fns';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
-type DisplayProfile = Profile | PublicProfile;
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
 // Component to display user's private wallet address (only visible to owner)
@@ -110,7 +108,7 @@ const ProfilePage = () => {
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<DisplayProfile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [streams, setStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ownWalletAddress, setOwnWalletAddress] = useState<string | null>(null);
@@ -181,9 +179,8 @@ const ProfilePage = () => {
         }
 
         // Fetch profile by username
-        // First fetch using public view
-        const { data: publicProfileData, error: profileError } = await supabase
-          .from('public_profiles')
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
           .select('*')
           .eq('username', username || '')
           .single();
@@ -192,20 +189,6 @@ const ProfilePage = () => {
           console.error('Error fetching profile:', profileError);
           setIsLoading(false);
           return;
-        }
-
-        // If viewing own profile, fetch full data including financial info
-        let profileData = publicProfileData;
-        if (user && publicProfileData.id === user.id) {
-          const { data: fullProfileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (fullProfileData) {
-            profileData = fullProfileData;
-          }
         }
 
         setProfile(profileData);
@@ -376,18 +359,16 @@ const ProfilePage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold">
-                    {'total_donations_received' in profile ? (profile.total_donations_received || 0) : 0} SOL
-                  </span>
+                  <span className="font-semibold">{profile.total_donations_received || 0} SOL</span>
                   <span className="text-muted-foreground">donated</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-2 items-center">
-                {isOwnProfile && 'total_earnings' in profile ? (
+                {isOwnProfile ? (
                   <>
                     <EditProfileDialog 
-                      profile={profile as Profile} 
+                      profile={profile} 
                       onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
                     />
                   </>

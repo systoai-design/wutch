@@ -26,14 +26,14 @@ export default function Bounties() {
   const fetchBounties = async () => {
     setIsLoading(true);
     try {
-      // Use the secure public view that excludes secret_word
       let query = supabase
-        .from('public_stream_bounties')
+        .from('stream_bounties')
         .select(`
           *,
           livestream:livestreams(title, thumbnail_url),
-          creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
-        `);
+          creator:profiles!stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq('is_active', true);
 
       // Apply sorting
       switch (sortBy) {

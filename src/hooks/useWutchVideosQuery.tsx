@@ -43,7 +43,7 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
       // Fetch profiles in bulk using a more optimized approach
       const userIds = [...new Set(data.map(v => v.user_id))];
       const { data: profilesData } = await supabase
-        .from('public_profiles')
+        .from('profiles')
         .select('id, username, display_name, avatar_url')
         .in('id', userIds);
 

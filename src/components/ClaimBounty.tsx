@@ -12,7 +12,6 @@ import { Database } from '@/integrations/supabase/types';
 import { shareStreamToTwitter } from '@/utils/shareUtils';
 
 type StreamBounty = Database['public']['Tables']['stream_bounties']['Row'];
-type PublicStreamBounty = Omit<StreamBounty, 'secret_word'>;
 
 interface ClaimBountyProps {
   livestreamId: string;
@@ -25,7 +24,7 @@ interface ClaimBountyProps {
 const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTitle, creatorName }: ClaimBountyProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [bounty, setBounty] = useState<PublicStreamBounty | null>(null);
+  const [bounty, setBounty] = useState<StreamBounty | null>(null);
   const [secretWord, setSecretWord] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasClaimed, setHasClaimed] = useState(false);
@@ -40,11 +39,12 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
       if (!livestreamId) return;
 
       try {
-        // Fetch active bounty for this stream using secure public view
+        // Fetch active bounty for this stream
         const { data: bountyData, error: bountyError } = await supabase
-          .from('public_stream_bounties')
+          .from('stream_bounties')
           .select('*')
           .eq('livestream_id', livestreamId)
+          .eq('is_active', true)
           .single();
 
         if (bountyError) {
