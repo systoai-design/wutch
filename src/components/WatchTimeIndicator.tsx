@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 interface WatchTimeIndicatorProps {
   watchTime: number;
   formattedWatchTime: string;
-  isExternalWindowOpen: boolean;
+  isTracking: boolean;
   meetsMinimumWatchTime: boolean;
   minimumRequired?: number; // in seconds, default 300 (5 minutes)
 }
@@ -14,7 +14,7 @@ interface WatchTimeIndicatorProps {
 const WatchTimeIndicator = ({ 
   watchTime, 
   formattedWatchTime, 
-  isExternalWindowOpen, 
+  isTracking, 
   meetsMinimumWatchTime,
   minimumRequired = 300 
 }: WatchTimeIndicatorProps) => {
@@ -29,18 +29,18 @@ const WatchTimeIndicator = ({
           <span className="font-semibold">Watch Time Tracker</span>
         </div>
         <Badge 
-          variant={isExternalWindowOpen ? "default" : "secondary"}
+          variant={isTracking ? "default" : "secondary"}
           className="gap-1"
         >
-          {isExternalWindowOpen ? (
+          {isTracking ? (
             <>
               <Eye className="h-3 w-3" />
-              Tracking
+              Tracking Active
             </>
           ) : (
             <>
               <EyeOff className="h-3 w-3" />
-              Stream Closed
+              Paused
             </>
           )}
         </Badge>
@@ -67,8 +67,8 @@ const WatchTimeIndicator = ({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Keep the Pump.fun window open to earn watch time.
-            {!isExternalWindowOpen && " (Timer paused - window closed)"}
+            Keep this tab open to earn watch time.
+            {!isTracking && " (Timer paused - tab not visible)"}
           </p>
         )}
       </div>

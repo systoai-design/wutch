@@ -44,10 +44,8 @@ const StreamDetail = () => {
   const [relatedStreams, setRelatedStreams] = useState<Livestream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
-  const [warningDismissedUntil, setWarningDismissedUntil] = useState<number>(0);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [guestPromptAction, setGuestPromptAction] = useState<'like' | 'donate'>('like');
-  const pumpFunWindowRef = useRef<Window | null>(null);
 
   // Track viewing session
   const { 
@@ -56,16 +54,13 @@ const StreamDetail = () => {
     isTabVisible, 
     meetsMinimumWatchTime,
     isSessionStarted,
-    isExternalWindowOpen
+    isTracking
   } = useViewingSession({ 
     livestreamId: id || '',
     shouldStart: hasStartedWatching,
-    externalWindow: pumpFunWindowRef.current,
     onTimerStart: () => {
       toast.success('Timer Started!', {
-        description: isMobile 
-          ? 'Watch time tracking active! Stay on this page to earn rewards.' 
-          : 'Keep both this page and Pump.fun open to earn rewards.',
+        description: 'Watch time tracking active! Keep this tab open to earn rewards.',
         duration: 5000,
       });
     }
@@ -236,24 +231,12 @@ const StreamDetail = () => {
                     size={isMobile ? "default" : "lg"}
                     className="gap-2 w-full sm:w-auto"
                     onClick={() => {
-                      if (isMobile) {
-                        // Mobile: Start timer BEFORE opening window
-                        if (!isOwner && user) {
-                          console.log('Starting watch session (mobile)');
-                          setHasStartedWatching(true);
-                        }
-                        window.open(stream.pump_fun_url, '_blank');
-                      } else {
-                        // Desktop: Start timer BEFORE opening window
-                        if (!isOwner && user) {
-                          console.log('Starting watch session (desktop)');
-                          setHasStartedWatching(true);
-                        }
-                        const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                        if (newWindow) {
-                          pumpFunWindowRef.current = newWindow;
-                        }
+                      // Start timer for non-owners
+                      if (!isOwner && user) {
+                        console.log('Starting watch session');
+                        setHasStartedWatching(true);
                       }
+                      window.open(stream.pump_fun_url, '_blank');
                     }}
                   >
                     <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -400,48 +383,13 @@ const StreamDetail = () => {
                     <Alert className="border-primary/20 bg-primary/5">
                       <Timer className="h-4 w-4" />
                       <AlertDescription className="text-sm">
-                        <strong>Watch time tracking active!</strong> {isMobile ? 'Keep this tab open to earn rewards.' : 'Keep this browser tab open to earn rewards. You can freely switch between this page and Pump.fun - switching tabs within this browser won\'t stop the timer.'}
+                        <strong>Watch time tracking active!</strong> Keep this tab open to earn rewards. The timer tracks as long as this page is visible.
                       </AlertDescription>
                     </Alert>
-                    {!isExternalWindowOpen && hasStartedWatching && Date.now() > warningDismissedUntil && !isMobile && (
-                      <Alert className="border-warning/50 bg-warning/10">
-                        <AlertCircle className="h-4 w-4 text-warning" />
-                        <AlertDescription className="flex items-center justify-between gap-2 text-sm">
-                          <span>
-                            <strong>Pump.fun window closed.</strong> Keep it open while watching.
-                          </span>
-                          <div className="flex gap-1.5 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                if (stream?.pump_fun_url) {
-                                  const newWindow = window.open(stream.pump_fun_url, '_blank', 'noopener,noreferrer');
-                                  if (newWindow) {
-                                    pumpFunWindowRef.current = newWindow;
-                                  }
-                                }
-                              }}
-                            >
-                              Reopen
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setWarningDismissedUntil(Date.now() + 5 * 60 * 1000);
-                              }}
-                            >
-                              Dismiss
-                            </Button>
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )}
                     <WatchTimeIndicator
                       watchTime={watchTime}
                       formattedWatchTime={formattedWatchTime}
-                      isExternalWindowOpen={isExternalWindowOpen}
+                      isTracking={isTracking}
                       meetsMinimumWatchTime={meetsMinimumWatchTime}
                     />
                   </>

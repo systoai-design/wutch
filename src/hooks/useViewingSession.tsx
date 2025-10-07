@@ -6,131 +6,53 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface UseViewingSessionProps {
   livestreamId: string;
   shouldStart?: boolean;
-  externalWindow?: Window | null;
   onTimerStart?: () => void;
 }
 
-export const useViewingSession = ({ livestreamId, shouldStart = false, externalWindow, onTimerStart }: UseViewingSessionProps) => {
+export const useViewingSession = ({ livestreamId, shouldStart = false, onTimerStart }: UseViewingSessionProps) => {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [watchTime, setWatchTime] = useState(0);
-  const [isExternalWindowOpen, setIsExternalWindowOpen] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const accumulatedTimeRef = useRef<number>(0);
   const livestreamOwnerRef = useRef<string | null>(null);
   const lastCreditedMinuteRef = useRef<number>(0);
-  const closedCheckCountRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const lastWatchTimeRef = useRef<number>(0);
 
-  // Optimized: Consolidated window polling and display update using requestAnimationFrame
-  // Mobile: Start timer immediately without external window tracking
+  // Use Page Visibility API for both mobile and desktop
   useEffect(() => {
     if (!shouldStart) {
-      setIsExternalWindowOpen(false);
-      closedCheckCountRef.current = 0;
+      setIsTracking(false);
       return;
     }
 
-    // Mobile: Start timer immediately, use Page Visibility API
-    if (isMobile) {
-      setIsExternalWindowOpen(true);
-      setIsSessionStarted(true);
-      startTimeRef.current = Date.now();
+    // Start timer immediately
+    setIsTracking(true);
+    setIsSessionStarted(true);
+    startTimeRef.current = Date.now();
 
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          // Tab hidden, pause timer
-          const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-          accumulatedTimeRef.current += currentSessionTime;
-          setIsExternalWindowOpen(false);
-        } else {
-          // Tab visible, resume timer
-          setIsExternalWindowOpen(true);
-          startTimeRef.current = Date.now();
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      // Update watch time display
-      const updateDisplay = () => {
-        if (!document.hidden) {
-          const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-          const newWatchTime = accumulatedTimeRef.current + currentSessionTime;
-          
-          if (newWatchTime !== lastWatchTimeRef.current) {
-            lastWatchTimeRef.current = newWatchTime;
-            setWatchTime(newWatchTime);
-          }
-        }
-        animationFrameRef.current = requestAnimationFrame(updateDisplay);
-      };
-
-      animationFrameRef.current = requestAnimationFrame(updateDisplay);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-      };
-    }
-
-    // Desktop: Use external window tracking
-    if (!externalWindow) {
-      setIsExternalWindowOpen(false);
-      closedCheckCountRef.current = 0;
-      return;
-    }
-
-    // Start with window open = true (optimistic start)
-    setIsExternalWindowOpen(true);
-    closedCheckCountRef.current = 0;
-
-    let lastCheckTime = Date.now();
-    const CHECK_INTERVAL = 1000; // Check every second
-    const DEBOUNCE_CHECKS = 2; // Require 2 consecutive closed checks
-
-    const checkWindowAndUpdateDisplay = () => {
-      const now = Date.now();
-      
-      // Check window status every second
-      if (now - lastCheckTime >= CHECK_INTERVAL) {
-        lastCheckTime = now;
-        
-        try {
-          if (externalWindow.closed) {
-            closedCheckCountRef.current++;
-            
-            // Only update state after consecutive closed checks (debouncing)
-            if (closedCheckCountRef.current >= DEBOUNCE_CHECKS && isExternalWindowOpen) {
-              setIsExternalWindowOpen(false);
-              const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-              accumulatedTimeRef.current += currentSessionTime;
-              console.log('External window closed, pausing timer');
-            }
-          } else {
-            closedCheckCountRef.current = 0;
-            if (!isExternalWindowOpen) {
-              setIsExternalWindowOpen(true);
-              startTimeRef.current = Date.now();
-            }
-          }
-        } catch (error) {
-          closedCheckCountRef.current++;
-          if (closedCheckCountRef.current >= DEBOUNCE_CHECKS && isExternalWindowOpen) {
-            console.log('Error checking window status, assuming closed');
-            setIsExternalWindowOpen(false);
-          }
-        }
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab hidden, pause timer
+        const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        accumulatedTimeRef.current += currentSessionTime;
+        setIsTracking(false);
+      } else {
+        // Tab visible, resume timer
+        setIsTracking(true);
+        startTimeRef.current = Date.now();
       }
+    };
 
-      // Update display if window is open - only if value changed
-      if (isExternalWindowOpen) {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Update watch time display
+    const updateDisplay = () => {
+      if (!document.hidden) {
         const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
         const newWatchTime = accumulatedTimeRef.current + currentSessionTime;
         
@@ -139,18 +61,18 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
           setWatchTime(newWatchTime);
         }
       }
-
-      animationFrameRef.current = requestAnimationFrame(checkWindowAndUpdateDisplay);
+      animationFrameRef.current = requestAnimationFrame(updateDisplay);
     };
 
-    animationFrameRef.current = requestAnimationFrame(checkWindowAndUpdateDisplay);
+    animationFrameRef.current = requestAnimationFrame(updateDisplay);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [shouldStart, externalWindow, isExternalWindowOpen, isMobile]);
+  }, [shouldStart]);
 
   // Create or resume viewing session
   useEffect(() => {
@@ -240,9 +162,9 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
       });
   }, [livestreamId]);
 
-  // Optimized: Send heartbeat updates every 30 seconds - skip when window closed
+  // Send heartbeat updates every 30 seconds
   const sendHeartbeat = useCallback(async () => {
-    if (!sessionId || !isExternalWindowOpen) return; // Skip if window closed
+    if (!sessionId || !isTracking) return; // Skip if paused
 
     try {
       const currentSessionTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -281,7 +203,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     } catch (error) {
       console.error('Error sending heartbeat:', error);
     }
-  }, [sessionId, livestreamId, isExternalWindowOpen]);
+  }, [sessionId, livestreamId, isTracking]);
 
   useEffect(() => {
     if (!sessionId || !user || !isSessionStarted) return;
@@ -299,10 +221,10 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
     };
   }, [sessionId, user, isSessionStarted, sendHeartbeat]);
 
-  // Optimized: Send final update on unmount
+  // Send final update on unmount
   useEffect(() => {
     return () => {
-      if (sessionId && isExternalWindowOpen) {
+      if (sessionId && isTracking) {
         const finalTime = accumulatedTimeRef.current + 
           Math.floor((Date.now() - startTimeRef.current) / 1000);
         
@@ -318,7 +240,7 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
           });
       }
     };
-  }, [sessionId, isExternalWindowOpen]);
+  }, [sessionId, isTracking]);
 
   const formatWatchTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -329,9 +251,9 @@ export const useViewingSession = ({ livestreamId, shouldStart = false, externalW
   return {
     watchTime,
     formattedWatchTime: formatWatchTime(watchTime),
-    isTabVisible: isExternalWindowOpen, // Keep for backward compatibility
+    isTabVisible: isTracking,
     meetsMinimumWatchTime: watchTime >= 300, // 5 minutes
     isSessionStarted,
-    isExternalWindowOpen,
+    isTracking,
   };
 };
