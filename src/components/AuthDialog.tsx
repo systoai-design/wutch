@@ -245,9 +245,26 @@ export const AuthDialog = () => {
 
         if (error) throw error;
         
-        // Force top-level window navigation to bypass iframe restrictions
+        // Try multiple methods to navigate when in iframe
         if (data?.url) {
-          window.top!.location.href = data.url;
+          try {
+            // First, try to navigate the top window
+            window.top!.location.href = data.url;
+          } catch (e) {
+            // If blocked, try opening in a new tab
+            const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer');
+            
+            // If popup was blocked, use anchor element as last resort
+            if (!newWindow) {
+              const anchor = document.createElement('a');
+              anchor.href = data.url;
+              anchor.target = '_blank';
+              anchor.rel = 'noopener noreferrer';
+              document.body.appendChild(anchor);
+              anchor.click();
+              document.body.removeChild(anchor);
+            }
+          }
         }
       } else {
         // Normal flow when not embedded
