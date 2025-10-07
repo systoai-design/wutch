@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useVideoView } from '@/hooks/useVideoView';
@@ -103,8 +103,8 @@ export function DesktopShortPlayer({
 
   return (
     <div className="relative w-full h-screen bg-background flex items-center justify-center overflow-hidden">
-      {/* Video Player - Centered */}
-      <div className="relative h-full max-w-[600px] w-full flex items-center justify-center">
+      {/* Video Player Container - Centered */}
+      <div className="relative h-[calc(100vh-4rem)] max-w-[600px] w-full flex items-center justify-center">
         <video
           ref={videoRef}
           src={short.video_url}
@@ -117,6 +117,17 @@ export function DesktopShortPlayer({
           aria-label="Short video player"
         />
 
+        {/* Play/Pause Overlay - Center of Video */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <div className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center shadow-xl">
+            {isPlaying ? (
+              <Pause className="h-10 w-10 text-white" fill="white" />
+            ) : (
+              <Play className="h-10 w-10 text-white ml-1" fill="white" />
+            )}
+          </div>
+        </div>
+
         {/* Mute/Unmute Button - Top Right of Video */}
         <button
           onClick={(e) => {
@@ -127,97 +138,95 @@ export function DesktopShortPlayer({
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </button>
-      </div>
 
-      {/* Right Sidebar - Creator Info & Actions */}
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-6 items-center w-16">
-        {/* Creator Avatar */}
-        <div className="flex flex-col items-center gap-2">
-          <Avatar className="h-14 w-14 border-2 border-white cursor-pointer hover:scale-105 transition-transform">
-            <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          {user && user.id !== short.user_id && !isFollowing && (
-            <button
-              onClick={toggleFollow}
-              className="w-6 h-6 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center shadow-lg transition-all"
-              aria-label="Follow"
+        {/* Right Sidebar - Creator Info & Actions (Inside Video Container) */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-6 items-center w-16 z-20">
+          {/* Creator Avatar */}
+          <div className="flex flex-col items-center gap-2">
+            <Avatar className="h-14 w-14 border-2 border-white cursor-pointer hover:scale-105 transition-transform">
+              <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            {user && user.id !== short.user_id && !isFollowing && (
+              <button
+                onClick={toggleFollow}
+                className="w-6 h-6 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center shadow-lg transition-all"
+                aria-label="Follow"
+              >
+                <span className="text-primary-foreground text-xl font-bold leading-none">+</span>
+              </button>
+            )}
+          </div>
+
+          {/* Like */}
+          <button
+            onClick={toggleLike}
+            className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
+          >
+            <div className={`p-3 rounded-full backdrop-blur-sm shadow-lg ${isLiked ? 'bg-white/90' : 'bg-black/60 hover:bg-black/80'}`}>
+              <Heart
+                className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`}
+              />
+            </div>
+            <span className="text-white text-xs font-medium">
+              {likeCount > 0 ? formatNumber(likeCount) : ''}
+            </span>
+          </button>
+
+          {/* Comment */}
+          <button
+            onClick={onOpenComments}
+            className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
+          >
+            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+              <MessageCircle className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-white text-xs font-medium">
+              {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
+            </span>
+          </button>
+
+          {/* Share */}
+          <button
+            onClick={onShare}
+            className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
+          >
+            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+              <Share2 className="h-6 w-6 text-white" />
+            </div>
+          </button>
+
+          {/* Promotional Link */}
+          {short.promotional_link && (
+            <a
+              href={short.promotional_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
             >
-              <span className="text-primary-foreground text-xl font-bold leading-none">+</span>
+              <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+                <ExternalLink className="h-6 w-6 text-white" />
+              </div>
+            </a>
+          )}
+
+          {/* Donate */}
+          {short.profiles?.public_wallet_address && (
+            <button
+              onClick={onOpenDonation}
+              className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
+            >
+              <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
+                <Wallet className="h-6 w-6 text-white" />
+              </div>
             </button>
           )}
         </div>
 
-        {/* Like */}
-        <button
-          onClick={toggleLike}
-          className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
-        >
-          <div className={`p-3 rounded-full backdrop-blur-sm shadow-lg ${isLiked ? 'bg-white/90' : 'bg-black/60 hover:bg-black/80'}`}>
-            <Heart
-              className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`}
-            />
-          </div>
-          <span className="text-white text-xs font-medium">
-            {likeCount > 0 ? formatNumber(likeCount) : ''}
-          </span>
-        </button>
-
-        {/* Comment */}
-        <button
-          onClick={onOpenComments}
-          className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
-        >
-          <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
-            <MessageCircle className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-white text-xs font-medium">
-            {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
-          </span>
-        </button>
-
-        {/* Share */}
-        <button
-          onClick={onShare}
-          className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
-        >
-          <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
-            <Share2 className="h-6 w-6 text-white" />
-          </div>
-        </button>
-
-        {/* Promotional Link */}
-        {short.promotional_link && (
-          <a
-            href={short.promotional_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
-          >
-            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
-              <ExternalLink className="h-6 w-6 text-white" />
-            </div>
-          </a>
-        )}
-
-        {/* Donate */}
-        {short.profiles?.public_wallet_address && (
-          <button
-            onClick={onOpenDonation}
-            className="flex flex-col items-center gap-1 hover:scale-110 active:scale-95 transition-transform"
-          >
-            <div className="p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg">
-              <Wallet className="h-6 w-6 text-white" />
-            </div>
-          </button>
-        )}
-      </div>
-
-      {/* Bottom Info Panel */}
-      <div className="absolute bottom-0 left-0 right-24 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none">
-        <div className="max-w-[600px]">
+        {/* Bottom Info Panel */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none z-10">
           <div className="flex items-center gap-3 mb-3">
             <p className="text-white font-semibold">
               @{short.profiles?.username || 'Unknown'}
