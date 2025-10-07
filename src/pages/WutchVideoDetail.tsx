@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { WutchVideoPlayer } from '@/components/WutchVideoPlayer';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
+import { WutchVideoCardCompact } from '@/components/WutchVideoCardCompact';
 import { ShortCard } from '@/components/ShortCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -353,21 +354,21 @@ const WutchVideoDetail = () => {
           {/* Right: Related Content */}
           <div className="space-y-4">
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="channel">From Channel</TabsTrigger>
-                <TabsTrigger value="related">Related</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-3 bg-muted/50">
+                <TabsTrigger value="all" className="data-[state=active]:bg-background">All</TabsTrigger>
+                <TabsTrigger value="channel" className="data-[state=active]:bg-background">From Channel</TabsTrigger>
+                <TabsTrigger value="related" className="data-[state=active]:bg-background">Related</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="all" className="space-y-4 mt-4">
+              <TabsContent value="all" className="space-y-3 mt-4">
                 {/* Shorts Section */}
                 {relatedShorts.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm">Shorts</h3>
-                    <Carousel>
-                      <CarouselContent>
+                  <div className="space-y-3 pb-4 border-b border-border">
+                    <h3 className="font-semibold text-sm px-2">Shorts</h3>
+                    <Carousel className="w-full">
+                      <CarouselContent className="-ml-2">
                         {relatedShorts.map((short) => (
-                          <CarouselItem key={short.id} className="basis-1/2">
+                          <CarouselItem key={short.id} className="basis-1/2 pl-2">
                             <ShortCard short={short} />
                           </CarouselItem>
                         ))}
@@ -377,15 +378,23 @@ const WutchVideoDetail = () => {
                 )}
 
                 {/* Related Videos */}
-                {relatedVideos.map((video) => (
-                  <WutchVideoCard key={video.id} video={video} className="w-full" />
-                ))}
+                <div className="space-y-2">
+                  {relatedVideos.length > 0 ? (
+                    relatedVideos.map((video) => (
+                      <WutchVideoCardCompact key={video.id} video={video} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No related videos found
+                    </p>
+                  )}
+                </div>
               </TabsContent>
               
-              <TabsContent value="channel" className="space-y-4 mt-4">
+              <TabsContent value="channel" className="space-y-2 mt-4">
                 {channelVideos.length > 0 ? (
                   channelVideos.map((video) => (
-                    <WutchVideoCard key={video.id} video={video} className="w-full" />
+                    <WutchVideoCardCompact key={video.id} video={video} />
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -394,10 +403,10 @@ const WutchVideoDetail = () => {
                 )}
               </TabsContent>
               
-              <TabsContent value="related" className="space-y-4 mt-4">
+              <TabsContent value="related" className="space-y-2 mt-4">
                 {relatedVideos.length > 0 ? (
                   relatedVideos.map((video) => (
-                    <WutchVideoCard key={video.id} video={video} className="w-full" />
+                    <WutchVideoCardCompact key={video.id} video={video} />
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">

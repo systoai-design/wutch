@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Twitter } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -227,13 +227,13 @@ const Landing = () => {
             <img 
               src={wutchLogo} 
               alt="Wutch Logo" 
-              className="h-8 w-8 sm:h-10 sm:w-10 transition-transform group-hover:scale-110"
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl transition-transform group-hover:scale-110"
               width="40"
               height="40"
               fetchPriority="high"
               decoding="async"
             />
-            <span className="text-xl sm:text-2xl font-bold text-foreground">Wutch</span>
+            <span className="text-xl sm:text-2xl font-bold text-white">Wutch</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -284,7 +284,7 @@ const Landing = () => {
               aria-label="Follow us on X"
               className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
             >
-              <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             <Button
               variant="ghost"
@@ -1044,7 +1044,7 @@ const Landing = () => {
                     rel="noopener noreferrer"
                     className="hover:text-foreground transition-colors flex items-center gap-2"
                   >
-                    <Twitter className="h-4 w-4" />
+                    <X className="h-4 w-4" />
                     X (Twitter)
                   </a>
                 </li>
