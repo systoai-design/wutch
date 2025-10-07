@@ -3,17 +3,20 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react'
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WutchVideoPlayerProps {
   videoUrl: string;
   videoId: string;
+  thumbnailUrl?: string;
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
 }
 
-export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }: WutchVideoPlayerProps) => {
+export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate, className }: WutchVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -93,7 +96,7 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
     }
   };
 
-  const handleMouseMove = () => {
+  const handleInteraction = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -103,6 +106,10 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
         setShowControls(false);
       }, 3000);
     }
+  };
+
+  const handleTouchStart = () => {
+    handleInteraction();
   };
 
   useEffect(() => {
@@ -128,14 +135,17 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, onTimeUpdate, className }:
     <div
       ref={containerRef}
       className={cn("relative bg-black rounded-lg overflow-hidden group", className)}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setShowControls(false)}
+      onMouseMove={isMobile ? undefined : handleInteraction}
+      onMouseLeave={isMobile ? undefined : () => setShowControls(false)}
+      onTouchStart={isMobile ? handleTouchStart : undefined}
     >
       <video
         ref={videoRef}
         src={videoUrl}
-        className="w-full h-full"
+        poster={thumbnailUrl}
+        className="w-full h-full object-contain max-h-[100dvh]"
         onClick={togglePlay}
+        playsInline
       />
 
       {/* Center play/pause overlay */}

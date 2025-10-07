@@ -258,6 +258,7 @@ const WutchVideoDetail = () => {
             <WutchVideoPlayer 
               videoUrl={video.video_url} 
               videoId={video.id}
+              thumbnailUrl={video.thumbnail_url}
               onTimeUpdate={(time) => setWatchTime(time)}
               className="aspect-video"
             />

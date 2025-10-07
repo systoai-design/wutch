@@ -73,6 +73,14 @@ const StreamDetail = () => {
   // Track stream likes
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = useStreamLike(id || '');
 
+  // Auto-start watch time tracking on mobile
+  useEffect(() => {
+    if (isMobile && stream && user && !isGuest && stream.user_id !== user.id && !hasStartedWatching) {
+      console.log('Auto-starting watch session for mobile');
+      setHasStartedWatching(true);
+    }
+  }, [isMobile, stream, user, isGuest, hasStartedWatching]);
+
   const fetchStreamData = async () => {
       if (!id) return;
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
 import { useVideoView } from '@/hooks/useVideoView';
@@ -11,6 +12,7 @@ import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
+import { cn } from '@/lib/utils';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -39,6 +41,9 @@ export function MobileShortPlayer({
 }: MobileShortPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
@@ -80,14 +85,54 @@ export function MobileShortPlayer({
     };
   }, []);
 
-  // Sync mute state
+  // Sync mute state and volume
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
+      if (!isMuted) {
+        videoRef.current.volume = volume;
+      }
     }
-  }, [isMuted]);
+  }, [isMuted, volume]);
+
+  // Auto-hide controls
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleShowControls = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  };
 
   const handleVideoClick = () => {
+    handleShowControls();
+  };
+
+  const handleDoubleTap = () => {
+    toggleLike();
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    if (newVolume === 0) {
+      onToggleMute();
+    } else if (isMuted) {
+      onToggleMute();
+    }
+  };
+
+  const togglePlayPause = () => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
         videoRef.current.play();
@@ -95,10 +140,6 @@ export function MobileShortPlayer({
         videoRef.current.pause();
       }
     }
-  };
-
-  const handleDoubleTap = () => {
-    toggleLike();
   };
 
   let lastTap = 0;
@@ -132,11 +173,57 @@ export function MobileShortPlayer({
 
       {/* Mute/Unmute Button - Top Right */}
       <button
-        onClick={onToggleMute}
+        onClick={() => {
+          onToggleMute();
+          handleShowControls();
+        }}
         className="absolute top-4 right-4 z-30 rounded-full p-2.5 bg-black/50 hover:bg-black/60 text-white backdrop-blur-sm transition-all shadow-lg"
       >
         {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
+
+      {/* Controls Overlay - Shows on Tap */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity pointer-events-none z-20",
+          showControls ? "opacity-100" : "opacity-0"
+        )}
+      >
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+          {/* Play/Pause Button */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-20 w-20 rounded-full bg-black/60 hover:bg-black/70 backdrop-blur-sm transition-all"
+            onClick={togglePlayPause}
+          >
+            {isPlaying ? (
+              <Pause className="h-10 w-10 text-white" />
+            ) : (
+              <Play className="h-10 w-10 text-white ml-1" />
+            )}
+          </Button>
+        </div>
+
+        {/* Volume Slider - Bottom Center */}
+        {!isMuted && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-auto">
+            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm rounded-full px-4 py-3">
+              <Volume2 className="h-5 w-5 text-white shrink-0" />
+              <Slider
+                value={[volume]}
+                max={1}
+                step={0.01}
+                onValueChange={handleVolumeChange}
+                className="w-32"
+              />
+              <span className="text-white text-sm font-medium min-w-[3ch]">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
