@@ -27,6 +27,8 @@ const Profile = lazy(() => import('./pages/Profile'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 const Search = lazy(() => import('./pages/Search'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -88,6 +90,8 @@ function AppContent() {
         <Route path="/bounties" element={<Bounties />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
         
         {/* App routes with Navigation and Sidebar */}
         <Route element={<AppLayout />}>

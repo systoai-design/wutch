@@ -951,9 +951,77 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 bg-background">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; 2025 Wutch. All rights reserved.</p>
+      <footer className="border-t border-border py-12 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* About Column */}
+            <div>
+              <h3 className="font-semibold mb-4">About</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a href="/privacy-policy" className="hover:text-foreground transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="/terms-of-service" className="hover:text-foreground transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Platform Column */}
+            <div>
+              <h3 className="font-semibold mb-4">Platform</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a href="#how-it-works" className="hover:text-foreground transition-colors">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#features" className="hover:text-foreground transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="/bounties" className="hover:text-foreground transition-colors">
+                    Bounties
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Community Column */}
+            <div>
+              <h3 className="font-semibold mb-4">Community</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a href="/app" className="hover:text-foreground transition-colors">
+                    Explore Streams
+                  </a>
+                </li>
+                <li>
+                  <a href="/shorts" className="hover:text-foreground transition-colors">
+                    Watch Shorts
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Column */}
+            <div>
+              <h3 className="font-semibold mb-4">Contact</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>support@wutch.com</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-border pt-8 text-center text-muted-foreground">
+            <p>&copy; 2025 Wutch. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
