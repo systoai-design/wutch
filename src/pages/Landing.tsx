@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Twitter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
@@ -23,7 +22,6 @@ const StatCard = memo(({ value, label, delay }: { value: string; label: string; 
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
-  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [featuredBounties, setFeaturedBounties] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
