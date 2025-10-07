@@ -38,6 +38,7 @@ export function DesktopShortPlayer({
 }: DesktopShortPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const { user } = useAuth();
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
@@ -102,30 +103,42 @@ export function DesktopShortPlayer({
   };
 
   return (
-    <div className="relative w-full h-screen bg-background flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-screen bg-black flex items-center justify-center overflow-hidden py-6">
       {/* Video Player Container - Centered */}
-      <div className="relative h-[calc(100vh-4rem)] max-w-[600px] w-full flex items-center justify-center">
-        <video
-          ref={videoRef}
-          src={short.video_url}
-          className="h-full w-full object-contain cursor-pointer"
-          playsInline
-          loop
-          muted
-          preload={isActive ? "auto" : "metadata"}
-          onClick={togglePlayPause}
-          aria-label="Short video player"
-        />
+      <div className="relative max-h-[90vh] max-w-[600px] w-full flex items-center justify-center">
+        {/* Video Wrapper with Hover Detection */}
+        <div 
+          className="relative w-full h-full"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <video
+            ref={videoRef}
+            src={short.video_url}
+            className="w-full h-full max-h-[90vh] object-contain cursor-pointer"
+            playsInline
+            loop
+            muted
+            preload={isActive ? "auto" : "metadata"}
+            onClick={togglePlayPause}
+            aria-label="Short video player"
+          />
 
-        {/* Play/Pause Overlay - Center of Video */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-          <div className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center shadow-xl">
-            {isPlaying ? (
-              <Pause className="h-10 w-10 text-white" fill="white" />
-            ) : (
-              <Play className="h-10 w-10 text-white ml-1" fill="white" />
-            )}
-          </div>
+          {/* Play/Pause Overlay - Shows on hover or when paused */}
+          {(isHovering || !isPlaying) && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 cursor-pointer z-10"
+              onClick={togglePlayPause}
+            >
+              <div className="w-24 h-24 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center shadow-2xl transition-transform hover:scale-110">
+                {isPlaying ? (
+                  <Pause className="h-12 w-12 text-white" fill="white" />
+                ) : (
+                  <Play className="h-12 w-12 text-white ml-1" fill="white" />
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mute/Unmute Button - Top Right of Video */}
@@ -134,13 +147,13 @@ export function DesktopShortPlayer({
             e.stopPropagation();
             onToggleMute();
           }}
-          className="absolute top-4 right-4 z-30 rounded-full p-2.5 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all shadow-lg"
+          className="absolute top-6 right-6 z-30 rounded-full p-3 bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-all shadow-lg"
         >
-          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
         </button>
 
         {/* Right Sidebar - Creator Info & Actions (Inside Video Container) */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-6 items-center w-16 z-20">
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 items-center w-16 z-20">
           {/* Creator Avatar */}
           <div className="flex flex-col items-center gap-2">
             <Avatar className="h-14 w-14 border-2 border-white cursor-pointer hover:scale-105 transition-transform">
@@ -226,7 +239,7 @@ export function DesktopShortPlayer({
         </div>
 
         {/* Bottom Info Panel */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none z-10">
           <div className="flex items-center gap-3 mb-3">
             <p className="text-white font-semibold">
               @{short.profiles?.username || 'Unknown'}
