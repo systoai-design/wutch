@@ -231,14 +231,35 @@ export const AuthDialog = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/app`
-        }
-      });
+      const isEmbedded = window.self !== window.top;
+      
+      if (isEmbedded) {
+        // When embedded in iframe (like Lovable editor), use skipBrowserRedirect
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/app`,
+            skipBrowserRedirect: true
+          }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        
+        // Force top-level window navigation to bypass iframe restrictions
+        if (data?.url) {
+          window.top!.location.href = data.url;
+        }
+      } else {
+        // Normal flow when not embedded
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/app`
+          }
+        });
+
+        if (error) throw error;
+      }
     } catch (error: any) {
       console.error('Google login error:', error);
       toast({
