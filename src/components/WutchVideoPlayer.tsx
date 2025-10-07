@@ -165,6 +165,8 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
         poster={thumbnailUrl}
         className="w-full h-full object-contain max-h-[100dvh]"
         onClick={handleClick}
+        autoPlay
+        muted
         playsInline
       />
 

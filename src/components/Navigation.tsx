@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Moon, Sun, User, LogOut } from 'lucide-react';
+import { Search, Menu, Moon, Sun, User, LogOut, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -8,13 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navigation = () => {
   const location = useLocation();
@@ -24,6 +26,23 @@ const Navigation = () => {
   const { toggle, toggleMobile } = useSidebar();
   const { open: openAuthDialog } = useAuthDialog();
   const [searchQuery, setSearchQuery] = useState('');
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user && !isGuest) {
+      fetchUserProfile();
+    }
+  }, [user, isGuest]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url, username, display_name')
+      .eq('id', user.id)
+      .single();
+    setUserProfile(data);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,12 +84,12 @@ const Navigation = () => {
             <img 
               src={wutchLogo} 
               alt="Wutch" 
-              className="h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-110"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
               width="36"
               height="36"
               loading="eager"
             />
-            <span className="font-bold text-base sm:text-lg hidden xs:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="font-bold text-base sm:text-lg hidden xs:inline text-white">
               Wutch
             </span>
           </Link>
@@ -84,7 +103,7 @@ const Navigation = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full pr-10"
+              className="w-full pr-10 rounded-[35px]"
             />
             <Button
               variant="ghost"
@@ -113,6 +132,32 @@ const Navigation = () => {
           <div className="block">
             <WalletConnect />
           </div>
+
+          {/* Twitter/X Icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.open('https://twitter.com', '_blank')}
+            className="hidden sm:inline-flex min-h-[44px] min-w-[44px]"
+            aria-label="Twitter"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </Button>
+
+          {/* Create Button */}
+          {!isGuest && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/submit')}
+              className="hidden sm:inline-flex gap-2 min-h-[44px]"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Create</span>
+            </Button>
+          )}
           
           <Button
             variant="ghost"
@@ -126,8 +171,17 @@ const Navigation = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] touch-manipulation" aria-label="User menu">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] rounded-full touch-manipulation" aria-label="User menu">
+                {!isGuest && userProfile ? (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile.avatar_url} alt={userProfile.display_name || userProfile.username} />
+                    <AvatarFallback>
+                      {userProfile.display_name?.[0] || userProfile.username?.[0] || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
