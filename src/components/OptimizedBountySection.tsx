@@ -29,7 +29,13 @@ export const OptimizedBountySection = ({ bounties, isLoading }: OptimizedBountyS
   }
 
   if (!bounties?.length) {
-    return null;
+    return (
+      <div className="text-center py-12 max-w-7xl mx-auto">
+        <p className="text-muted-foreground text-lg">
+          No active bounties at the moment. Check back soon! 🎁
+        </p>
+      </div>
+    );
   }
 
   return (

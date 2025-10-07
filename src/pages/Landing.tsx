@@ -143,10 +143,16 @@ const Landing = () => {
           livestream:livestreams(title, thumbnail_url),
           creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
         `)
+        .eq('is_active', true)
         .order('reward_per_participant', { ascending: false })
         .limit(3);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching bounties:', error);
+        throw error;
+      }
+      
+      console.log('Featured bounties fetched:', data?.length || 0);
       setFeaturedBounties(data || []);
     } catch (error) {
       console.error('Error fetching bounties:', error);
