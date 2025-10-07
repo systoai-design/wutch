@@ -66,3 +66,19 @@ export function sanitizeUrl(url: string): string {
     return '';
   }
 }
+
+/**
+ * Validates a Solana address format
+ * Solana addresses are base58 encoded and typically 32-44 characters long
+ */
+export function isValidSolanaAddress(address: string): boolean {
+  if (!address || typeof address !== 'string') {
+    return false;
+  }
+  
+  // Solana addresses are base58 encoded (no 0, O, I, l characters)
+  // Typically 32-44 characters long
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  
+  return base58Regex.test(address);
+}
