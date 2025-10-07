@@ -141,7 +141,7 @@ const Landing = () => {
         .select(`
           *,
           livestream:livestreams(title, thumbnail_url),
-          creator:profiles!public_stream_bounties_creator_id_fkey(username, display_name, avatar_url)
+          creator:profiles(username, display_name, avatar_url)
         `)
         .eq('is_active', true)
         .order('reward_per_participant', { ascending: false })
