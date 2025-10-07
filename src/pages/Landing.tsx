@@ -198,38 +198,14 @@ const Landing = () => {
 
   const fetchCreatorStats = async () => {
     try {
-      // Fetch total earnings paid to creators
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('total_earnings, pending_earnings');
+      // Fetch aggregated earnings stats using secure function
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_platform_earnings_stats');
 
-      if (profilesError) throw profilesError;
+      if (statsError) throw statsError;
 
-      const totalPaidToCreators = (profilesData || []).reduce(
-        (sum, profile) => sum + parseFloat(profile.total_earnings?.toString() || '0') + parseFloat(profile.pending_earnings?.toString() || '0'),
-        0
-      );
-
-      // Count active creators (those with any content)
-      const { data: livestreamCreators } = await supabase
-        .from('livestreams')
-        .select('user_id');
-      
-      const { data: shortCreators } = await supabase
-        .from('short_videos')
-        .select('user_id');
-      
-      const { data: wutchCreators } = await supabase
-        .from('wutch_videos')
-        .select('user_id');
-
-      const uniqueCreatorIds = new Set([
-        ...(livestreamCreators || []).map(c => c.user_id),
-        ...(shortCreators || []).map(c => c.user_id),
-        ...(wutchCreators || []).map(c => c.user_id)
-      ]);
-      
-      const activeCreators = uniqueCreatorIds.size;
+      const totalPaidToCreators = statsData?.[0]?.total_paid_to_creators || 0;
+      const activeCreators = Number(statsData?.[0]?.active_creators || 0);
 
       // Calculate average earnings
       const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;
