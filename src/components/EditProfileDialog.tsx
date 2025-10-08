@@ -172,7 +172,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-[90vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader className="space-y-2 sm:space-y-3">
           <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
