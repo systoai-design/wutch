@@ -118,7 +118,6 @@ export function DesktopShortPlayer({
             className="w-full h-full max-h-[90vh] object-contain cursor-pointer"
             playsInline
             loop
-            muted
             preload={isActive ? "auto" : "metadata"}
             onClick={togglePlayPause}
             aria-label="Short video player"

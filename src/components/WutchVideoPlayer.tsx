@@ -4,6 +4,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { VideoPlayerSettings } from '@/components/VideoPlayerSettings';
 
 interface WutchVideoPlayerProps {
   videoUrl: string;
@@ -25,6 +26,7 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isHoveringVolume, setIsHoveringVolume] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
@@ -51,6 +53,13 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
       video.removeEventListener('pause', handlePause);
     };
   }, [onTimeUpdate]);
+
+  // Apply playback rate
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -166,7 +175,6 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
         className="w-full h-full object-contain max-h-[100dvh]"
         onClick={handleClick}
         autoPlay
-        muted
         playsInline
       />
 
@@ -265,6 +273,12 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
             </div>
 
             <div className="flex-1" />
+
+            {/* Settings */}
+            <VideoPlayerSettings 
+              playbackRate={playbackRate}
+              onPlaybackRateChange={setPlaybackRate}
+            />
 
             {/* Fullscreen */}
             <Button

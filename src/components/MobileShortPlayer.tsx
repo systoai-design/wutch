@@ -166,7 +166,6 @@ export function MobileShortPlayer({
         className="mobile-short-video absolute inset-0 w-full h-full object-contain"
         playsInline
         loop
-        muted
         preload={isActive ? "auto" : "none"}
         onTouchEnd={handleTouchEnd}
       />
