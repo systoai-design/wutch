@@ -44,6 +44,7 @@ const Landing = () => {
     leaderboard: false,
     creator: false,
   });
+  const [animateRevenue, setAnimateRevenue] = useState(false);
 
   // Intersection Observer for lazy loading sections
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -72,6 +73,8 @@ const Landing = () => {
             } else if (sectionId === 'creator-rewards' && !sectionsVisible.creator) {
               setSectionsVisible(prev => ({ ...prev, creator: true }));
               fetchCreatorStats();
+            } else if (sectionId === 'revenue-split') {
+              setAnimateRevenue(true);
             }
             observerRef.current?.unobserve(entry.target);
           }
@@ -88,6 +91,7 @@ const Landing = () => {
       observeSection('bounties');
       observeSection('leaderboard');
       observeSection('creator-rewards');
+      observeSection('revenue-split');
     }, 100);
 
     return () => observerRef.current?.disconnect();
@@ -729,7 +733,7 @@ const Landing = () => {
           </div>
 
           {/* Platform Comparison */}
-          <div className="max-w-4xl mx-auto mb-16">
+          <div id="revenue-split" className="max-w-4xl mx-auto mb-16">
             <h3 className="text-3xl font-bold text-center mb-10 text-foreground">Industry-Leading Creator Split</h3>
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="p-8 space-y-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/30">
@@ -742,10 +746,16 @@ const Landing = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-foreground font-medium">Creator</span>
-                    <span className="text-primary font-bold">95%</span>
+                    <span className={`text-primary font-bold ${animateRevenue ? 'animate-count-up' : ''}`}>95%</span>
                   </div>
                   <div className="h-8 bg-background/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full" style={{ width: '95%' }} />
+                    <div 
+                      className={`h-full bg-gradient-to-r from-primary to-primary/80 rounded-full ${animateRevenue ? 'animated-bar' : ''}`}
+                      style={{ 
+                        '--target-width': '95%',
+                        width: animateRevenue ? '0%' : '95%'
+                      } as React.CSSProperties}
+                    />
                   </div>
                   <div className="flex justify-between text-sm mt-2">
                     <span className="text-muted-foreground">Platform</span>
@@ -764,10 +774,16 @@ const Landing = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-foreground font-medium">Creator</span>
-                    <span className="text-muted-foreground font-bold">50-70%</span>
+                    <span className={`text-muted-foreground font-bold ${animateRevenue ? 'animate-count-up' : ''}`}>50-70%</span>
                   </div>
                   <div className="h-8 bg-background/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-muted rounded-full" style={{ width: '60%' }} />
+                    <div 
+                      className={`h-full bg-muted rounded-full ${animateRevenue ? 'animated-bar fast delayed' : ''}`}
+                      style={{ 
+                        '--target-width': '60%',
+                        width: animateRevenue ? '0%' : '60%'
+                      } as React.CSSProperties}
+                    />
                   </div>
                   <div className="flex justify-between text-sm mt-2">
                     <span className="text-muted-foreground">Platform</span>

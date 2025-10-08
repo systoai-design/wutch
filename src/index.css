@@ -223,6 +223,81 @@ All colors MUST be HSL.
   .counter-animate {
     animation: counter-up 0.6s ease-out;
   }
+  
+  /* Animated Progress Bar */
+  @keyframes fillBar {
+    from {
+      width: 0%;
+    }
+    to {
+      width: var(--target-width);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  @keyframes countUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animated-bar {
+    animation: fillBar 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .animated-bar.fast {
+    animation-duration: 1.2s;
+  }
+
+  .animated-bar.delayed {
+    animation-delay: 0.3s;
+  }
+
+  .animated-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out;
+  }
+
+  .animate-count-up {
+    animation: countUp 0.8s ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animated-bar {
+      animation: none;
+      width: var(--target-width) !important;
+    }
+    .animated-bar::after {
+      display: none;
+    }
+  }
 }
 
 /* Mobile Shorts Styling */
