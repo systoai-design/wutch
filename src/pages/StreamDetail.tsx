@@ -102,12 +102,12 @@ const StreamDetail = () => {
           setLikeCount(streamData.like_count);
         }
 
-        // Fetch streamer profile using public view (hides financial data)
+        // Fetch streamer profile (public fields only)
         const { data: streamerData } = await supabase
-          .from('public_profiles')
-          .select('*')
+          .from('profiles')
+          .select('id, username, display_name, avatar_url, follower_count, social_links, is_verified, banner_url, bio, created_at, promotional_link, promotional_link_text, public_wallet_address')
           .eq('id', streamData.user_id)
-          .single();
+          .maybeSingle();
 
         if (streamerData) {
           setStreamer(streamerData);
