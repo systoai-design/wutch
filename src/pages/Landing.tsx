@@ -235,18 +235,18 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur-md transition-all duration-300">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 group touch-manipulation">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-3 group touch-manipulation">
             <img 
               src={wutchLogo} 
               alt="Wutch Logo" 
-              className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl transition-transform group-hover:scale-110"
+              className="h-7 w-7 sm:h-10 sm:w-10 rounded-xl transition-transform group-hover:scale-110"
               width="40"
               height="40"
               fetchPriority="high"
               decoding="async"
             />
-            <span className="text-xl sm:text-2xl font-bold text-white">Wutch</span>
+            <span className="text-lg sm:text-2xl font-bold text-white hidden xs:inline sm:inline">Wutch</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -289,13 +289,13 @@ const Landing = () => {
             </button>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => window.open('https://pump.fun/', '_blank')}
               aria-label="Visit PumpFun"
-              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
             >
               <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
@@ -304,7 +304,7 @@ const Landing = () => {
               size="icon"
               onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
               aria-label="Follow us on X"
-              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
             >
               <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
@@ -313,7 +313,7 @@ const Landing = () => {
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
             >
               {isDark ? (
                 <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -321,7 +321,7 @@ const Landing = () => {
                 <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
             </Button>
-            <Button asChild size="default" className="transition-all hover:scale-105 text-sm sm:text-base h-10 sm:h-11 px-4 sm:px-6 touch-manipulation">
+            <Button asChild size="default" className="transition-all hover:scale-105 text-sm sm:text-base h-9 sm:h-11 px-3 sm:px-6 touch-manipulation">
               <Link to="/app">Launch App</Link>
             </Button>
           </div>
