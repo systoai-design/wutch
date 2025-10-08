@@ -63,20 +63,23 @@ export function PumpFunPlayer({
         throw new Error('Could not extract token address from URL');
       }
       
+      // Extract clean token address (handle malformed URLs with trailing "pump")
+      const cleanTokenAddress = tokenAddress.replace(/pump$/, '');
+      
       // Validate Solana address format
-      if (!isValidSolanaAddress(tokenAddress)) {
-        console.error('[PumpFunPlayer] Invalid Solana address format:', tokenAddress);
+      if (!isValidSolanaAddress(cleanTokenAddress)) {
+        console.error('[PumpFunPlayer] Invalid Solana address format:', cleanTokenAddress);
         setHasError(true);
         setErrorType('url-parsing-error');
         onLoadError?.();
         return;
       }
       
-      // Use direct pump.fun URL for embedding (more reliable than pumpembed)
-      const newEmbedUrl = `https://pump.fun/coin/${tokenAddress}`;
+      // Use official pumpembed.com service for embedding
+      const newEmbedUrl = `https://www.pumpembed.com/embed/${cleanTokenAddress}`;
       setEmbedUrl(newEmbedUrl);
       console.log('[PumpFunPlayer] Extracted embed URL:', newEmbedUrl);
-      console.log('[PumpFunPlayer] Token address:', tokenAddress);
+      console.log('[PumpFunPlayer] Token address:', cleanTokenAddress);
       onLoadStart?.();
       
       // Start 5-second timeout
@@ -308,8 +311,9 @@ export function PumpFunPlayer({
         ref={iframeRef}
         src={embedUrl}
         className="w-full h-full border-0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="autoplay; fullscreen; picture-in-picture; accelerometer; clipboard-write; encrypted-media; gyroscope"
         allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
         onLoad={handleIframeLoad}
         onError={handleIframeError}
         title="Pump.fun Stream"
