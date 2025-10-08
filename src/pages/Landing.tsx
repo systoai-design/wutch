@@ -318,7 +318,7 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium animate-fade-in">
             <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
-            Earn Crypto From Every View
+            Turn Attention Into SOL
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.1s' }}>
