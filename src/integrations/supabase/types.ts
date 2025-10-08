@@ -1292,6 +1292,17 @@ export type Database = {
           total_paid_to_creators: number
         }[]
       }
+      get_user_financial_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          earnings_breakdown: Json
+          rewards_breakdown: Json
+          total_donated: number
+          total_earned: number
+          total_received: number
+          total_rewards_given: number
+        }[]
+      }
       get_user_watch_time: {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number

@@ -18,6 +18,7 @@ import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
+import { ProfileFinancialStats } from '@/components/ProfileFinancialStats';
 import { WalletStatusBadge } from '@/components/WalletStatusBadge';
 import { WalletEducationPanel } from '@/components/WalletEducationPanel';
 import { PublicWalletButton } from '@/components/PublicWalletButton';
@@ -479,6 +480,12 @@ const ProfilePage = () => {
                   <span className="text-muted-foreground">donated</span>
                 </div>
               </div>
+
+              <ProfileFinancialStats 
+                userId={profile.id}
+                isOwnProfile={isOwnProfile}
+                className="mt-4"
+              />
 
               <div className="flex flex-wrap gap-2 items-center">
                 {isOwnProfile && 'total_earnings' in profile ? (
