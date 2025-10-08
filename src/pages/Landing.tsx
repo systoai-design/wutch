@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
+import { SplineBackground } from '@/components/SplineBackground';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
 
@@ -314,8 +315,9 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-24 lg:py-36">
-        <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+      <section className="relative container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-24 lg:py-36 overflow-hidden">
+        <SplineBackground />
+        <div className="relative max-w-4xl mx-auto text-center space-y-6 sm:space-y-8" style={{ zIndex: 2 }}>
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium animate-fade-in">
             <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
             Turn Attention Into SOL
