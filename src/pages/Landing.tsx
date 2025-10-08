@@ -830,7 +830,7 @@ const Landing = () => {
       <section id="features" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Why Wutch is the Best Crypto Rewards Platform for Creators & Viewers</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Best Crypto Rewards Platform for Creators & Viewers</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
               Earn SOLANA through multiple methods. The fairest blockchain-powered content platform with transparent rewards.
             </p>
