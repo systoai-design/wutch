@@ -224,11 +224,12 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-start gap-2 mb-3">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
+            aria-label={`View ${short.profiles?.username}'s profile`}
           >
             <Avatar className="h-10 w-10 border-2 border-white">
               <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
@@ -237,29 +238,35 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <Link 
-            to={`/profile/${short.profiles?.username}`}
-            className="flex-1 min-w-0 cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="text-white font-semibold text-sm truncate">
-              @{short.profiles?.username || 'Unknown'}
-            </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1">
+              <Link 
+                to={`/profile/${short.profiles?.username}`}
+                className="cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`View ${short.profiles?.username}'s profile`}
+              >
+                <p className="text-white font-semibold text-sm">
+                  @{short.profiles?.username || 'Unknown'}
+                </p>
+              </Link>
+              {user?.id !== short.user_id && (
+                <Button
+                  size="sm"
+                  variant={isFollowing ? "secondary" : "default"}
+                  onClick={toggleFollow}
+                  disabled={isFollowLoading}
+                  className="h-6 px-2 text-xs shrink-0 active:scale-95 transition-transform pointer-events-auto"
+                  aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
+                >
+                  {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
+                </Button>
+              )}
+            </div>
             {short.profiles?.display_name && (
               <p className="text-white/80 text-xs truncate">{short.profiles.display_name}</p>
             )}
-          </Link>
-          {user?.id !== short.user_id && (
-            <Button
-              size="sm"
-              variant={isFollowing ? "secondary" : "default"}
-              onClick={toggleFollow}
-              disabled={isFollowLoading}
-              className="h-7 px-3 text-xs shrink-0 active:scale-95 transition-transform pointer-events-auto"
-            >
-              {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
-            </Button>
-          )}
+          </div>
         </div>
         
         <div className="space-y-1">
@@ -362,7 +369,7 @@ export function MobileShortPlayer({
       <GuestPromptDialog
         open={showFollowGuestDialog}
         onOpenChange={setShowFollowGuestDialog}
-        action="like"
+        action="follow"
       />
     </div>
   );

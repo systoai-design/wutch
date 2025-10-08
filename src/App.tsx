@@ -122,7 +122,8 @@ function AppContent() {
           <Route path="/wutch/:id" element={<WutchVideoDetail />} />
           
           <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
-          <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<Search />} />
           <Route path="/trending" element={<Home />} />
           <Route path="/upcoming" element={<Home />} />
