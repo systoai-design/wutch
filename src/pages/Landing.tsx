@@ -10,6 +10,7 @@ import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
+import pumpFunLogo from '@/assets/pumpfun-logo.png';
 
 // Memoized stat card component
 const StatCard = memo(({ value, label, delay }: { value: string; label: string; delay: string }) => (
@@ -287,6 +288,15 @@ const Landing = () => {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => window.open('https://pump.fun/', '_blank')}
+              aria-label="Visit PumpFun"
+              className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
+            >
+              <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
               aria-label="Follow us on X"
               className="transition-transform hover:scale-110 h-10 w-10 sm:h-11 sm:w-11"
@@ -330,12 +340,12 @@ const Landing = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in px-2" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
-              <Link to="/app">Start Earning Now</Link>
+            <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation pulse-glow">
+              <Link to="/app">🚀 Get Your First SOL</Link>
             </Button>
             <Button asChild size="default" variant="outline" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
               <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-                How It Works
+                See How It Works
               </button>
             </Button>
           </div>
@@ -365,48 +375,52 @@ const Landing = () => {
       <section id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-muted/30 to-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">How to Earn SOLANA on Wutch - 4 Simple Ways</h2>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Zap className="h-4 w-4" />
+              Like YouTube, But You Earn Crypto
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">4 Ways to Earn SOLANA</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Earn cryptocurrency through watching streams, creating content, claiming bounties, and sharing campaigns. Start earning SOLANA today.
+              Just like YouTube shares ad revenue with creators - we share rewards with everyone. Start earning SOLANA in minutes.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation">
                 <Eye className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Watch Livestreams & Earn SOLANA Rewards</h3>
+              <h3 className="text-2xl font-bold text-foreground">Watch & Earn SOLANA</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Watch livestreams and short videos. Claim bounties for active watching and participate in sharing campaigns to earn crypto rewards.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.2s' }}>
                 <Video className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Create Videos & Earn 95% of Crypto Donations</h3>
+              <h3 className="text-2xl font-bold text-foreground">Create & Earn 95%</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Upload short videos or go live. Receive 95% of all donations (5% platform fee) and tips from your audience. Create funded bounties and sharing campaigns to engage viewers.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.4s' }}>
                 <Coins className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Claim SOLANA Bounties for Active Watching</h3>
+              <h3 className="text-2xl font-bold text-foreground">Claim Bounties</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Watch for secret words in streams and claim bounty rewards. Accumulate watch time (minimum 5 minutes) to qualify.
               </p>
             </Card>
 
-            <Card className="p-8 text-center space-y-6 border-primary/20 bg-card/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6">
+            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.6s' }}>
                 <Zap className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Instant SOL Payouts to Your Wallet</h3>
+              <h3 className="text-2xl font-bold text-foreground">Share & Get Paid</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.
               </p>
@@ -423,15 +437,15 @@ const Landing = () => {
               <Share2 className="h-4 w-4" />
               Viral Marketing Meets Crypto Rewards
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Share Campaigns - Earn & Advertise with SOLANA</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Get Paid to Share Content</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              The ultimate win-win: Users earn SOL for sharing content, Creators get viral reach for their streams
+              The ultimate win-win: You earn SOL for sharing, Creators get viral reach. Everyone wins.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* For Users */}
-            <Card className="p-8 space-y-6 border-primary/20 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+            <Card className="p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
               <div className="flex items-start gap-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
                   <Coins className="h-8 w-8 text-primary" />
@@ -489,7 +503,7 @@ const Landing = () => {
             </Card>
 
             {/* For Creators */}
-            <Card className="p-8 space-y-6 border-primary/20 bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
+            <Card className="p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
               <div className="flex items-start gap-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
                   <TrendingUp className="h-8 w-8 text-primary" />
@@ -578,10 +592,10 @@ const Landing = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button asChild size="lg" className="gap-2 hover:scale-105 transition-transform">
+            <Button asChild size="lg" className="gap-2 hover:scale-105 transition-transform pulse-glow">
               <Link to="/app">
                 <Share2 className="h-5 w-5" />
-                Start Earning from Shares
+                💰 Claim Your First Share Reward
               </Link>
             </Button>
           </div>
@@ -593,9 +607,12 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-4xl font-bold mb-2 text-foreground">Available Bounties</h2>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-live/10 text-live text-xs font-medium mb-3">
+                🔴 Live Now
+              </div>
+              <h2 className="text-4xl font-bold mb-2 text-foreground">Claim Live Bounties Now</h2>
               <p className="text-xl text-muted-foreground">
-                Watch streams and claim crypto rewards
+                Active bounties waiting to be claimed - earn SOLANA in minutes
               </p>
             </div>
             <Button 
@@ -619,9 +636,9 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4 text-foreground">SOLANA Leaderboard - Top Crypto Earners This Month</h2>
+              <h2 className="text-4xl font-bold mb-4 text-foreground">Top Earners This Week</h2>
               <p className="text-xl text-muted-foreground">
-                See who's earning the most SOLANA on Wutch
+                See who's making the most SOLANA - you could be next
               </p>
             </div>
 
@@ -638,29 +655,29 @@ const Landing = () => {
       <section id="creator-rewards" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Creator Earnings - 95% Revenue Split on All Donations</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Creators Earn 95% of All Tips</h2>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Industry-leading 95% creator revenue split. Earn SOLANA through donations, bounties, sharing campaigns, and view-based monetization.
+              Like YouTube's revenue sharing but better. Keep 95% of everything you earn - the fairest split in crypto.
             </p>
           </div>
 
           {/* Hero Stats */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
-            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+            <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate">
               <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
               <div className="text-4xl font-bold text-primary mb-2">
                 ${creatorStats.totalPaidToCreators.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
               <div className="text-sm text-muted-foreground font-medium">Total Paid to Creators</div>
             </Card>
-            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+            <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.1s' }}>
               <Users className="h-12 w-12 text-primary mx-auto mb-4" />
               <div className="text-4xl font-bold text-primary mb-2">
                 {creatorStats.activeCreators.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground font-medium">Active Creators</div>
             </Card>
-            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+            <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.2s' }}>
               <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
               <div className="text-4xl font-bold text-primary mb-2">
                 ${creatorStats.averageEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
@@ -807,8 +824,8 @@ const Landing = () => {
                 Join the fairest creator platform. Keep 95% of donations, create bounties, and engage your audience like never before.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild size="lg" className="px-8 py-6 h-auto text-lg hover:scale-105 transition-transform">
-                  <Link to="/auth">Start Creating & Earning</Link>
+                <Button asChild size="lg" className="px-8 py-6 h-auto text-lg hover:scale-105 transition-transform pulse-glow">
+                  <Link to="/auth">🎬 Start Creating & Earning</Link>
                 </Button>
                 <Button 
                   asChild 
@@ -831,8 +848,8 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Best Crypto Rewards Platform for Creators & Viewers</h2>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Earn SOLANA through multiple methods. The fairest blockchain-powered content platform with transparent rewards.
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              Multiple ways to earn. Fair, transparent, instant payments. The crypto rewards platform built for everyone.
             </p>
           </div>
 
@@ -960,15 +977,14 @@ const Landing = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto space-y-10">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Start Earning SOLANA Today - Join 1000+ Active Users
+              Start Earning SOLANA Today
             </h2>
             <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
-              Join thousands of creators and viewers already earning SOLANA crypto rewards. 
-              Watch streams, create content, claim bounties, and get paid for your time and engagement on the blockchain.
+              Join 1000+ people already making daily SOL. Watch, create, share - get paid in crypto. Just like YouTube, but you actually earn.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
-                <Link to="/app">Launch App Now</Link>
+              <Button asChild size="lg" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform pulse-glow">
+                <Link to="/app">🚀 Launch App & Start Earning</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="text-lg px-12 py-6 h-auto hover:scale-105 transition-transform">
                 <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>

@@ -16,6 +16,7 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
+import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -133,6 +134,17 @@ const Navigation = () => {
           <div className="block">
             <WalletConnect />
           </div>
+
+          {/* PumpFun Icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.open('https://pump.fun/', '_blank')}
+            className="hidden sm:inline-flex min-h-[44px] min-w-[44px]"
+            aria-label="Visit PumpFun"
+          >
+            <img src={pumpFunLogo} alt="PumpFun" className="h-5 w-5" />
+          </Button>
 
           {/* Twitter/X Icon */}
           <Button
