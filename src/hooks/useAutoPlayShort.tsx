@@ -30,6 +30,7 @@ export function useAutoPlayShort({
           }
           
           // Auto-play with smart audio handling
+          video.muted = isMuted;
           video.play().catch((error) => {
             // Browser blocked autoplay - force mute and retry
             console.log('Autoplay prevented, trying with mute:', error);
@@ -39,8 +40,9 @@ export function useAutoPlayShort({
               setTimeout(() => {
                 if (!isMuted) {
                   video.muted = false;
+                  console.log('Auto-unmuted video after autoplay recovery');
                 }
-              }, 100);
+              }, 150);
             }).catch(e => console.log('Autoplay failed even with mute:', e));
           });
           

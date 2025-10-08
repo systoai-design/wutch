@@ -96,6 +96,13 @@ export function MobileShortPlayer({
     }
   }, [isMuted, volume]);
 
+  // Force sync video muted state when becoming active
+  useEffect(() => {
+    if (videoRef.current && isActive) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isActive, isMuted]);
+
   // Auto-hide controls
   useEffect(() => {
     return () => {
@@ -253,6 +260,22 @@ export function MobileShortPlayer({
 
       {/* Right Side Actions - Vertically Centered */}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
+        {/* Mute/Unmute */}
+        <button
+          onClick={onToggleMute}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${
+            isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
+          }`}>
+            {isMuted ? (
+              <VolumeX className="h-6 w-6 text-white" />
+            ) : (
+              <Volume2 className="h-6 w-6 text-white" />
+            )}
+          </div>
+        </button>
+
         {/* Like */}
         <button
           onClick={toggleLike}
@@ -279,22 +302,6 @@ export function MobileShortPlayer({
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
           </span>
-        </button>
-
-        {/* Mute/Unmute */}
-        <button
-          onClick={onToggleMute}
-          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
-        >
-          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${
-            isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
-          }`}>
-            {isMuted ? (
-              <VolumeX className="h-6 w-6 text-white" />
-            ) : (
-              <Volume2 className="h-6 w-6 text-white" />
-            )}
-          </div>
         </button>
 
         {/* Share */}
