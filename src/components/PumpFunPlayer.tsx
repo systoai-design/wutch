@@ -6,16 +6,19 @@ interface PumpFunPlayerProps {
   pumpFunUrl: string;
   isLive?: boolean;
   showExternalLink?: boolean;
+  onStreamOpened?: () => void;
 }
 
 export function PumpFunPlayer({ 
   pumpFunUrl, 
   isLive = false,
-  showExternalLink = false
+  showExternalLink = false,
+  onStreamOpened
 }: PumpFunPlayerProps) {
   
   const handleOpenStream = () => {
     window.open(pumpFunUrl, '_blank', 'noopener,noreferrer');
+    onStreamOpened?.();
   };
 
   return (

@@ -211,6 +211,7 @@ const StreamDetail = () => {
               pumpFunUrl={stream.pump_fun_url}
               isLive={stream.is_live || false}
               showExternalLink={true}
+              onStreamOpened={() => setHasStartedWatching(true)}
             />
           </div>
 
