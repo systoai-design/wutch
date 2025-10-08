@@ -172,15 +172,15 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="space-y-2 sm:space-y-3">
+          <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Update your profile information. Changes will be visible to everyone.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-4">
             <div>
               <Label htmlFor="display_name">Display Name</Label>
               <Input
@@ -193,14 +193,15 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
 
             <div>
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio" className="text-sm">Bio</Label>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Tell us about yourself"
-                rows={3}
+                rows={2}
                 maxLength={500}
+                className="text-sm"
               />
             </div>
 
@@ -217,7 +218,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                 placeholder="https://your-affiliate-link.com"
                 maxLength={500}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 Add an affiliate or promotional link (e.g., product, service, etc.). Must be HTTPS.
               </p>
             </div>
@@ -233,28 +234,28 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                 placeholder="Check this out!"
                 maxLength={50}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 Customize what viewers see on your promotional link button (max 50 characters)
               </p>
             </div>
 
             <div>
-              <Label htmlFor="avatar">Avatar Image</Label>
+              <Label htmlFor="avatar" className="text-sm">Avatar Image</Label>
               <div className="space-y-2">
                 {avatarPreview && (
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden border">
+                  <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border">
                     <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="absolute top-1 right-1 h-6 w-6"
+                      className="absolute top-1 right-1 h-6 w-6 touch-manipulation"
                       onClick={() => {
                         setAvatarFile(null);
                         setAvatarPreview('');
                       }}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 )}
@@ -267,10 +268,10 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                     className="hidden"
                   />
                   <Label htmlFor="avatar" className="cursor-pointer">
-                    <Button type="button" variant="outline" asChild>
+                    <Button type="button" variant="outline" size="sm" asChild className="touch-manipulation">
                       <span>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Avatar
+                        <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm">Upload Avatar</span>
                       </span>
                     </Button>
                   </Label>
@@ -279,22 +280,22 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
 
             <div>
-              <Label htmlFor="banner">Banner Image</Label>
+              <Label htmlFor="banner" className="text-sm">Banner Image</Label>
               <div className="space-y-2">
                 {bannerPreview && (
-                  <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                  <div className="relative w-full h-24 sm:h-32 rounded-lg overflow-hidden border">
                     <img src={bannerPreview} alt="Banner preview" className="w-full h-full object-cover" />
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="absolute top-2 right-2 h-6 w-6"
+                      className="absolute top-1 sm:top-2 right-1 sm:right-2 h-6 w-6 touch-manipulation"
                       onClick={() => {
                         setBannerFile(null);
                         setBannerPreview('');
                       }}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 )}
@@ -307,10 +308,10 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                     className="hidden"
                   />
                   <Label htmlFor="banner" className="cursor-pointer">
-                    <Button type="button" variant="outline" asChild>
+                    <Button type="button" variant="outline" size="sm" asChild className="touch-manipulation">
                       <span>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Banner
+                        <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm">Upload Banner</span>
                       </span>
                     </Button>
                   </Label>
@@ -319,18 +320,18 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
 
 
-            <Separator className="my-6" />
+            <Separator className="my-4 sm:my-6" />
 
             <div>
-              <h3 className="font-semibold mb-4">Wallet Management</h3>
+              <h3 className="font-semibold mb-3 text-base sm:text-lg">Wallet Management</h3>
               <WalletManagement />
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-4 sm:my-6" />
 
             <div>
-              <h3 className="font-semibold mb-4">Social Links</h3>
-              <div className="space-y-4">
+              <h3 className="font-semibold mb-3 text-base sm:text-lg">Social Links</h3>
+              <div className="space-y-3 sm:space-y-4">
                 <div>
                   <Label htmlFor="twitter">Twitter</Label>
                   <Input
@@ -366,11 +367,11 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto touch-manipulation">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto touch-manipulation">
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
