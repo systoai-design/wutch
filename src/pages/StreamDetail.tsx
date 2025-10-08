@@ -70,14 +70,6 @@ const StreamDetail = () => {
   // Track stream likes
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = useStreamLike(id || '');
 
-  // Auto-start watch time tracking when player loads (for non-owners)
-  const handlePlayerLoadStart = () => {
-    if (user && !isGuest && stream && stream.user_id !== user.id && !hasStartedWatching) {
-      console.log('Auto-starting watch session for embedded player');
-      setHasStartedWatching(true);
-    }
-  };
-
   const fetchStreamData = async () => {
       if (!id) return;
 
@@ -218,7 +210,6 @@ const StreamDetail = () => {
             <PumpFunPlayer 
               pumpFunUrl={stream.pump_fun_url}
               isLive={stream.is_live || false}
-              onLoadStart={handlePlayerLoadStart}
               showExternalLink={true}
             />
           </div>
