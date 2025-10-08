@@ -102,9 +102,9 @@ const StreamDetail = () => {
           setLikeCount(streamData.like_count);
         }
 
-        // Fetch streamer profile (public fields only)
+        // Fetch streamer profile (public fields only via view)
         const { data: streamerData } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, username, display_name, avatar_url, follower_count, social_links, is_verified, banner_url, bio, created_at, promotional_link, promotional_link_text, public_wallet_address')
           .eq('id', streamData.user_id)
           .maybeSingle();
@@ -173,13 +173,17 @@ const StreamDetail = () => {
     );
   }
 
-  if (!stream || !streamer) {
+  if (!stream) {
     return <div className="p-8 text-center">Stream not found</div>;
   }
 
   const isOwner = user && stream.user_id === user.id;
   const canDelete = isOwner || isAdmin;
-  const socialLinks = (streamer.social_links as { twitter?: string; discord?: string; website?: string }) || {};
+  const socialLinks = (streamer?.social_links as { twitter?: string; discord?: string; website?: string }) || {};
+  const displayName = streamer?.display_name || streamer?.username || 'Creator';
+  const avatarUrl = streamer?.avatar_url || '/placeholder.svg';
+  const followerCount = streamer?.follower_count ?? 0;
+  const username = streamer?.username || '';
 
   const handleDeleteStream = async () => {
     if (!id) return;
@@ -242,20 +246,37 @@ const StreamDetail = () => {
             </div>
 
             <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
-              <Link to={`/profile/${streamer.username}`} className="flex items-center gap-2.5 sm:gap-3 hover:opacity-80 transition-opacity">
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-                  <AvatarImage src={streamer.avatar_url || '/placeholder.svg'} />
-                  <AvatarFallback>
-                    {(streamer.display_name || streamer.username)[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-sm sm:text-base">{streamer.display_name || streamer.username}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    {(streamer.follower_count || 0).toLocaleString()} {isMobile ? '' : 'followers'}
-                  </p>
+              {username ? (
+                <Link to={`/profile/${username}`} className="flex items-center gap-2.5 sm:gap-3 hover:opacity-80 transition-opacity">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                    <AvatarImage src={avatarUrl} />
+                    <AvatarFallback>
+                      {displayName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-sm sm:text-base">{displayName}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {followerCount.toLocaleString()} {isMobile ? '' : 'followers'}
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                    <AvatarImage src={avatarUrl} />
+                    <AvatarFallback>
+                      {displayName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-sm sm:text-base">{displayName}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {followerCount.toLocaleString()} {isMobile ? '' : 'followers'}
+                    </p>
+                  </div>
                 </div>
-              </Link>
+              )}
 
               <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                 <Button 
