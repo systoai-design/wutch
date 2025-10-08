@@ -14,22 +14,22 @@ import { AuthDialog } from '@/components/AuthDialog';
 import { useAuthDialog } from '@/store/authDialogStore';
 
 // Lazy load pages for code splitting
-const Landing = lazy(() => import('./pages/Landing').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Bounties = lazy(() => import('./pages/Bounties').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Home = lazy(() => import('./pages/Home').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Streams = lazy(() => import('./pages/Streams').catch(() => ({ default: () => <div>Error loading page</div> })));
-const WutchVideos = lazy(() => import('./pages/WutchVideos').catch(() => ({ default: () => <div>Error loading page</div> })));
-const WutchVideoDetail = lazy(() => import('./pages/WutchVideoDetail').catch(() => ({ default: () => <div>Error loading page</div> })));
-const StreamDetail = lazy(() => import('./pages/StreamDetail').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Shorts = lazy(() => import('./pages/Shorts').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Submit = lazy(() => import('./pages/Submit').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Profile = lazy(() => import('./pages/Profile').catch(() => ({ default: () => <div>Error loading page</div> })));
-const ResetPassword = lazy(() => import('./pages/ResetPassword').catch(() => ({ default: () => <div>Error loading page</div> })));
-const UpdatePassword = lazy(() => import('./pages/UpdatePassword').catch(() => ({ default: () => <div>Error loading page</div> })));
-const Search = lazy(() => import('./pages/Search').catch(() => ({ default: () => <div>Error loading page</div> })));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').catch(() => ({ default: () => <div>Error loading page</div> })));
-const TermsOfService = lazy(() => import('./pages/TermsOfService').catch(() => ({ default: () => <div>Error loading page</div> })));
-const NotFound = lazy(() => import('./pages/NotFound').catch(() => ({ default: () => <div>Error loading page</div> })));
+const Landing = lazy(() => import('./pages/Landing'));
+const Bounties = lazy(() => import('./pages/Bounties'));
+const Home = lazy(() => import('./pages/Home'));
+const Streams = lazy(() => import('./pages/Streams'));
+const WutchVideos = lazy(() => import('./pages/WutchVideos'));
+const WutchVideoDetail = lazy(() => import('./pages/WutchVideoDetail'));
+const StreamDetail = lazy(() => import('./pages/StreamDetail'));
+const Shorts = lazy(() => import('./pages/Shorts'));
+const Submit = lazy(() => import('./pages/Submit'));
+const Profile = lazy(() => import('./pages/Profile'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
+const Search = lazy(() => import('./pages/Search'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
