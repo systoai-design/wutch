@@ -51,16 +51,16 @@ const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
       <div className="px-3 sm:px-4 py-2.5 sm:py-3">
         {/* Semi-rounded container */}
         <div className="relative bg-muted/30 rounded-2xl p-1.5 border border-border/50 shadow-sm">
-          {/* Left gradient indicator */}
+          {/* Left gradient indicator - more prominent */}
           <div 
-            className={`absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-muted/30 to-transparent pointer-events-none z-10 transition-opacity duration-300 rounded-l-2xl ${
+            className={`absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent pointer-events-none z-10 transition-opacity duration-300 rounded-l-2xl ${
               showLeftGradient ? 'opacity-100' : 'opacity-0'
             }`}
           />
           
-          {/* Right gradient indicator */}
+          {/* Right gradient indicator - more prominent */}
           <div 
-            className={`absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-muted/30 to-transparent pointer-events-none z-10 transition-opacity duration-300 rounded-r-2xl ${
+            className={`absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-muted/50 via-muted/30 to-transparent pointer-events-none z-10 transition-opacity duration-300 rounded-r-2xl ${
               showRightGradient ? 'opacity-100' : 'opacity-0'
             }`}
           />
@@ -81,11 +81,13 @@ const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
                   variant={isActive ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onFilterChange(filter.value)}
-                  className={`whitespace-nowrap rounded-full transition-all duration-200 snap-center flex-shrink-0 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm px-3 sm:px-4 ${
+                  className={`whitespace-nowrap rounded-full transition-all duration-200 snap-center flex-shrink-0 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm px-3 sm:px-4 touch-manipulation ${
                     isActive 
-                      ? 'shadow-md hover:shadow-lg' 
-                      : 'hover:bg-accent/80'
-                  }`}
+                      ? 'shadow-lg hover:shadow-xl ring-2 ring-primary/30 scale-105' 
+                      : 'hover:bg-accent/80 hover:scale-102'
+                  } ${filter.value === 'live' && isActive ? 'animate-pulse-subtle' : ''}`}
+                  aria-pressed={isActive}
+                  aria-label={`Filter by ${filter.label}`}
                 >
                   {Icon && (
                     <Icon 

@@ -25,16 +25,23 @@ const BottomNavigation = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors touch-manipulation",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 touch-manipulation relative",
+                isActive ? "text-primary scale-105" : "text-muted-foreground hover:text-foreground",
                 item.isAction && "text-primary"
               )}
             >
+              {isActive && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-b-full" />
+              )}
               <Icon className={cn(
-                "h-6 w-6",
-                item.isAction && "h-7 w-7"
+                "h-6 w-6 transition-transform",
+                item.isAction && "h-7 w-7",
+                isActive && "scale-110"
               )} />
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className={cn(
+                "text-xs transition-all",
+                isActive ? "font-bold" : "font-medium"
+              )}>{item.label}</span>
             </Link>
           );
         })}

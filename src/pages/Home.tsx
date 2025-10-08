@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link, useLocation } from 'react-router-dom';
+import { useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -7,7 +7,10 @@ import FilterBar, { FilterOption } from '@/components/FilterBar';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight, X, Video, Zap, PlaySquare, Clock } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { ScrollToTop } from '@/components/ScrollToTop';
+import { SkeletonStreamCard } from '@/components/SkeletonCard';
 import {
   Carousel,
   CarouselContent,
@@ -43,6 +46,7 @@ type WutchVideo = Pick<Database['public']['Tables']['wutch_videos']['Row'],
 
 const Home = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
     document.title = 'Home - Watch Live Streams | Wutch';
@@ -72,6 +76,12 @@ const Home = () => {
       setActiveFilter('all');
     }
   }, [location.pathname]);
+
+  // React to URL category changes  
+  useEffect(() => {
+    const urlCategory = searchParams.get('category');
+    setSelectedCategory(urlCategory);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchAllStreams();
@@ -254,9 +264,19 @@ const Home = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <main className="min-h-screen p-4 md:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="h-10 w-48 bg-muted rounded-xl animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <SkeletonStreamCard key={i} />
+            ))}
+          </div>
+        </div>
+        <ScrollToTop />
+      </main>
     );
   }
 
@@ -375,16 +395,27 @@ const Home = () => {
                   )}
                 </>
               ) : (
-                <div className="text-center py-20">
-                  <p className="text-muted-foreground text-lg">
-                    {activeFilter === 'live' && 'No live streams at the moment.'}
-                    {activeFilter === 'recent' && 'No recently ended streams or videos.'}
-                    {activeFilter === 'trending' && 'No trending content right now.'}
-                    {activeFilter === 'with-bounty' && 'No streams with bounties available.'}
-                    {activeFilter === 'without-bounty' && 'No streams without bounties.'}
-                    {activeFilter === 'upcoming' && 'No upcoming streams.'}
-                  </p>
-                </div>
+                <EmptyState
+                  icon={activeFilter === 'live' ? Video : activeFilter === 'upcoming' ? Clock : PlaySquare}
+                  title={`No ${activeFilter === 'live' ? 'Live' : activeFilter === 'recent' ? 'Recent' : activeFilter === 'upcoming' ? 'Upcoming' : 'Trending'} Content`}
+                  description={
+                    activeFilter === 'live' 
+                      ? 'No live streams at the moment. Check back soon!' 
+                      : activeFilter === 'recent'
+                      ? 'No recently ended streams or videos yet.'
+                      : activeFilter === 'trending'
+                      ? 'No trending content right now.'
+                      : activeFilter === 'with-bounty'
+                      ? 'No streams with bounties available.'
+                      : activeFilter === 'without-bounty'
+                      ? 'No streams without bounties.'
+                      : 'No upcoming streams scheduled.'
+                  }
+                  action={{
+                    label: 'View All Streams',
+                    onClick: () => setActiveFilter('all')
+                  }}
+                />
               );
             })()}
           </div>
@@ -524,17 +555,24 @@ const Home = () => {
             )}
 
             {/* Empty State */}
-            {liveStreams.length === 0 && upcomingStreams.length === 0 && endedStreams.length === 0 && (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">
-                  {selectedCategory
-                    ? `No streams in the "${selectedCategory}" category at the moment.`
-                    : 'No streams available at the moment.'}
-                </p>
-              </div>
+            {liveStreams.length === 0 && upcomingStreams.length === 0 && endedStreams.length === 0 && shorts.length === 0 && wutchVideos.length === 0 && (
+              <EmptyState
+                icon={Video}
+                title={selectedCategory ? `No Streams in "${selectedCategory}"` : 'No Content Available'}
+                description={
+                  selectedCategory
+                    ? `No streams found in the "${selectedCategory}" category at the moment. Try a different category or check back later!`
+                    : 'No streams or videos available at the moment. Be the first to go live!'
+                }
+                action={{
+                  label: selectedCategory ? 'Clear Filter' : 'Start Streaming',
+                  onClick: () => selectedCategory ? navigate('/app') : navigate('/submit')
+                }}
+              />
             )}
           </div>
         )}
+        <ScrollToTop />
       </main>
     </div>
   );
