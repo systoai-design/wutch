@@ -60,6 +60,7 @@ export function MobileShortPlayer({
     videoRef,
     shortId: short.id,
     isActive,
+    isMuted,
     onBecomeActive: () => {
       // Fetch like count when video becomes active
       if (short.like_count !== undefined) {
@@ -166,21 +167,9 @@ export function MobileShortPlayer({
         className="mobile-short-video absolute inset-0 w-full h-full object-contain"
         playsInline
         loop
-        muted
         preload={isActive ? "auto" : "none"}
         onTouchEnd={handleTouchEnd}
       />
-
-      {/* Mute/Unmute Button - Top Right */}
-      <button
-        onClick={() => {
-          onToggleMute();
-          handleShowControls();
-        }}
-        className="absolute top-4 right-4 z-30 rounded-full p-2.5 bg-black/50 hover:bg-black/60 text-white backdrop-blur-sm transition-all shadow-lg"
-      >
-        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-      </button>
 
       {/* Controls Overlay - Shows on Tap */}
       <div
@@ -290,6 +279,22 @@ export function MobileShortPlayer({
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {short.commentCount && short.commentCount > 0 ? formatNumber(short.commentCount) : ''}
           </span>
+        </button>
+
+        {/* Mute/Unmute */}
+        <button
+          onClick={onToggleMute}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${
+            isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
+          }`}>
+            {isMuted ? (
+              <VolumeX className="h-6 w-6 text-white" />
+            ) : (
+              <Volume2 className="h-6 w-6 text-white" />
+            )}
+          </div>
         </button>
 
         {/* Share */}

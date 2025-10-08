@@ -4,6 +4,7 @@ interface UseAutoPlayShortOptions {
   videoRef: React.RefObject<HTMLVideoElement>;
   shortId: string;
   isActive: boolean;
+  isMuted: boolean;
   onBecomeActive?: () => void;
 }
 
@@ -11,6 +12,7 @@ export function useAutoPlayShort({
   videoRef, 
   shortId, 
   isActive,
+  isMuted,
   onBecomeActive 
 }: UseAutoPlayShortOptions) {
   const hasPlayedRef = useRef(false);
@@ -27,14 +29,19 @@ export function useAutoPlayShort({
             onBecomeActive();
           }
           
-          // Auto-play if not already playing
+          // Auto-play with smart audio handling
           video.play().catch((error) => {
-            // Autoplay was prevented - ensure muted attribute is set
-            console.log('Autoplay prevented, ensuring muted:', error);
-            if (!video.muted) {
-              video.muted = true;
-              video.play().catch(e => console.log('Autoplay failed even with mute:', e));
-            }
+            // Browser blocked autoplay - force mute and retry
+            console.log('Autoplay prevented, trying with mute:', error);
+            video.muted = true;
+            video.play().then(() => {
+              // Once playing, respect user's mute preference
+              setTimeout(() => {
+                if (!isMuted) {
+                  video.muted = false;
+                }
+              }, 100);
+            }).catch(e => console.log('Autoplay failed even with mute:', e));
           });
           
           hasPlayedRef.current = true;
@@ -56,7 +63,7 @@ export function useAutoPlayShort({
     return () => {
       observer.disconnect();
     };
-  }, [videoRef, shortId, onBecomeActive]);
+  }, [videoRef, shortId, isMuted, onBecomeActive]);
 
   // Preload management
   useEffect(() => {
