@@ -35,12 +35,22 @@ export function PumpFunPlayer({
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
+
+      if (observerRef.current) {
+        try {
+          observerRef.current.disconnect();
+        } catch (e) {
+          console.log('[PumpFunPlayer] Observer already disconnected');
+        }
+        observerRef.current = null;
+      }
       
       // Clean up script if it exists
       if (scriptRef.current && containerRef.current) {
@@ -167,6 +177,26 @@ export function PumpFunPlayer({
     if (containerRef.current) {
       containerRef.current.appendChild(script);
       scriptRef.current = script;
+
+      // Observe for injected player to hide loader ASAP
+      if (observerRef.current) {
+        try { observerRef.current.disconnect(); } catch {}
+      }
+      observerRef.current = new MutationObserver(() => {
+        if (containerRef.current && containerRef.current.childElementCount > 0) {
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          setIsLoading(false);
+          setHasTimedOut(false);
+          setLoadTimeRemaining(0);
+          try {
+            observerRef.current?.disconnect();
+          } catch {}
+        }
+      });
+      try {
+        observerRef.current.observe(containerRef.current, { childList: true });
+      } catch {}
     }
 
     // Start 5-second timeout
@@ -310,7 +340,7 @@ export function PumpFunPlayer({
     <div className="relative w-full h-full">
       {/* Live Badge Overlay */}
       {isLive && (
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 left-4 z-30">
           <Badge variant="destructive" className="bg-live text-live-foreground text-sm sm:text-base px-3 py-1.5 shadow-lg">
             <span className="inline-block h-2 w-2 rounded-full bg-current mr-2 animate-pulse" />
             LIVE
@@ -320,7 +350,7 @@ export function PumpFunPlayer({
 
       {/* External Link Button */}
       {showExternalLink && (
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-30">
           <Button 
             size="sm"
             variant="secondary"
@@ -335,7 +365,7 @@ export function PumpFunPlayer({
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="absolute inset-0 z-20 pointer-events-none bg-background/70 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center space-y-3">
             <Skeleton className="h-12 w-12 rounded-full mx-auto animate-pulse" />
             <div className="space-y-1">
@@ -353,7 +383,7 @@ export function PumpFunPlayer({
       {/* Embed Container - Script will inject player here */}
       <div 
         ref={containerRef}
-        className="w-full h-full"
+        className="absolute inset-0"
         aria-label="Pump.fun live stream player"
       />
     </div>
