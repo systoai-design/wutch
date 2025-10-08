@@ -22,7 +22,7 @@ export function PumpFunPlayer({
   };
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-background via-muted/30 to-background flex flex-col items-center justify-center gap-4 sm:gap-6 p-4 sm:p-6 md:p-8">
+    <div className="relative w-full h-full bg-gradient-to-br from-background via-muted/30 to-background flex flex-col items-center justify-center gap-3 sm:gap-6 p-3 sm:p-6 md:p-8">
       {/* Live Badge */}
       {isLive && (
         <div className="absolute top-3 sm:top-6 left-3 sm:left-6 z-10">
@@ -49,21 +49,21 @@ export function PumpFunPlayer({
       )}
 
       {/* Main Content */}
-      <div className="flex flex-col items-center gap-4 sm:gap-6 max-w-md text-center px-4">
+      <div className="flex flex-col items-center gap-3 sm:gap-6 max-w-md text-center px-3">
         {/* Icon */}
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-          <div className="relative bg-primary/10 p-4 sm:p-6 rounded-full">
-            <Play className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+          <div className="relative bg-primary/10 p-3 sm:p-6 rounded-full">
+            <Play className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
           </div>
         </div>
 
         {/* Text Content */}
-        <div className="space-y-2 sm:space-y-3">
-          <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+        <div className="space-y-1.5 sm:space-y-3">
+          <h3 className="text-lg sm:text-2xl font-bold text-foreground">
             Watch Live on Pump.fun
           </h3>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-muted-foreground text-xs sm:text-sm leading-snug">
             This stream is hosted on Pump.fun's platform. Click the button below to watch the live stream in a new tab.
           </p>
         </div>
@@ -71,7 +71,7 @@ export function PumpFunPlayer({
         {/* CTA Button */}
         <Button 
           size="default"
-          className="gap-2 sm:gap-3 text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 shadow-xl active:scale-95 transition-transform w-full sm:w-auto"
+          className="gap-2 sm:gap-3 text-sm sm:text-lg px-5 py-3 sm:px-8 sm:py-6 shadow-xl active:scale-95 transition-transform w-full sm:w-auto"
           onClick={handleOpenStream}
         >
           <Play className="h-4 w-4 sm:h-5 sm:w-5" />
