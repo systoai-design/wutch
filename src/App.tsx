@@ -158,16 +158,8 @@ function AppLayout() {
 }
 
 function ShortsLayout() {
-  const isMobile = useIsMobile();
-  const location = useLocation();
-  
-  // On mobile, render shorts without any navigation/layout
-  if (isMobile) {
-    return <Outlet />;
-  }
-  
-  // On desktop, use standard layout
-  return <AppLayout />;
+  // Render shorts without any navigation/layout on all devices for immersive experience
+  return <Outlet />;
 }
 
 const App = () => {

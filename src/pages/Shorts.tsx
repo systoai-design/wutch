@@ -16,7 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { generateContentUrl, parseContentUrl } from '@/utils/urlHelpers';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -28,6 +28,7 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 const Shorts = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
@@ -186,12 +187,15 @@ const Shorts = () => {
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         scrollToShort('up');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        navigate('/app');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobile, scrollToShort]);
+  }, [isMobile, scrollToShort, navigate]);
 
   const handleShare = async (short: ShortVideo) => {
     if (navigator.share) {
@@ -336,9 +340,9 @@ const Shorts = () => {
     );
   }
 
-  // Desktop: Vertical scroll with snap
+  // Desktop: Fullscreen Immersive Experience
   return (
-    <div className="relative h-screen overflow-hidden bg-background">
+    <div className="relative h-screen w-screen overflow-hidden bg-black fixed inset-0 z-50">
       <div 
         ref={desktopScrollRef}
         className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
@@ -376,25 +380,35 @@ const Shorts = () => {
         ))}
       </div>
 
+      {/* Back Button - Top Left */}
+      <button
+        onClick={() => navigate('/app')}
+        className="fixed top-6 left-6 z-50 h-11 w-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+        aria-label="Back to home"
+      >
+        <span className="text-xl">←</span>
+      </button>
+
       {/* Fixed Navigation Arrows */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
-        <Button
+      {activeShortIndex > 0 && (
+        <button
           onClick={() => scrollToShort('up')}
-          disabled={activeShortIndex === 0}
-          size="icon"
-          className="h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg disabled:opacity-30"
+          className="fixed top-1/2 left-8 -translate-y-1/2 z-50 h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+          aria-label="Previous short"
         >
-          <ChevronUp className="h-6 w-6 text-white" />
-        </Button>
-        <Button
+          <ChevronUp className="h-6 w-6" />
+        </button>
+      )}
+      
+      {activeShortIndex < shorts.length - 1 && (
+        <button
           onClick={() => scrollToShort('down')}
-          disabled={activeShortIndex === shorts.length - 1}
-          size="icon"
-          className="h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm shadow-lg disabled:opacity-30"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+          aria-label="Next short"
         >
-          <ChevronDown className="h-6 w-6 text-white" />
-        </Button>
-      </div>
+          <ChevronDown className="h-6 w-6" />
+        </button>
+      )}
 
       {/* Comments Dialog for Desktop */}
       {selectedShort && isCommentsOpen && (
