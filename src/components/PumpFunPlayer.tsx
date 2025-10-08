@@ -25,7 +25,7 @@ export function PumpFunPlayer({
 }: PumpFunPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [tokenAddress, setTokenAddress] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<ErrorType>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -33,13 +33,24 @@ export function PumpFunPlayer({
   
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
+      
+      // Clean up script if it exists
+      if (scriptRef.current && containerRef.current) {
+        try {
+          containerRef.current.removeChild(scriptRef.current);
+        } catch (e) {
+          console.log('[PumpFunPlayer] Script already removed');
+        }
+        scriptRef.current = null;
+      }
     };
   }, []);
 
@@ -51,20 +62,21 @@ export function PumpFunPlayer({
     setErrorType(null);
     setHasTimedOut(false);
     setLoadTimeRemaining(5);
+    setTokenAddress(null);
     
     try {
       const url = new URL(pumpFunUrl);
       const pathParts = url.pathname.split('/').filter(Boolean);
       
       // Get the last part of the path (token address)
-      const tokenAddress = pathParts[pathParts.length - 1];
+      const rawTokenAddress = pathParts[pathParts.length - 1];
       
-      if (!tokenAddress) {
+      if (!rawTokenAddress) {
         throw new Error('Could not extract token address from URL');
       }
       
       // Extract clean token address (handle malformed URLs with trailing "pump")
-      const cleanTokenAddress = tokenAddress.replace(/pump$/, '');
+      const cleanTokenAddress = rawTokenAddress.replace(/pump$/, '');
       
       // Validate Solana address format
       if (!isValidSolanaAddress(cleanTokenAddress)) {
@@ -75,15 +87,9 @@ export function PumpFunPlayer({
         return;
       }
       
-      // Use official pumpembed.com service for embedding
-      const newEmbedUrl = `https://www.pumpembed.com/embed/${cleanTokenAddress}`;
-      setEmbedUrl(newEmbedUrl);
-      console.log('[PumpFunPlayer] Extracted embed URL:', newEmbedUrl);
-      console.log('[PumpFunPlayer] Token address:', cleanTokenAddress);
+      console.log('[PumpFunPlayer] Extracted token address:', cleanTokenAddress);
+      setTokenAddress(cleanTokenAddress);
       onLoadStart?.();
-      
-      // Start 5-second timeout
-      startLoadTimeout();
       
     } catch (error) {
       console.error('[PumpFunPlayer] Error parsing Pump.fun URL:', error);
@@ -92,6 +98,92 @@ export function PumpFunPlayer({
       onLoadError?.();
     }
   }, [pumpFunUrl, onLoadStart, onLoadError, retryCount]);
+
+  // Load the pumpembed.com script when token address is available
+  useEffect(() => {
+    if (!tokenAddress || !containerRef.current) {
+      return;
+    }
+
+    // Clean up any existing script
+    if (scriptRef.current && containerRef.current) {
+      try {
+        containerRef.current.removeChild(scriptRef.current);
+      } catch (e) {
+        console.log('[PumpFunPlayer] Previous script already removed');
+      }
+      scriptRef.current = null;
+    }
+
+    // Clear the container
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+    }
+
+    console.log('[PumpFunPlayer] Loading pumpembed script for token:', tokenAddress);
+
+    // Create script element with data attributes
+    const script = document.createElement('script');
+    script.src = 'https://www.pumpembed.com/embed.js';
+    script.async = true;
+    script.setAttribute('data-mint-id', tokenAddress);
+    script.setAttribute('data-width', '100%');
+    script.setAttribute('data-height', '100%');
+    script.setAttribute('data-allow', 'autoplay; fullscreen; picture-in-picture');
+    script.setAttribute('data-style', 'border:0;overflow:hidden');
+    script.setAttribute('data-referrerpolicy', 'strict-origin-when-cross-origin');
+    script.setAttribute('data-border', '0');
+    script.setAttribute('data-pump', '1');
+    script.setAttribute('data-controls', '1');
+
+    // Handle script load events
+    script.onload = () => {
+      console.log('[PumpFunPlayer] Pumpembed script loaded successfully');
+      
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      
+      // Give the script time to inject the player
+      setTimeout(() => {
+        setIsLoading(false);
+        setHasTimedOut(false);
+        setLoadTimeRemaining(0);
+      }, 1000);
+    };
+
+    script.onerror = () => {
+      console.error('[PumpFunPlayer] Failed to load pumpembed script');
+      
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      
+      setIsLoading(false);
+      setHasError(true);
+      setErrorType('service-down');
+      onLoadError?.();
+    };
+
+    // Append script to container
+    if (containerRef.current) {
+      containerRef.current.appendChild(script);
+      scriptRef.current = script;
+    }
+
+    // Start 5-second timeout
+    startLoadTimeout();
+
+    // Cleanup function
+    return () => {
+      if (script && containerRef.current) {
+        try {
+          containerRef.current.removeChild(script);
+        } catch (e) {
+          console.log('[PumpFunPlayer] Script cleanup: already removed');
+        }
+      }
+      scriptRef.current = null;
+    };
+  }, [tokenAddress, onLoadError]);
 
   const startLoadTimeout = () => {
     // Clear existing timeouts
@@ -115,7 +207,7 @@ export function PumpFunPlayer({
     // Main timeout
     timeoutRef.current = setTimeout(() => {
       if (isLoading) {
-        console.error('[PumpFunPlayer] Iframe load timeout after 5 seconds');
+        console.error('[PumpFunPlayer] Script load timeout after 5 seconds');
         setIsLoading(false);
         setHasTimedOut(true);
         setHasError(true);
@@ -123,54 +215,6 @@ export function PumpFunPlayer({
         onLoadError?.();
       }
     }, 5000);
-  };
-
-  const handleIframeLoad = () => {
-    console.log('[PumpFunPlayer] Iframe loaded successfully');
-    
-    // Clear timeouts on successful load
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    
-    setIsLoading(false);
-    setHasTimedOut(false);
-    setLoadTimeRemaining(0);
-    
-    // Check if iframe content loaded properly (attempt to detect 404)
-    setTimeout(() => {
-      try {
-        const iframe = iframeRef.current;
-        if (iframe?.contentWindow) {
-          // Try to detect if it's showing an error page
-          // Note: This may be blocked by CORS, but we try anyway
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          if (iframeDoc) {
-            const bodyText = iframeDoc.body?.textContent?.toLowerCase() || '';
-            if (bodyText.includes('404') || bodyText.includes('not found')) {
-              console.log('[PumpFunPlayer] Detected 404 in iframe content');
-              setHasError(true);
-              setErrorType('stream-not-broadcasting');
-              onLoadError?.();
-            }
-          }
-        }
-      } catch (e) {
-        // CORS will prevent access, which is expected
-        console.log('[PumpFunPlayer] Cannot check iframe content (CORS)');
-      }
-    }, 500);
-  };
-
-  const handleIframeError = () => {
-    console.error('[PumpFunPlayer] Iframe failed to load');
-    
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    
-    setIsLoading(false);
-    setHasError(true);
-    setErrorType('service-down');
-    onLoadError?.();
   };
 
   const handleRetry = () => {
@@ -196,7 +240,7 @@ export function PumpFunPlayer({
   };
 
   // Fallback UI if embedding fails
-  if (hasError || !embedUrl) {
+  if (hasError || !tokenAddress) {
     const showRetry = retryCount < 2 && errorType !== 'url-parsing-error';
     
     return (
@@ -252,7 +296,7 @@ export function PumpFunPlayer({
                 <div>Error Type: {errorType || 'none'}</div>
                 <div>Retry Count: {retryCount}/2</div>
                 <div>Timed Out: {hasTimedOut ? 'Yes' : 'No'}</div>
-                <div className="break-all">Embed URL: {embedUrl || 'none'}</div>
+                <div className="break-all">Token: {tokenAddress || 'none'}</div>
                 <div className="break-all">Source URL: {pumpFunUrl}</div>
               </div>
             </details>
@@ -306,17 +350,10 @@ export function PumpFunPlayer({
         </div>
       )}
 
-      {/* Embedded Iframe */}
-      <iframe
-        ref={iframeRef}
-        src={embedUrl}
-        className="w-full h-full border-0"
-        allow="autoplay; fullscreen; picture-in-picture; accelerometer; clipboard-write; encrypted-media; gyroscope"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={handleIframeLoad}
-        onError={handleIframeError}
-        title="Pump.fun Stream"
+      {/* Embed Container - Script will inject player here */}
+      <div 
+        ref={containerRef}
+        className="w-full h-full"
         aria-label="Pump.fun live stream player"
       />
     </div>
