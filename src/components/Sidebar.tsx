@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Home, Flame, Clock, Video, PlaySquare, CalendarClock, Zap } from 'lucide-react';
+import { Home, Flame, Clock, Video, PlaySquare, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,6 +30,8 @@ const Sidebar = () => {
     { icon: Video, label: 'Streams', path: '/streams' },
     { icon: PlaySquare, label: 'Wutch', path: '/wutch' },
     { icon: Zap, label: 'Shorts', path: '/shorts' },
+    { icon: DollarSign, label: 'Bounties', path: '/bounties' },
+    { icon: Trophy, label: 'Leaderboards', path: '/leaderboards' },
     { icon: Flame, label: 'Trending', path: '/trending' },
     { icon: CalendarClock, label: 'Upcoming', path: '/upcoming' },
     { icon: Clock, label: 'Recently Ended', path: '/recent' },

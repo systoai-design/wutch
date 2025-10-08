@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2 } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -19,6 +19,7 @@ import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
 import { ProfileFinancialStats } from '@/components/ProfileFinancialStats';
+import { ImageViewer } from '@/components/ImageViewer';
 import { WalletStatusBadge } from '@/components/WalletStatusBadge';
 import { WalletEducationPanel } from '@/components/WalletEducationPanel';
 import { PublicWalletButton } from '@/components/PublicWalletButton';
@@ -155,8 +156,15 @@ const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [viewingImage, setViewingImage] = useState<{ url: string; alt: string } | null>(null);
   
   const activeTab = searchParams.get('tab') || 'streams';
+
+  const handleViewImage = (url: string, alt: string) => {
+    setViewingImage({ url, alt });
+    setImageViewerOpen(true);
+  };
 
   const handleDeleteUser = async () => {
     if (!profile || !isAdmin) return;
@@ -431,13 +439,19 @@ const ProfilePage = () => {
     <div className="min-h-screen">
       {/* Banner */}
       {profile.banner_url ? (
-        <div className="relative h-32 md:h-48 lg:h-64 w-full overflow-hidden">
+        <div 
+          className="relative h-32 md:h-48 lg:h-64 w-full overflow-hidden group cursor-pointer"
+          onClick={() => handleViewImage(profile.banner_url || '', `${profile.username}'s banner`)}
+        >
           <img 
             src={profile.banner_url} 
             alt="Profile banner" 
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <Maximize2 className="w-12 h-12 text-white" />
+          </div>
         </div>
       ) : (
         <div className="h-32 md:h-48 lg:h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5" />
@@ -447,12 +461,20 @@ const ProfilePage = () => {
       <div className="border-b border-border bg-card -mt-12 md:-mt-16 relative">
         <div className="max-w-6xl mx-auto p-4 md:p-6">
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center">
-            <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background">
-              <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
-              <AvatarFallback className="text-2xl md:text-3xl">
-                {(profile.display_name || profile.username)[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div 
+              className="relative group cursor-pointer"
+              onClick={() => handleViewImage(profile.avatar_url || '', `${profile.username}'s avatar`)}
+            >
+              <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background">
+                <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
+                <AvatarFallback className="text-2xl md:text-3xl">
+                  {(profile.display_name || profile.username)[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <Maximize2 className="w-8 h-8 text-white" />
+              </div>
+            </div>
 
             <div className="flex-1 space-y-3 md:space-y-4 w-full">
               <div>
@@ -777,6 +799,13 @@ const ProfilePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImageViewer
+        imageUrl={viewingImage?.url || null}
+        open={imageViewerOpen}
+        onOpenChange={setImageViewerOpen}
+        alt={viewingImage?.alt}
+      />
     </div>
   );
 };

@@ -21,6 +21,8 @@ serve(async (req) => {
     const query = url.searchParams.get('q');
     const type = url.searchParams.get('type') || 'all';
 
+    console.log('Search request:', { query, type });
+
     if (!query) {
       return new Response(
         JSON.stringify({ error: 'Query parameter q is required' }),
@@ -72,14 +74,18 @@ serve(async (req) => {
       results.shorts = shorts || [];
     }
 
-    // Search users
-    if (type === 'all' || type === 'users') {
-      const { data: users } = await supabaseClient
+    // Search users - support both 'users' and 'creators' for backwards compatibility
+    if (type === 'all' || type === 'users' || type === 'creators') {
+      console.log('Searching profiles for:', query);
+      
+      const { data: users, error: usersError } = await supabaseClient
         .from('profiles')
         .select('*')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%,bio.ilike.%${query}%`)
         .limit(10);
 
+      console.log('Profiles search results:', { count: users?.length, error: usersError });
+      
       results.profiles = users || [];
     }
 

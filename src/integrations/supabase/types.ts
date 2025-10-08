@@ -1285,6 +1285,46 @@ export type Database = {
         Args: { stream_id: string }
         Returns: undefined
       }
+      get_most_donated_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          donation_count: number
+          rank: number
+          total_received: number
+          user_id: string
+          username: string
+        }[]
+      }
+      get_most_earned_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          paid_out: number
+          pending: number
+          rank: number
+          total_earned: number
+          user_id: string
+          username: string
+        }[]
+      }
+      get_most_rewards_given_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          bounties_count: number
+          bounties_total: number
+          campaigns_count: number
+          campaigns_total: number
+          display_name: string
+          rank: number
+          total_rewards_given: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_platform_earnings_stats: {
         Args: Record<PropertyKey, never>
         Returns: {

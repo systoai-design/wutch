@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Coins, Gift, Heart, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Coins, Gift, Heart, TrendingUp, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -42,15 +43,17 @@ interface ProfileFinancialStatsProps {
 export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: ProfileFinancialStatsProps) {
   const [stats, setStats] = useState<FinancialStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchFinancialStats();
-  }, [userId]);
-
-  const fetchFinancialStats = async () => {
+  const fetchFinancialStats = useCallback(async (showRefreshing = false) => {
     try {
-      setLoading(true);
+      if (showRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const { data, error } = await supabase.rpc('get_user_financial_stats', {
         p_user_id: userId
       });
@@ -67,17 +70,116 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
           earnings_breakdown: rawData.earnings_breakdown as any,
           rewards_breakdown: rawData.rewards_breakdown as any,
         });
+        setLastUpdated(new Date());
       }
     } catch (error) {
       console.error('Error fetching financial stats:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load financial statistics',
-        variant: 'destructive',
-      });
+      if (!showRefreshing) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load financial statistics',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  }, [userId, toast]);
+
+  useEffect(() => {
+    fetchFinancialStats();
+
+    // Set up real-time subscriptions for tables that affect stats
+    const channel = supabase
+      .channel('financial-stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stream_bounties',
+          filter: `creator_id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bounty_claims',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_shares',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'view_earnings',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sharing_campaigns',
+          filter: `creator_id=eq.${userId}`,
+        },
+        () => {
+          fetchFinancialStats(true);
+        }
+      )
+      .subscribe();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchFinancialStats(true);
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [userId, fetchFinancialStats]);
+
+  const handleManualRefresh = () => {
+    fetchFinancialStats(true);
   };
 
   const formatSOL = (amount: number) => {
@@ -167,9 +269,25 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
 
   const visibleCards = statCards.filter(card => card.show);
 
+  const timeSinceUpdate = Math.floor((new Date().getTime() - lastUpdated.getTime()) / 1000);
+  const updateText = timeSinceUpdate < 5 ? '🔴 Live' : `Updated ${timeSinceUpdate}s ago`;
+
   return (
     <TooltipProvider>
-      <div className={`grid grid-cols-2 ${isOwnProfile ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 sm:gap-4 ${className}`}>
+      <div className={className}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-muted-foreground">{updateText}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className="h-7 px-2"
+          >
+            <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className={`grid grid-cols-2 ${isOwnProfile ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 sm:gap-4`}>
         {visibleCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -191,6 +309,7 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
             </Tooltip>
           );
         })}
+        </div>
       </div>
     </TooltipProvider>
   );

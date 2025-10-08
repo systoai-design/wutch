@@ -29,6 +29,7 @@ const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 const Search = lazy(() => import('./pages/Search'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Leaderboards = lazy(() => import('./pages/Leaderboards'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -125,6 +126,7 @@ function AppContent() {
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<Search />} />
+          <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/trending" element={<Home />} />
           <Route path="/upcoming" element={<Home />} />
           <Route path="/recent" element={<Home />} />
