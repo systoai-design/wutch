@@ -66,31 +66,43 @@ export const CardStack: React.FC<CardStackProps> = ({ cards, className }) => {
         opacity: 0,
         zIndex: 0,
         pointerEvents: 'none' as const,
+        filter: 'blur(0px)',
+        boxShadow: 'none',
       };
     }
     
     if (position === 0) {
-      // Current/top card
+      // Current/top card - with dramatic shadow and red glow
       const rotation = isDragging ? dragOffset.x * ROTATION_FACTOR : 0;
       return {
         transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${rotation}deg) scale(1)`,
         opacity: 1,
         zIndex: cards.length,
         pointerEvents: 'auto' as const,
+        filter: 'blur(0px)',
+        boxShadow: '0 20px 60px -10px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.2)',
       };
     }
     
-    // Cards in the stack behind
+    // Cards in the stack behind - enhanced depth
     const stackPosition = Math.min(position, 3);
-    const scale = 1 - (stackPosition * 0.04);
-    const translateY = -(stackPosition * 8);
+    const scale = 1 - (stackPosition * 0.08); // More dramatic scale: 0.92, 0.84, 0.76
+    const translateY = -(stackPosition * 20); // Larger offset: -20px, -40px, -60px
+    const rotate = stackPosition * 2; // Subtle rotation: 2°, 4°, 6°
     const opacity = 1 - (stackPosition * 0.15);
+    const blur = stackPosition * 0.3; // Slight blur for depth
+    
+    // Progressive shadow depth
+    const shadowIntensity = 0.15 - (stackPosition * 0.03);
+    const boxShadow = `0 ${8 + stackPosition * 4}px ${20 + stackPosition * 10}px -5px hsl(var(--foreground) / ${shadowIntensity})`;
     
     return {
-      transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
+      transform: `translate3d(0, ${translateY}px, 0) scale(${scale}) rotate(${rotate}deg)`,
       opacity,
       zIndex: cards.length - stackPosition,
       pointerEvents: position === 1 ? ('auto' as const) : ('none' as const),
+      filter: `blur(${blur}px)`,
+      boxShadow,
     };
   };
 
@@ -115,6 +127,8 @@ export const CardStack: React.FC<CardStackProps> = ({ cards, className }) => {
                 opacity: style.opacity,
                 zIndex: style.zIndex,
                 pointerEvents: style.pointerEvents,
+                filter: style.filter,
+                boxShadow: style.boxShadow,
                 willChange: isDragging ? 'transform' : 'auto',
               }}
               onMouseDown={(e) => {
