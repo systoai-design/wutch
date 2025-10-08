@@ -36,7 +36,7 @@ const Shorts = () => {
   const [activeShortIndex, setActiveShortIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(() => {
     const saved = localStorage.getItem('shorts-muted');
-    return saved === null ? true : saved === 'true';
+    return saved === null ? false : saved === 'true';
   });
   const hasInitializedRef = useRef(false);
   const desktopScrollRef = useRef<HTMLDivElement>(null);

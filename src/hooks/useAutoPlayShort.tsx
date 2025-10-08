@@ -29,8 +29,12 @@ export function useAutoPlayShort({
           
           // Auto-play if not already playing
           video.play().catch((error) => {
-            // Autoplay was prevented (likely not muted)
-            console.log('Autoplay prevented:', error);
+            // Autoplay was prevented - ensure muted attribute is set
+            console.log('Autoplay prevented, ensuring muted:', error);
+            if (!video.muted) {
+              video.muted = true;
+              video.play().catch(e => console.log('Autoplay failed even with mute:', e));
+            }
           });
           
           hasPlayedRef.current = true;

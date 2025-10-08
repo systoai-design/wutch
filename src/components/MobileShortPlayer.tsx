@@ -166,6 +166,7 @@ export function MobileShortPlayer({
         className="mobile-short-video absolute inset-0 w-full h-full object-contain"
         playsInline
         loop
+        muted
         preload={isActive ? "auto" : "none"}
         onTouchEnd={handleTouchEnd}
       />
@@ -184,8 +185,8 @@ export function MobileShortPlayer({
       {/* Controls Overlay - Shows on Tap */}
       <div
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity pointer-events-none z-20",
-          showControls ? "opacity-100" : "opacity-0"
+          "absolute inset-0 bg-black/50 backdrop-blur-md transition-all duration-300 pointer-events-none z-20",
+          showControls ? "opacity-100 animate-in fade-in" : "opacity-0"
         )}
       >
         <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
@@ -193,13 +194,13 @@ export function MobileShortPlayer({
           <Button
             size="icon"
             variant="ghost"
-            className="h-20 w-20 rounded-full bg-black/60 hover:bg-black/70 backdrop-blur-sm transition-all"
+            className="h-24 w-24 rounded-full bg-black/70 hover:bg-black/80 backdrop-blur-md transition-all shadow-2xl active:scale-95"
             onClick={togglePlayPause}
           >
             {isPlaying ? (
-              <Pause className="h-10 w-10 text-white" />
+              <Pause className="h-12 w-12 text-white" />
             ) : (
-              <Play className="h-10 w-10 text-white ml-1" />
+              <Play className="h-12 w-12 text-white ml-1" />
             )}
           </Button>
         </div>
