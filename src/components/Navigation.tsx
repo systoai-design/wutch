@@ -118,7 +118,7 @@ const Navigation = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-2">
           {/* Search icon - mobile only */}
           <Button
             variant="ghost"
@@ -140,10 +140,10 @@ const Navigation = () => {
             variant="ghost"
             size="icon"
             onClick={() => window.open('https://pump.fun/', '_blank')}
-            className="hidden sm:inline-flex min-h-[44px] min-w-[44px]"
+            className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
-            <img src={pumpFunLogo} alt="PumpFun" className="h-5 w-5" />
+            <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           {/* Twitter/X Icon */}
@@ -151,10 +151,10 @@ const Navigation = () => {
             variant="ghost"
             size="icon"
             onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
-            className="hidden sm:inline-flex min-h-[44px] min-w-[44px]"
+            className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
-            <img src={xLogo} alt="X" className="h-5 w-5" />
+            <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           {/* Create Button */}
