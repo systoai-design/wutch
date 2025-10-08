@@ -8,7 +8,6 @@ import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
-import { WutchVideoCardCompact } from '@/components/WutchVideoCardCompact';
 import { SkeletonStreamCard, SkeletonShortCard, SkeletonVideoCard } from '@/components/SkeletonCard';
 import { EmptyState } from '@/components/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
@@ -623,7 +622,7 @@ const ProfilePage = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {videos.map((video) => (
-                  <WutchVideoCardCompact key={video.id} video={video} />
+                  <WutchVideoCard key={video.id} video={video} />
                 ))}
               </div>
             )}
