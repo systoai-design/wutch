@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
+import { ShortCard } from '@/components/ShortCard';
+import { WutchVideoCard } from '@/components/WutchVideoCard';
+import { WutchVideoCardCompact } from '@/components/WutchVideoCardCompact';
+import { SkeletonStreamCard, SkeletonShortCard, SkeletonVideoCard } from '@/components/SkeletonCard';
+import { EmptyState } from '@/components/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +29,30 @@ import { formatDistanceToNow } from 'date-fns';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
 type DisplayProfile = Profile | PublicProfile;
-type Livestream = Database['public']['Tables']['livestreams']['Row'];
+
+type LivestreamWithProfile = Database['public']['Tables']['livestreams']['Row'] & {
+  profiles?: {
+    username: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
+
+type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
+  profiles?: {
+    username: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
+
+type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
+  profiles?: {
+    username: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
 
 // Component to display user's private wallet address (only visible to owner)
 function ProfileWalletDisplay({ userId }: { userId: string }) {
@@ -107,18 +135,28 @@ function ProfileWalletDisplay({ userId }: { userId: string }) {
 const ProfilePage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
   const { toast } = useToast();
+  
   const [profile, setProfile] = useState<DisplayProfile | null>(null);
-  const [streams, setStreams] = useState<Livestream[]>([]);
+  const [streams, setStreams] = useState<LivestreamWithProfile[]>([]);
+  const [shorts, setShorts] = useState<ShortVideo[]>([]);
+  const [videos, setVideos] = useState<WutchVideo[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [ownWalletAddress, setOwnWalletAddress] = useState<string | null>(null);
+  const [isLoadingStreams, setIsLoadingStreams] = useState(true);
+  const [isLoadingShorts, setIsLoadingShorts] = useState(true);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+  
   const [showMFAEnrollment, setShowMFAEnrollment] = useState(false);
   const [hasMFA, setHasMFA] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  
+  const activeTab = searchParams.get('tab') || 'streams';
 
   const handleDeleteUser = async () => {
     if (!profile || !isAdmin) return;
@@ -209,16 +247,68 @@ const ProfilePage = () => {
         }
 
         setProfile(profileData);
+        setFollowerCount(profileData.follower_count || 0);
 
-        // Fetch user's streams
+        // Fetch user's streams with profile info
+        setIsLoadingStreams(true);
         const { data: streamsData } = await supabase
           .from('livestreams')
           .select('*')
           .eq('user_id', profileData.id)
           .order('created_at', { ascending: false });
 
-        setStreams(streamsData || []);
-        setFollowerCount(profileData.follower_count || 0);
+        // Enrich with profile data
+        const streamsWithProfile = (streamsData || []).map(stream => ({
+          ...stream,
+          profiles: {
+            username: profileData.username,
+            display_name: profileData.display_name,
+            avatar_url: profileData.avatar_url,
+          }
+        }));
+        setStreams(streamsWithProfile);
+        setIsLoadingStreams(false);
+
+        // Fetch user's shorts with profile info
+        setIsLoadingShorts(true);
+        const { data: shortsData } = await supabase
+          .from('short_videos')
+          .select('*')
+          .eq('user_id', profileData.id)
+          .order('created_at', { ascending: false });
+
+        // Enrich with profile data
+        const shortsWithProfile = (shortsData || []).map(short => ({
+          ...short,
+          profiles: {
+            username: profileData.username,
+            display_name: profileData.display_name,
+            avatar_url: profileData.avatar_url,
+          }
+        }));
+        setShorts(shortsWithProfile as any);
+        setIsLoadingShorts(false);
+
+        // Fetch user's wutch videos with profile info
+        setIsLoadingVideos(true);
+        const { data: videosData } = await supabase
+          .from('wutch_videos')
+          .select('*')
+          .eq('user_id', profileData.id)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false });
+
+        // Enrich with profile data
+        const videosWithProfile = (videosData || []).map(video => ({
+          ...video,
+          profiles: {
+            username: profileData.username,
+            display_name: profileData.display_name,
+            avatar_url: profileData.avatar_url,
+          }
+        }));
+        setVideos(videosWithProfile);
+        setIsLoadingVideos(false);
 
         // Check if current user is following this profile
         if (user && user.id !== profileData.id) {
@@ -333,11 +423,15 @@ const ProfilePage = () => {
   const isOwnProfile = user?.id === profile.id;
   const socialLinks = (profile.social_links as { twitter?: string; discord?: string; website?: string }) || {};
 
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+
   return (
     <div className="min-h-screen">
       {/* Banner */}
       {profile.banner_url ? (
-        <div className="relative h-48 md:h-64 w-full overflow-hidden">
+        <div className="relative h-32 md:h-48 lg:h-64 w-full overflow-hidden">
           <img 
             src={profile.banner_url} 
             alt="Profile banner" 
@@ -346,36 +440,40 @@ const ProfilePage = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
         </div>
       ) : (
-        <div className="h-48 md:h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5" />
+        <div className="h-32 md:h-48 lg:h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5" />
       )}
 
       {/* Header */}
-      <div className="border-b border-border bg-card -mt-16 relative">
-        <div className="max-w-6xl mx-auto p-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="h-32 w-32 border-4 border-background">
+      <div className="border-b border-border bg-card -mt-12 md:-mt-16 relative">
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center">
+            <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background">
               <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
-              <AvatarFallback className="text-3xl">
+              <AvatarFallback className="text-2xl md:text-3xl">
                 {(profile.display_name || profile.username)[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-3 md:space-y-4 w-full">
               <div>
-                <h1 className="text-3xl font-bold mb-2">{profile.display_name || profile.username}</h1>
-                <p className="text-muted-foreground">@{profile.username}</p>
+                <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{profile.display_name || profile.username}</h1>
+                <p className="text-sm md:text-base text-muted-foreground">@{profile.username}</p>
               </div>
 
-              {profile.bio && <p className="text-foreground max-w-2xl">{profile.bio}</p>}
+              {profile.bio && (
+                <p className="text-sm md:text-base text-foreground max-w-2xl line-clamp-3">
+                  {profile.bio}
+                </p>
+              )}
 
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
                   <span className="font-semibold">{followerCount.toLocaleString()}</span>
                   <span className="text-muted-foreground">followers</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Wallet className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
                   <span className="font-semibold">
                     {'total_donations_received' in profile ? (profile.total_donations_received || 0) : 0} SOL
                   </span>
@@ -457,29 +555,108 @@ const ProfilePage = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto p-6">
-        <Tabs defaultValue="streams">
-          <TabsList className={`${isOwnProfile ? 'grid-cols-4' : 'grid-cols-3'} grid w-full`}>
-            <TabsTrigger value="streams">Streams</TabsTrigger>
-            <TabsTrigger value="shorts">Shorts</TabsTrigger>
-            {isOwnProfile && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
-            <TabsTrigger value="about">About</TabsTrigger>
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className={`${isOwnProfile ? 'grid-cols-4 md:grid-cols-5' : 'grid-cols-4'} grid w-full overflow-x-auto`}>
+            <TabsTrigger value="streams" className="text-xs md:text-sm">
+              Streams {streams.length > 0 && `(${streams.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="videos" className="text-xs md:text-sm">
+              Videos {videos.length > 0 && `(${videos.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="shorts" className="text-xs md:text-sm">
+              Shorts {shorts.length > 0 && `(${shorts.length})`}
+            </TabsTrigger>
+            {isOwnProfile && (
+              <TabsTrigger value="analytics" className="text-xs md:text-sm">
+                Analytics
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="about" className="text-xs md:text-sm">
+              About
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="streams" className="mt-6">
-            {streams.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No streams yet</p>
+            {isLoadingStreams ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonStreamCard key={i} />
+                ))}
+              </div>
+            ) : streams.length === 0 ? (
+              <EmptyState
+                icon={Video}
+                title="No streams yet"
+                description={isOwnProfile ? "Start streaming to share your content with the world!" : `${profile.display_name || profile.username} hasn't streamed yet.`}
+                action={isOwnProfile ? {
+                  label: "Start Streaming",
+                  onClick: () => navigate('/submit')
+                } : undefined}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {streams.map((stream) => (
-                  <StreamCard key={stream.id} stream={stream} />
+                  <StreamCard key={stream.id} stream={stream as any} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="videos" className="mt-6">
+            {isLoadingVideos ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonVideoCard key={i} />
+                ))}
+              </div>
+            ) : videos.length === 0 ? (
+              <EmptyState
+                icon={PlayCircle}
+                title="No videos yet"
+                description={isOwnProfile ? "Upload your first video to get started!" : `${profile.display_name || profile.username} hasn't uploaded any videos yet.`}
+                action={isOwnProfile ? {
+                  label: "Upload Video",
+                  onClick: () => navigate('/submit')
+                } : undefined}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {videos.map((video) => (
+                  <WutchVideoCardCompact key={video.id} video={video} />
                 ))}
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="shorts" className="mt-6">
-            <p className="text-center text-muted-foreground py-8">No shorts yet</p>
+            {isLoadingShorts ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonShortCard key={i} />
+                ))}
+              </div>
+            ) : shorts.length === 0 ? (
+              <EmptyState
+                icon={Film}
+                title="No shorts yet"
+                description={isOwnProfile ? "Create short-form content to engage your audience!" : `${profile.display_name || profile.username} hasn't posted any shorts yet.`}
+                action={isOwnProfile ? {
+                  label: "Create Short",
+                  onClick: () => navigate('/submit')
+                } : undefined}
+              />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {shorts.map((short) => (
+                  <ShortCard 
+                    key={short.id} 
+                    short={short as any}
+                    onClick={() => navigate('/shorts')}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {isOwnProfile && (
