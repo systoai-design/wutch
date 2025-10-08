@@ -268,7 +268,7 @@ export function MobileShortPlayer({
               )}
             </div>
             {short.profiles?.display_name && (
-              <p className="text-white/80 text-xs truncate">{short.profiles.display_name}</p>
+              <p className="text-white/80 text-xs mt-1 truncate block">{short.profiles.display_name}</p>
             )}
           </div>
         </div>
