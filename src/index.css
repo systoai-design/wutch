@@ -48,7 +48,7 @@ All colors MUST be HSL.
     --donation: 142 76% 36%;
     --donation-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --radius: 1.25rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
@@ -366,13 +366,13 @@ div[class*="lovable-badge"],
 
 /* Carousel container styling */
 .carousel-container {
-  @apply relative bg-muted/20 rounded-2xl p-3 border border-border/30 shadow-sm overflow-hidden;
+  @apply relative bg-muted/20 rounded-3xl p-3 border border-border/30 shadow-sm overflow-hidden;
   will-change: transform;
 }
 
 @media (min-width: 640px) {
   .carousel-container {
-    @apply rounded-2xl p-4;
+    @apply rounded-3xl p-4;
   }
 }
 
@@ -382,8 +382,23 @@ div[class*="lovable-badge"],
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+}
+
+.carousel-scroll > * {
+  scroll-snap-align: start;
 }
 
 .carousel-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* Enhanced carousel drag cursor */
+[role="region"][aria-roledescription="carousel"] {
+  cursor: grab;
+  user-select: none;
+}
+
+[role="region"][aria-roledescription="carousel"]:active {
+  cursor: grabbing;
 }

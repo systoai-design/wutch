@@ -1,6 +1,13 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
@@ -389,47 +396,65 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation">
-                <Eye className="h-10 w-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground">Watch & Earn SOLANA</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Watch livestreams and short videos. Claim bounties for active watching and participate in sharing campaigns to earn crypto rewards.
-              </p>
-            </Card>
+          <Carousel 
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full max-w-7xl mx-auto"
+          >
+            <CarouselContent className="-ml-4">
+              <CarouselItem className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group h-full rounded-3xl">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation">
+                    <Eye className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">Watch & Earn SOLANA</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Watch livestreams and short videos. Claim bounties for active watching and participate in sharing campaigns to earn crypto rewards.
+                  </p>
+                </Card>
+              </CarouselItem>
 
-            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.2s' }}>
-                <Video className="h-10 w-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground">Create & Earn 95%</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Upload short videos or go live. Receive 95% of all donations (5% platform fee) and tips from your audience. Create funded bounties and sharing campaigns to engage viewers.
-              </p>
-            </Card>
+              <CarouselItem className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group h-full rounded-3xl">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.2s' }}>
+                    <Video className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">Create & Earn 95%</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Upload short videos or go live. Receive 95% of all donations (5% platform fee) and tips from your audience. Create funded bounties and sharing campaigns to engage viewers.
+                  </p>
+                </Card>
+              </CarouselItem>
 
-            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.4s' }}>
-                <Coins className="h-10 w-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground">Claim Bounties</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Watch for secret words in streams and claim bounty rewards. Accumulate watch time (minimum 5 minutes) to qualify.
-              </p>
-            </Card>
+              <CarouselItem className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group h-full rounded-3xl">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.4s' }}>
+                    <Coins className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">Claim Bounties</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Watch for secret words in streams and claim bounty rewards. Accumulate watch time (minimum 5 minutes) to qualify.
+                  </p>
+                </Card>
+              </CarouselItem>
 
-            <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.6s' }}>
-                <Zap className="h-10 w-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground">Share & Get Paid</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.
-              </p>
-            </Card>
-          </div>
+              <CarouselItem className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <Card className="p-8 text-center space-y-6 glass-card transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group h-full rounded-3xl">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto transition-transform group-hover:scale-110 group-hover:rotate-6 float-animation" style={{ animationDelay: '0.6s' }}>
+                    <Zap className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">Share & Get Paid</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.
+                  </p>
+                </Card>
+              </CarouselItem>
+            </CarouselContent>
+            <CarouselPrevious className="hidden lg:flex -left-12 h-12 w-12" />
+            <CarouselNext className="hidden lg:flex -right-12 h-12 w-12" />
+          </Carousel>
         </div>
       </section>
 
