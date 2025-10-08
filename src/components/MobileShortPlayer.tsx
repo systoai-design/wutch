@@ -223,11 +223,15 @@ export function MobileShortPlayer({
       </div>
 
       {/* Bottom Overlay - Creator Info & Title */}
-      <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
+      <div 
+        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20 pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start gap-2 mb-3">
           <Link 
             to={`/profile/${short.profiles?.username}`}
-            className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity pointer-events-auto"
+            className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={(e) => e.stopPropagation()}
             aria-label={`View ${short.profiles?.username}'s profile`}
           >
@@ -238,17 +242,17 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1">
               <Link 
                 to={`/profile/${short.profiles?.username}`}
-                className="cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto"
+                className="cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`View ${short.profiles?.username}'s profile`}
               >
-                <p className="text-white font-semibold text-sm">
+                <span className="text-white font-semibold text-sm">
                   @{short.profiles?.username || 'Unknown'}
-                </p>
+                </span>
               </Link>
               {user?.id !== short.user_id && (
                 <Button
@@ -256,7 +260,7 @@ export function MobileShortPlayer({
                   variant={isFollowing ? "secondary" : "default"}
                   onClick={toggleFollow}
                   disabled={isFollowLoading}
-                  className="h-6 px-2 text-xs shrink-0 active:scale-95 transition-transform pointer-events-auto"
+                  className="h-5 px-2 text-[11px] leading-none rounded-sm ml-1 shrink-0 active:scale-95 transition-transform"
                   aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
                 >
                   {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
