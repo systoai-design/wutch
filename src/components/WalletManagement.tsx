@@ -185,7 +185,7 @@ export const WalletManagement = () => {
         </Button>
         
         <AlertDialog open={showChangeWarning} onOpenChange={setShowChangeWarning}>
-          <AlertDialogContent>
+          <AlertDialogContent className="w-[90vw] max-w-[90vw] overflow-x-hidden p-4 sm:p-6 sm:max-w-lg">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
                 <Wallet className="h-5 w-5" />
@@ -237,15 +237,15 @@ export const WalletManagement = () => {
           </div>
         </div>
         
-        <div className="flex items-center justify-between gap-2">
-          <code className="text-sm bg-muted px-3 py-2 rounded flex-1 truncate">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <code className="text-sm bg-muted px-3 py-2 rounded flex-1 min-w-0 truncate">
             {walletAddress}
           </code>
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyAddress}
-            className="gap-2"
+            className="gap-2 shrink-0"
             type="button"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -282,7 +282,7 @@ export const WalletManagement = () => {
 
       {/* Change Wallet Warning */}
       <AlertDialog open={showChangeWarning} onOpenChange={setShowChangeWarning}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90vw] max-w-[90vw] overflow-x-hidden p-4 sm:p-6 sm:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -325,7 +325,7 @@ export const WalletManagement = () => {
 
       {/* Disconnect Warning */}
       <AlertDialog open={showDisconnectWarning} onOpenChange={setShowDisconnectWarning}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90vw] max-w-[90vw] overflow-x-hidden p-4 sm:p-6 sm:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />

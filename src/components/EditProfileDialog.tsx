@@ -172,14 +172,14 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto p-3 sm:p-6">
+      <DialogContent className="w-[92vw] sm:w-auto max-w-[90vw] sm:max-w-2xl max-h-[85vh] overflow-x-hidden overflow-y-auto p-3 sm:p-6">
         <DialogHeader className="space-y-2 sm:space-y-3">
           <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
             Update your profile information. Changes will be visible to everyone.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 overflow-x-hidden">
           <div className="space-y-3 sm:space-y-4">
             <div>
               <Label htmlFor="display_name">Display Name</Label>
