@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -49,7 +50,7 @@ export function MobileShortPlayer({
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
     useShortVideoLike(short.id);
   
-  const { isFollowing, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
+  const { isFollowing, isLoading: isFollowLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
     useFollow(short.user_id);
 
   // Track views when active
@@ -223,29 +224,40 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10 border-2 border-white">
-            <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-3">
+          <Link 
+            to={`/profile/${short.profiles?.username}`}
+            className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Avatar className="h-10 w-10 border-2 border-white">
+              <AvatarImage src={optimizeImage(short.profiles?.avatar_url, imagePresets.avatar)} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {short.profiles?.username?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <Link 
+            to={`/profile/${short.profiles?.username}`}
+            className="flex-1 min-w-0 cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <p className="text-white font-semibold text-sm truncate">
               @{short.profiles?.username || 'Unknown'}
             </p>
             {short.profiles?.display_name && (
               <p className="text-white/80 text-xs truncate">{short.profiles.display_name}</p>
             )}
-          </div>
-          {user && user.id !== short.user_id && (
+          </Link>
+          {user?.id !== short.user_id && (
             <Button
               size="sm"
               variant={isFollowing ? "secondary" : "default"}
               onClick={toggleFollow}
-              className="shrink-0"
+              disabled={isFollowLoading}
+              className="h-7 px-3 text-xs shrink-0 active:scale-95 transition-transform pointer-events-auto"
             >
-              {isFollowing ? 'Following' : 'Follow'}
+              {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
             </Button>
           )}
         </div>
