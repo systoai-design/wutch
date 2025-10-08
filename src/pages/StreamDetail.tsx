@@ -203,7 +203,7 @@ const StreamDetail = () => {
         action={guestPromptAction}
       />
       <div className="min-h-screen">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 p-3 sm:p-4 lg:p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           {/* Video Player */}
           <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
@@ -225,9 +225,9 @@ const StreamDetail = () => {
           {/* Stream Info */}
           <div className="space-y-3 sm:space-y-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold mb-2">{stream.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold mb-2 line-clamp-2 sm:line-clamp-none">{stream.title}</h1>
               <div className="flex items-center gap-2 sm:gap-4 text-sm text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-primary/10 rounded-full">
+                <div className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-primary/10 rounded-full">
                   <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                   <span className="font-semibold text-foreground text-sm">{(stream.viewer_count || 0).toLocaleString()}</span>
                   <span className="text-xs">{isMobile ? '' : 'viewers'}</span>
@@ -282,7 +282,7 @@ const StreamDetail = () => {
                       toggleLike();
                     }
                   }}
-                  className="relative"
+                  className="relative active:scale-95 transition-transform min-h-[44px] min-w-[44px]"
                 >
                   <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiked ? 'fill-primary text-primary' : ''}`} />
                   {likeCount > 0 && (
@@ -295,7 +295,7 @@ const StreamDetail = () => {
                 <Button 
                   variant="outline" 
                   size={isMobile ? "sm" : "default"}
-                  className="gap-1.5 sm:gap-2"
+                  className="gap-1.5 sm:gap-2 active:scale-95 transition-transform min-h-[44px]"
                   onClick={() => {
                     if (stream && streamer) {
                       shareStreamToTwitter({
