@@ -23,7 +23,7 @@ interface ClaimBountyProps {
 }
 
 const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTitle, creatorName }: ClaimBountyProps) => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { toast } = useToast();
   const [bounty, setBounty] = useState<PublicStreamBounty | null>(null);
   const [secretWord, setSecretWord] = useState('');
@@ -272,13 +272,7 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
   }
 
   if (!bounty) {
-    return (
-      <Card className="p-6 text-center">
-        <p className="text-muted-foreground">
-          No bounty available for this stream yet. Stay tuned for future rewards!
-        </p>
-      </Card>
-    );
+    return null;
   }
 
   const spotsRemaining = bounty.participant_limit - bounty.claimed_count;
@@ -288,6 +282,58 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
   const timeUntilExpiration = workClaimExpiresAt ? Math.max(0, Math.floor((workClaimExpiresAt - Date.now()) / 1000)) : 0;
   const expirationMinutes = Math.floor(timeUntilExpiration / 60);
   const expirationSeconds = timeUntilExpiration % 60;
+
+  // Guest view - show bounty info but require sign up
+  if (isGuest) {
+    return (
+      <Card className="p-6 space-y-4 bg-gradient-to-br from-primary/5 to-background">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            <h3 className="font-semibold text-lg">Bounty Available</h3>
+          </div>
+          <Badge variant="secondary">
+            {spotsRemaining} spots left
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Reward</p>
+            <p className="text-2xl font-bold flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              {bounty.reward_per_participant} SOL
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Requirements</p>
+            <div className="space-y-1">
+              <p className="text-sm">• Share stream</p>
+              <p className="text-sm">• Watch {minutesRequired} minutes</p>
+              <p className="text-sm">• Enter secret word</p>
+            </div>
+          </div>
+        </div>
+
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Sign up to track your watch time and claim this bounty!
+          </AlertDescription>
+        </Alert>
+
+        <Button 
+          className="w-full"
+          size="lg"
+          onClick={() => {
+            window.location.href = '/?auth=signup';
+          }}
+        >
+          Sign Up to Claim {bounty.reward_per_participant} SOL
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 space-y-4 bg-gradient-to-br from-primary/5 to-background">

@@ -304,7 +304,7 @@ const StreamDetail = () => {
                   <CreateSharingCampaign livestreamId={stream.id} />
                 )}
                 
-                {!isOwner && user && stream && (
+                {!isOwner && stream && (
                   <ShareAndEarn 
                     livestreamId={stream.id}
                     streamTitle={stream.title}
@@ -337,10 +337,10 @@ const StreamDetail = () => {
               </div>
             </div>
 
-            {/* Watch Time Tracker - Only show for non-owners */}
-            {!isOwner && user && (
+            {/* Watch Time Tracker - Show for non-owners */}
+            {!isOwner && (
               <>
-                {isSessionStarted ? (
+                {user && isSessionStarted ? (
                   <>
                     <Alert className="border-primary/20 bg-primary/5">
                       <Timer className="h-4 w-4" />
@@ -355,12 +355,19 @@ const StreamDetail = () => {
                       meetsMinimumWatchTime={meetsMinimumWatchTime}
                     />
                   </>
+                ) : isGuest ? (
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <Timer className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      <strong>Sign in to track watch time</strong> and earn rewards while watching!
+                    </AlertDescription>
+                  </Alert>
                 ) : null}
               </>
             )}
 
-            {/* Bounty Claim - Only show for non-owners */}
-            {!isOwner && user && hasStartedWatching && (
+            {/* Bounty Claim - Show for all non-owners */}
+            {!isOwner && (
               <ClaimBounty
                 livestreamId={id!}
                 watchTime={watchTime}

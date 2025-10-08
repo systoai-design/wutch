@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Share2, Wallet, Twitter, Trash2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Share2, Wallet, Twitter, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,7 +45,7 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
   const [twitterHandle, setTwitterHandle] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { isAdmin } = useAdmin();
 
   const handleDeleteCampaign = async () => {
@@ -267,6 +268,54 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
   }
 
   const remainingShares = campaign.max_shares_per_user ? campaign.max_shares_per_user - userShares : "Unlimited";
+
+  // Guest view - show campaign info but require sign up
+  if (isGuest) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share & Earn Campaign
+            </CardTitle>
+            <CardDescription>
+              Earn {campaign.reward_per_share} SOL for each share
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Reward per Share</p>
+              <p className="text-2xl font-bold">{campaign.reward_per_share} SOL</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Campaign Budget</p>
+              <p className="text-2xl font-bold">{(campaign.total_budget - campaign.spent_budget).toFixed(3)} SOL</p>
+            </div>
+          </div>
+
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Sign up to start earning rewards by sharing this stream!
+            </AlertDescription>
+          </Alert>
+
+          <Button 
+            className="w-full"
+            onClick={() => {
+              window.location.href = '/?auth=signup';
+            }}
+          >
+            <Twitter className="mr-2 h-4 w-4" />
+            Sign Up to Earn
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

@@ -13,7 +13,7 @@ import { useAuthDialog } from "@/store/authDialogStore";
 interface GuestPromptDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  action: "like" | "comment" | "donate" | "submit" | "claim";
+  action: "like" | "comment" | "donate" | "submit" | "claim" | "earn";
 }
 
 const GuestPromptDialog = ({ open, onOpenChange, action }: GuestPromptDialogProps) => {
@@ -39,6 +39,10 @@ const GuestPromptDialog = ({ open, onOpenChange, action }: GuestPromptDialogProp
     claim: {
       title: "Sign up to claim rewards",
       description: "Create an account to claim bounties and earn crypto rewards!",
+    },
+    earn: {
+      title: "Sign up to earn by sharing",
+      description: "Create an account to earn SOL by sharing streams with your network!",
     },
   };
 
