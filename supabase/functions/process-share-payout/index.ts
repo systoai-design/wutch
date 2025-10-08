@@ -13,21 +13,55 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's auth token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
     );
 
+    // Verify the authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { userId, campaignId, walletAddress } = await req.json();
+
+    // SECURITY: Verify the requesting user matches the userId
+    if (user.id !== userId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Cannot claim rewards for another user' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!userId || !campaignId || !walletAddress) {
       throw new Error('Missing required parameters');
     }
 
-    console.log('Processing share payout for:', { userId, campaignId, walletAddress });
+    console.log('Processing share payout for authenticated user:', { userId, campaignId });
+
+    // Create service role client for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     // Get all unclaimed shares for this user and campaign
-    const { data: unclaimedShares, error: sharesError } = await supabaseClient
+    const { data: unclaimedShares, error: sharesError } = await supabaseAdmin
       .from('user_shares')
       .select('*')
       .eq('user_id', userId)
@@ -96,7 +130,7 @@ serve(async (req) => {
 
     // Mark all shares as claimed
     const shareIds = unclaimedShares.map(share => share.id);
-    const { error: updateError } = await supabaseClient
+    const { error: updateError } = await supabaseAdmin
       .from('user_shares')
       .update({
         is_claimed: true,

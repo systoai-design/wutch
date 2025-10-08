@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Database } from '@/integrations/supabase/types';
 import { shareStreamToTwitter } from '@/utils/shareUtils';
+import { bountyClaimSchema } from '@/utils/donationValidation';
+import { z } from 'zod';
 
 type StreamBounty = Database['public']['Tables']['stream_bounties']['Row'];
 type PublicStreamBounty = Omit<StreamBounty, 'secret_word'>;
@@ -184,13 +186,23 @@ const ClaimBounty = ({ livestreamId, watchTime, meetsMinimumWatchTime, streamTit
       return;
     }
 
-    if (!secretWord.trim()) {
-      toast({
-        title: 'Secret Word Required',
-        description: 'Please enter the secret word from the stream.',
-        variant: 'destructive',
+    // Input validation using Zod schema
+    try {
+      bountyClaimSchema.parse({
+        secretWord: secretWord.trim(),
+        walletAddress: walletRow.wallet_address,
+        bountyId: bounty.id,
       });
-      return;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: 'Validation Error',
+          description: firstError.message,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);

@@ -15,6 +15,8 @@ import { Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { campaignSchema } from '@/utils/donationValidation';
+import { z } from 'zod';
 
 interface CreateSharingCampaignProps {
   livestreamId: string;
@@ -43,12 +45,20 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
       const totalBudget = parseFloat(formData.totalBudget);
       const maxSharesPerUser = formData.maxSharesPerUser ? parseInt(formData.maxSharesPerUser) : null;
 
-      if (rewardPerShare < 0.0001) {
-        throw new Error('Minimum reward per share is 0.0001 SOL');
-      }
-
-      if (totalBudget <= 0) {
-        throw new Error('Total budget must be greater than 0');
+      // Input validation using Zod schema
+      try {
+        campaignSchema.parse({
+          rewardPerShare,
+          totalBudget,
+          maxSharesPerUser,
+          livestreamId,
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const firstError = error.errors[0];
+          throw new Error(firstError.message);
+        }
+        throw error;
       }
 
       // Calculate platform fee (5%) - deducted FROM the total budget

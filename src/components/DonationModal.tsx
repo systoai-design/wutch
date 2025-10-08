@@ -13,6 +13,8 @@ import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { donationSchema } from '@/utils/donationValidation';
+import { z } from 'zod';
 
 interface DonationModalProps {
   isOpen: boolean;
@@ -35,13 +37,27 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
 
   const handleDonate = async () => {
     const amount = selectedAmount || parseFloat(customAmount);
-    if (!amount || amount <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid donation amount',
-        variant: 'destructive',
+
+    // Input validation using Zod schema
+    try {
+      donationSchema.parse({
+        amount,
+        walletAddress,
+        contentId,
+        contentType,
+        recipientUserId,
+        message: null,
       });
-      return;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: 'Validation Error',
+          description: firstError.message,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     if (!user) {
