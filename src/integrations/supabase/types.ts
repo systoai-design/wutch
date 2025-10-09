@@ -964,6 +964,39 @@ export type Database = {
           },
         ]
       }
+      verification_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          new_value: string
+          type: string
+          used: boolean | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          new_value: string
+          type: string
+          used?: boolean | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          new_value?: string
+          type?: string
+          used?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       view_earnings: {
         Row: {
           content_id: string

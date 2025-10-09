@@ -18,25 +18,22 @@ export const useStreamsQuery = () => {
   return useQuery({
     queryKey: ['streams'],
     queryFn: async () => {
-      // Fetch all streams in parallel
+      // Fetch all streams in parallel using status field for consistency
       const [liveResult, upcomingResult, endedResult, bountiesResult, campaignsResult] = await Promise.all([
         supabase
           .from('livestreams')
           .select('*, profiles!livestreams_user_id_fkey (username, display_name, avatar_url)')
-          .eq('is_live', true)
+          .eq('status', 'live')
           .order('viewer_count', { ascending: false }),
         supabase
           .from('livestreams')
           .select('*, profiles!livestreams_user_id_fkey (username, display_name, avatar_url)')
-          .eq('is_live', false)
-          .gte('started_at', new Date().toISOString())
-          .is('ended_at', null)
+          .eq('status', 'pending')
           .order('started_at', { ascending: true }),
         supabase
           .from('livestreams')
           .select('*, profiles!livestreams_user_id_fkey (username, display_name, avatar_url)')
-          .eq('is_live', false)
-          .not('ended_at', 'is', null)
+          .eq('status', 'ended')
           .order('ended_at', { ascending: false })
           .limit(12),
         supabase

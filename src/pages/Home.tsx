@@ -101,6 +101,7 @@ const Home = () => {
 
       // Fetch live streams with bounty and share campaign info
       // Use public_stream_bounties view for security (excludes secret_word)
+      // Use status field for consistency
       let liveQuery = supabase
         .from('livestreams')
         .select(`
@@ -109,7 +110,7 @@ const Home = () => {
           public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
           sharing_campaigns!livestream_id(id, is_active)
         `)
-        .eq('is_live', true)
+        .eq('status', 'live')
         .order('viewer_count', { ascending: false });
       liveQuery = buildQuery(liveQuery);
       const { data: liveData } = await liveQuery;

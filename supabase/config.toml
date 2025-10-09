@@ -36,3 +36,12 @@ verify_jwt = false
 
 [functions.request-password-reset]
 verify_jwt = false
+
+[functions.send-verification-code]
+verify_jwt = true
+
+[functions.verify-and-update]
+verify_jwt = true
+
+[functions.process-share-payout]
+verify_jwt = true

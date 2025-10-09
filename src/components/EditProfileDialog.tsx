@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,13 +12,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Upload, X, ExternalLink } from 'lucide-react';
+import { Settings, Upload, X, ExternalLink, Mail, AtSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
 import { WalletManagement } from '@/components/WalletManagement';
 import { Separator } from '@/components/ui/separator';
+import { UsernameChangeDialog } from '@/components/UsernameChangeDialog';
+import { EmailChangeDialog } from '@/components/EmailChangeDialog';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -34,7 +36,22 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(profile.avatar_url || '');
   const [bannerPreview, setBannerPreview] = useState<string>(profile.banner_url || '');
+  const [usernameDialogOpen, setUsernameDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [isGoogleAuth, setIsGoogleAuth] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || '');
+        setIsGoogleAuth(user.app_metadata?.provider === 'google');
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   const socialLinks = (profile.social_links as { twitter?: string; discord?: string; website?: string }) || {};
 
@@ -181,6 +198,61 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 overflow-x-hidden">
           <div className="space-y-3 sm:space-y-4">
+            {/* Account Settings */}
+            <div>
+              <h3 className="font-semibold mb-3 text-base sm:text-lg">Account Settings</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="username"
+                      value={profile.username}
+                      disabled
+                      className="bg-muted flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUsernameDialogOpen(true)}
+                    >
+                      <AtSign className="h-4 w-4 mr-2" />
+                      Change
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="email"
+                      value={userEmail}
+                      disabled
+                      className="bg-muted flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEmailDialogOpen(true)}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Change
+                    </Button>
+                  </div>
+                  {isGoogleAuth && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Google authenticated accounts cannot change email
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Separator className="my-4 sm:my-6" />
+
             <div>
               <Label htmlFor="display_name">Display Name</Label>
               <Input
@@ -377,6 +449,25 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <UsernameChangeDialog
+        open={usernameDialogOpen}
+        onOpenChange={setUsernameDialogOpen}
+        currentUsername={profile.username}
+        onSuccess={(newUsername) => {
+          onProfileUpdate({ ...profile, username: newUsername });
+        }}
+      />
+
+      <EmailChangeDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        currentEmail={userEmail}
+        isGoogleAuth={isGoogleAuth}
+        onSuccess={() => {
+          // User will be signed out, so no need to update anything
+        }}
+      />
     </Dialog>
   );
 }
