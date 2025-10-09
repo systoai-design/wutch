@@ -1,7 +1,7 @@
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'follow' | 'donation' | 'like' | 'comment' | 'share' | 'bounty_claim';
+  type: 'follow' | 'donation' | 'like' | 'comment' | 'share' | 'bounty_claim' | 'red_badge_eligible';
   title: string;
   message: string;
   actor_id: string | null;

@@ -707,6 +707,33 @@ export type Database = {
         }
         Relationships: []
       }
+      red_badge_eligibility_notifications: {
+        Row: {
+          follower_count: number
+          id: string
+          notified_at: string
+          user_id: string
+          was_eligible: boolean
+          watch_hours: number
+        }
+        Insert: {
+          follower_count: number
+          id?: string
+          notified_at?: string
+          user_id: string
+          was_eligible?: boolean
+          watch_hours: number
+        }
+        Update: {
+          follower_count?: number
+          id?: string
+          notified_at?: string
+          user_id?: string
+          was_eligible?: boolean
+          watch_hours?: number
+        }
+        Relationships: []
+      }
       sharing_campaigns: {
         Row: {
           created_at: string

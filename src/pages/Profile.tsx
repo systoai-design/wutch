@@ -168,6 +168,7 @@ const ProfilePage = () => {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImage, setViewingImage] = useState<{ url: string; alt: string } | null>(null);
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [verificationType, setVerificationType] = useState<'blue' | 'red'>('blue');
   
   const activeTab = searchParams.get('tab') || 'streams';
 
@@ -540,6 +541,19 @@ const ProfilePage = () => {
                       profile={profile as Profile} 
                       onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
                     />
+                    {!profile.is_verified && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setVerificationType('blue');
+                          setVerificationDialogOpen(true);
+                        }}
+                      >
+                        <Shield className="h-4 w-4 mr-2" />
+                        Get Verified
+                      </Button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -957,6 +971,7 @@ const ProfilePage = () => {
                         <div className="flex gap-2">
                           <Button
                             onClick={() => {
+                              setVerificationType('blue');
                               setVerificationDialogOpen(true);
                             }}
                             className="flex items-center gap-2"
@@ -966,6 +981,7 @@ const ProfilePage = () => {
                           </Button>
                           <Button
                             onClick={() => {
+                              setVerificationType('red');
                               setVerificationDialogOpen(true);
                             }}
                             variant="outline"
@@ -1005,6 +1021,12 @@ const ProfilePage = () => {
         open={imageViewerOpen}
         onOpenChange={setImageViewerOpen}
         alt={viewingImage?.alt}
+      />
+
+      <VerificationRequestDialog
+        open={verificationDialogOpen}
+        onOpenChange={setVerificationDialogOpen}
+        verificationType={verificationType}
       />
     </div>
   );
