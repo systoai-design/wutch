@@ -502,7 +502,15 @@ const ProfilePage = () => {
 
             <div className="flex-1 space-y-3 md:space-y-4 w-full">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{profile.display_name || profile.username}</h1>
+                <div className="flex items-center gap-2 flex-wrap mb-1 md:mb-2">
+                  <h1 className="text-2xl md:text-3xl font-bold">{profile.display_name || profile.username}</h1>
+                  {profile.verification_type && profile.verification_type !== 'none' && (
+                    <VerificationBadge 
+                      verificationType={profile.verification_type as 'blue' | 'red'} 
+                      size="lg"
+                    />
+                  )}
+                </div>
                 <p className="text-sm md:text-base text-muted-foreground">@{profile.username}</p>
               </div>
 
