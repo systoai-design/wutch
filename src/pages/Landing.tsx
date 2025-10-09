@@ -1083,7 +1083,7 @@ const Landing = () => {
             <div>
               <h3 className="font-semibold mb-4">Contact</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li>wutch.fun@gmail.com</li>
+                <li>support@wutch.fun</li>
               </ul>
             </div>
           </div>
