@@ -532,46 +532,6 @@ const ProfilePage = () => {
                 className="mt-4"
               />
 
-              {/* Verification Section */}
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                  Verification
-                </h3>
-                <div className="p-4 bg-muted rounded-lg">
-                  {profile.verification_type && profile.verification_type !== 'none' ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">Verified Account</p>
-                        <VerificationBadge verificationType={profile.verification_type as any} />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {profile.verification_type === 'blue' 
-                          ? 'Your identity has been verified'
-                          : 'You earned this badge through engagement and hard work'}
-                      </p>
-                      {profile.verified_at && (
-                        <p className="text-xs text-muted-foreground">
-                          Verified on {format(new Date(profile.verified_at), 'MMMM d, yyyy')}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Get verified to build trust with your audience
-                      </p>
-                      <div className="flex gap-2">
-                        <VerificationRequestDialog 
-                          open={verificationDialogOpen}
-                          onOpenChange={setVerificationDialogOpen}
-                          verificationType="blue"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               <div className="flex flex-wrap gap-2 items-center">
                 {isOwnProfile && 'total_earnings' in profile ? (
@@ -963,6 +923,61 @@ const ProfilePage = () => {
                     Donation Settings
                   </h3>
                   <DonationSettings />
+                </div>
+
+                {/* Verification Section */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    Verification
+                  </h3>
+                  <div className="p-4 bg-muted rounded-lg">
+                    {profile.verification_type && profile.verification_type !== 'none' ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">Verified Account</p>
+                          <VerificationBadge verificationType={profile.verification_type as any} />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {profile.verification_type === 'blue' 
+                            ? 'Your identity has been verified'
+                            : 'You earned this badge through engagement and hard work'}
+                        </p>
+                        {profile.verified_at && (
+                          <p className="text-xs text-muted-foreground">
+                            Verified on {format(new Date(profile.verified_at), 'MMMM d, yyyy')}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Get verified to build trust with your audience
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => {
+                              setVerificationDialogOpen(true);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Request Blue Badge
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setVerificationDialogOpen(true);
+                            }}
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Request Red Badge
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             </TabsContent>
