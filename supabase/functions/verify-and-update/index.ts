@@ -28,11 +28,13 @@ serve(async (req) => {
       }
     );
 
-    // Get user from auth
+    // Get user from auth using Bearer token from header
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.split(" ")[1];
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
       throw new Error("Unauthorized");
