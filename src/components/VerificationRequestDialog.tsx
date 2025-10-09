@@ -238,7 +238,10 @@ export function VerificationRequestDialog({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-grant-badge', {
-        body: { verificationType }
+        body: { verificationType },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) {
@@ -280,35 +283,6 @@ export function VerificationRequestDialog({
   };
 
   const renderBlueFlow = () => {
-    // Admins can grant themselves badge directly without forms
-    if (isAdmin) {
-      return (
-        <div className="space-y-4">
-          <div className="bg-primary/10 p-4 rounded-lg space-y-3 border border-primary/20">
-            <h4 className="font-semibold text-primary">Administrator Access</h4>
-            <p className="text-sm text-muted-foreground">
-              As a platform administrator, you can instantly grant yourself the blue verification badge without payment or document submission.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              ✓ No payment required<br />
-              ✓ No documents needed<br />
-              ✓ Instant activation
-            </p>
-          </div>
-          <Button onClick={handleAdminGrantBadge} disabled={loading} className="w-full">
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Granting Badge...
-              </>
-            ) : (
-              'Grant Blue Badge'
-            )}
-          </Button>
-        </div>
-      );
-    }
-
     if (step === 1) {
       return (
         <div className="space-y-4">

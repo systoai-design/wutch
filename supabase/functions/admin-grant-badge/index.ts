@@ -54,6 +54,14 @@ serve(async (req) => {
       );
     }
 
+    // SECURITY: Admins must submit documents for blue badge
+    if (verificationType === 'blue') {
+      return new Response(
+        JSON.stringify({ error: 'Admins must submit documents for the blue badge. Please use the standard verification flow.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check if admin already has this badge
     const { data: existingProfile, error: profileError } = await supabaseClient
       .from('profiles')
