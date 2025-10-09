@@ -167,6 +167,7 @@ const ProfilePage = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [viewingImage, setViewingImage] = useState<{ url: string; alt: string } | null>(null);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   
   const activeTab = searchParams.get('tab') || 'streams';
 
@@ -560,7 +561,13 @@ const ProfilePage = () => {
                       <p className="text-sm text-muted-foreground">
                         Get verified to build trust with your audience
                       </p>
-                      <VerificationRequestDialog />
+                      <div className="flex gap-2">
+                        <VerificationRequestDialog 
+                          open={verificationDialogOpen}
+                          onOpenChange={setVerificationDialogOpen}
+                          verificationType="blue"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
