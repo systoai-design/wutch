@@ -41,11 +41,27 @@ serve(async (req) => {
     // Search livestreams
     if (type === 'all' || type === 'livestreams') {
       console.log('Searching livestreams for:', query);
-      const { data: livestreams, error: livestreamsError } = await supabaseClient
+      
+      // First, find matching profiles
+      const { data: matchingProfiles } = await supabaseClient
+        .from('public_profiles')
+        .select('id')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`);
+      
+      const matchingUserIds = matchingProfiles?.map(p => p.id) || [];
+      
+      // Build the query to search both content and creator
+      let livestreamQuery = supabaseClient
         .from('livestreams')
-        .select('*')
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
-        .limit(10);
+        .select('*');
+      
+      if (matchingUserIds.length > 0) {
+        livestreamQuery = livestreamQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%,user_id.in.(${matchingUserIds.join(',')})`);
+      } else {
+        livestreamQuery = livestreamQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
+      }
+      
+      const { data: livestreams, error: livestreamsError } = await livestreamQuery.limit(10);
 
       console.log('Livestreams results:', { count: livestreams?.length, error: livestreamsError });
       
@@ -53,7 +69,7 @@ serve(async (req) => {
         const userIds = [...new Set(livestreams.map(s => s.user_id))];
         const { data: profiles } = await supabaseClient
           .from('public_profiles')
-          .select('id, username, display_name, avatar_url')
+          .select('id, username, display_name, avatar_url, banner_url')
           .in('id', userIds);
         
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -69,11 +85,27 @@ serve(async (req) => {
     // Search short videos
     if (type === 'all' || type === 'shorts') {
       console.log('Searching short videos for:', query);
-      const { data: shorts, error: shortsError } = await supabaseClient
+      
+      // First, find matching profiles
+      const { data: matchingProfiles } = await supabaseClient
+        .from('public_profiles')
+        .select('id')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`);
+      
+      const matchingUserIds = matchingProfiles?.map(p => p.id) || [];
+      
+      // Build the query to search both content and creator
+      let shortsQuery = supabaseClient
         .from('short_videos')
-        .select('*')
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(10);
+        .select('*');
+      
+      if (matchingUserIds.length > 0) {
+        shortsQuery = shortsQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,user_id.in.(${matchingUserIds.join(',')})`);
+      } else {
+        shortsQuery = shortsQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+      }
+      
+      const { data: shorts, error: shortsError } = await shortsQuery.limit(10);
 
       console.log('Short videos results:', { count: shorts?.length, error: shortsError });
       
@@ -81,7 +113,7 @@ serve(async (req) => {
         const userIds = [...new Set(shorts.map(s => s.user_id))];
         const { data: profiles } = await supabaseClient
           .from('public_profiles')
-          .select('id, username, display_name, avatar_url')
+          .select('id, username, display_name, avatar_url, banner_url')
           .in('id', userIds);
         
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -97,12 +129,28 @@ serve(async (req) => {
     // Search wutch videos
     if (type === 'all' || type === 'wutch') {
       console.log('Searching wutch videos for:', query);
-      const { data: wutchVideos, error: wutchError } = await supabaseClient
+      
+      // First, find matching profiles
+      const { data: matchingProfiles } = await supabaseClient
+        .from('public_profiles')
+        .select('id')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`);
+      
+      const matchingUserIds = matchingProfiles?.map(p => p.id) || [];
+      
+      // Build the query to search both content and creator
+      let wutchQuery = supabaseClient
         .from('wutch_videos')
         .select('*')
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
-        .eq('status', 'published')
-        .limit(10);
+        .eq('status', 'published');
+      
+      if (matchingUserIds.length > 0) {
+        wutchQuery = wutchQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%,user_id.in.(${matchingUserIds.join(',')})`);
+      } else {
+        wutchQuery = wutchQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
+      }
+      
+      const { data: wutchVideos, error: wutchError } = await wutchQuery.limit(10);
 
       console.log('Wutch videos results:', { count: wutchVideos?.length, error: wutchError });
       
@@ -110,7 +158,7 @@ serve(async (req) => {
         const userIds = [...new Set(wutchVideos.map(v => v.user_id))];
         const { data: profiles } = await supabaseClient
           .from('public_profiles')
-          .select('id, username, display_name, avatar_url')
+          .select('id, username, display_name, avatar_url, banner_url')
           .in('id', userIds);
         
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -129,7 +177,7 @@ serve(async (req) => {
       
       const { data: users, error: usersError } = await supabaseClient
         .from('public_profiles')
-        .select('id, username, display_name, avatar_url, bio, follower_count, is_verified')
+        .select('id, username, display_name, avatar_url, banner_url, bio, follower_count, is_verified, public_wallet_address')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%,bio.ilike.%${query}%`)
         .limit(10);
 
