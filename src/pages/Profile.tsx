@@ -351,6 +351,18 @@ const ProfilePage = () => {
     checkMFAStatus();
   }, [user]);
 
+  useEffect(() => {
+    const container = tabsScrollRef.current;
+    if (!container) return;
+    const active = container.querySelector('[role="tab"][data-state="active"]') as HTMLElement | null;
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+      if (active.getAttribute('value') === 'streams') {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      }
+    }
+  }, [activeTab]);
+
   const handleDisableMFA = async () => {
     try {
       const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -436,18 +448,6 @@ const ProfilePage = () => {
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
   };
-
-  useEffect(() => {
-    const container = tabsScrollRef.current;
-    if (!container) return;
-    const active = container.querySelector('[role="tab"][data-state="active"]') as HTMLElement | null;
-    if (active) {
-      active.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-      if (active.getAttribute('value') === 'streams') {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      }
-    }
-  }, [activeTab]);
 
   return (
     <div className="min-h-screen">
