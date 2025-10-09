@@ -61,8 +61,9 @@ export default function AdminVerification() {
 
   const fetchRequests = async () => {
     try {
-      const { data, error } = await supabase
-        .from('verification_requests')
+      // Use the decrypted view for automatic PII decryption
+      const { data, error } = await (supabase as any)
+        .from('verification_requests_decrypted')
         .select('*')
         .order('submitted_at', { ascending: false });
 
@@ -70,7 +71,7 @@ export default function AdminVerification() {
 
       // Fetch profile data separately
       const requestsWithProfiles = await Promise.all(
-        (data || []).map(async (request) => {
+        (data || []).map(async (request: any) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('username, display_name, avatar_url')
@@ -156,12 +157,41 @@ export default function AdminVerification() {
     }
   };
 
-  const viewDocument = (url?: string) => {
+  const viewDocument = async (requestId: string, url?: string) => {
     if (!url) {
       toast.error('No document available');
       return;
     }
-    window.open(url, '_blank');
+    
+    try {
+      // Generate time-limited signed URL for document access
+      const { data: path, error } = await (supabase as any)
+        .rpc('get_verification_document_url', {
+          request_id: requestId,
+          expires_in_seconds: 300 // 5 minutes
+        }) as { data: string | null; error: any };
+
+      if (error) throw error;
+      
+      if (!path) {
+        toast.error('Document not found');
+        return;
+      }
+
+      // Get signed URL from storage
+      const { data: signedUrlData } = await supabase.storage
+        .from('verification-documents')
+        .createSignedUrl((path as string).replace(/^.*verification-documents\//, ''), 300);
+
+      if (signedUrlData?.signedUrl) {
+        window.open(signedUrlData.signedUrl, '_blank');
+      } else {
+        window.open(url, '_blank'); // Fallback to direct URL
+      }
+    } catch (error) {
+      console.error('Error accessing document:', error);
+      toast.error('Failed to access document');
+    }
   };
 
   if (adminLoading || loading) {
@@ -255,7 +285,7 @@ export default function AdminVerification() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => viewDocument(request.legal_id_document_url)}
+                onClick={() => viewDocument(request.id, request.legal_id_document_url)}
               >
                 <Eye className="w-4 h-4 mr-1" />
                 View ID
