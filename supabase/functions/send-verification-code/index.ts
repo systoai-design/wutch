@@ -130,7 +130,7 @@ serve(async (req) => {
     console.log('Attempting to send verification email to:', user.email);
     
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Wutch <onboarding@resend.dev>",
+      from: "Wutch <noreply@wutch.fun>",
       to: [user.email!],
       subject: `Verification Code: ${code}`,
       html: emailHtml,
