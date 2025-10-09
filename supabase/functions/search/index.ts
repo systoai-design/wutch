@@ -12,9 +12,10 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role key to bypass RLS for search
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const url = new URL(req.url);
@@ -42,20 +43,27 @@ serve(async (req) => {
       console.log('Searching livestreams for:', query);
       const { data: livestreams, error: livestreamsError } = await supabaseClient
         .from('livestreams')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
         .limit(10);
 
       console.log('Livestreams results:', { count: livestreams?.length, error: livestreamsError });
-      results.livestreams = livestreams || [];
+      
+      if (livestreams && livestreams.length > 0) {
+        const userIds = [...new Set(livestreams.map(s => s.user_id))];
+        const { data: profiles } = await supabaseClient
+          .from('public_profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        results.livestreams = livestreams.map(stream => ({
+          ...stream,
+          profiles: profileMap.get(stream.user_id) || null
+        }));
+      } else {
+        results.livestreams = [];
+      }
     }
 
     // Search short videos
@@ -63,20 +71,27 @@ serve(async (req) => {
       console.log('Searching short videos for:', query);
       const { data: shorts, error: shortsError } = await supabaseClient
         .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
         .limit(10);
 
       console.log('Short videos results:', { count: shorts?.length, error: shortsError });
-      results.short_videos = shorts || [];
+      
+      if (shorts && shorts.length > 0) {
+        const userIds = [...new Set(shorts.map(s => s.user_id))];
+        const { data: profiles } = await supabaseClient
+          .from('public_profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        results.short_videos = shorts.map(video => ({
+          ...video,
+          profiles: profileMap.get(video.user_id) || null
+        }));
+      } else {
+        results.short_videos = [];
+      }
     }
 
     // Search wutch videos
@@ -84,21 +99,28 @@ serve(async (req) => {
       console.log('Searching wutch videos for:', query);
       const { data: wutchVideos, error: wutchError } = await supabaseClient
         .from('wutch_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
         .eq('status', 'published')
         .limit(10);
 
       console.log('Wutch videos results:', { count: wutchVideos?.length, error: wutchError });
-      results.wutch_videos = wutchVideos || [];
+      
+      if (wutchVideos && wutchVideos.length > 0) {
+        const userIds = [...new Set(wutchVideos.map(v => v.user_id))];
+        const { data: profiles } = await supabaseClient
+          .from('public_profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        results.wutch_videos = wutchVideos.map(video => ({
+          ...video,
+          profiles: profileMap.get(video.user_id) || null
+        }));
+      } else {
+        results.wutch_videos = [];
+      }
     }
 
     // Search users - support both 'users' and 'creators' for backwards compatibility
@@ -107,11 +129,11 @@ serve(async (req) => {
       
       const { data: users, error: usersError } = await supabaseClient
         .from('public_profiles')
-        .select('*')
+        .select('id, username, display_name, avatar_url, bio, follower_count, is_verified')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%,bio.ilike.%${query}%`)
         .limit(10);
 
-      console.log('Profiles search results:', { count: users?.length, error: usersError });
+      console.log('Profiles search results:', { count: users?.length, error: usersError, sample: users?.[0] });
       
       results.profiles = users || [];
     }
