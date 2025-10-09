@@ -23,7 +23,7 @@ serve(async (req) => {
     console.log('Verifying donation:', { transactionSignature, donorWallet, recipientUserId, contentId, contentType, amount });
 
     // Connect to Solana mainnet (use devnet for testing)
-    const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f', 'confirmed');
     
     // Verify transaction exists and is confirmed
     const transaction = await connection.getTransaction(transactionSignature, {

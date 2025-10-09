@@ -103,7 +103,7 @@ export function VerificationRequestDialog({
 
     setLoading(true);
     try {
-      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+      const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f', 'confirmed');
 
       const transaction = new Transaction().add(
         SystemProgram.transfer({

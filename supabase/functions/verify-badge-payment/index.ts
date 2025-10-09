@@ -40,7 +40,7 @@ serve(async (req) => {
     console.log('Verifying payment:', { transactionSignature, walletAddress });
 
     // Connect to Solana mainnet
-    const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f', 'confirmed');
 
     // Get transaction details
     const transaction = await connection.getParsedTransaction(transactionSignature, {
