@@ -693,7 +693,7 @@ const ProfilePage = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="about" className="mt-6 space-y-6">
+          <TabsContent value="about" className="mt-2 space-y-6">
             {isOwnProfile && (
               <Card className="p-6 space-y-4">
                 <div>
