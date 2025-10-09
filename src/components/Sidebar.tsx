@@ -1,11 +1,13 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Home, Flame, Clock, Video, PlaySquare, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
+import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { CATEGORIES } from '@/constants/categories';
 import { useEffect, useState } from 'react';
+import pumpFunLogo from '@/assets/pumpfun-logo.png';
+import wutchLogo from '@/assets/wutch-logo.png';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -26,22 +28,21 @@ const Sidebar = () => {
   }, [location.pathname, isHomePage, isHovering, setCollapsed]);
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/app' },
-    { icon: Video, label: 'Streams', path: '/streams' },
-    { icon: PlaySquare, label: 'Wutch', path: '/wutch' },
-    { icon: Zap, label: 'Shorts', path: '/shorts' },
-    { icon: DollarSign, label: 'Bounties', path: '/bounties' },
-    { icon: Trophy, label: 'Leaderboards', path: '/leaderboards' },
-    { icon: Flame, label: 'Trending', path: '/trending' },
-    { icon: CalendarClock, label: 'Upcoming', path: '/upcoming' },
-    { icon: Clock, label: 'Recently Ended', path: '/recent' },
+    { icon: Home, label: 'Home', path: '/app', type: 'icon' },
+    { icon: null, label: 'Pump Streams', path: '/streams', type: 'image', imageSrc: pumpFunLogo },
+    { icon: null, label: 'Wutch', path: '/wutch', type: 'image', imageSrc: wutchLogo },
+    { icon: Zap, label: 'Shorts', path: '/shorts', type: 'icon' },
+    { icon: DollarSign, label: 'Bounties', path: '/bounties', type: 'icon' },
+    { icon: Trophy, label: 'Leaderboards', path: '/leaderboards', type: 'icon' },
+    { icon: Flame, label: 'Trending', path: '/trending', type: 'icon' },
+    { icon: CalendarClock, label: 'Upcoming', path: '/upcoming', type: 'icon' },
+    { icon: Clock, label: 'Recently Ended', path: '/recent', type: 'icon' },
   ];
 
   const sidebarContent = (
     <div className="p-4">
       <nav className="space-y-1">
         {navItems.map((item) => {
-          const Icon = item.icon;
           const isActive = location.pathname === item.path;
           
           return (
@@ -56,7 +57,15 @@ const Sidebar = () => {
                   : 'hover:bg-accent hover:text-accent-foreground'
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              {item.type === 'icon' ? (
+                <item.icon className="h-5 w-5 shrink-0" />
+              ) : (
+                <img 
+                  src={item.imageSrc} 
+                  alt={item.label} 
+                  className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                />
+              )}
               <span>{item.label}</span>
             </Link>
           );
@@ -113,7 +122,6 @@ const Sidebar = () => {
         <div className={cn("p-4", (isCollapsed && !isHovering) && "px-2")}>
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive = location.pathname === item.path;
               const shouldCollapse = isCollapsed && !isHovering;
               
@@ -129,7 +137,15 @@ const Sidebar = () => {
                     shouldCollapse && 'justify-center px-2'
                   )}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
+                  {item.type === 'icon' ? (
+                    <item.icon className="h-5 w-5 shrink-0" />
+                  ) : (
+                    <img 
+                      src={item.imageSrc} 
+                      alt={item.label} 
+                      className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                    />
+                  )}
                   {!shouldCollapse && <span>{item.label}</span>}
                 </Link>
               );
