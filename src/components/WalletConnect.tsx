@@ -4,12 +4,15 @@ import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const wallet = useWallet();
+  const { publicKey, connect, disconnect, connecting, connected, select, wallets } = wallet;
 
   useEffect(() => {
     const loadWalletData = async () => {
@@ -53,22 +56,21 @@ export const WalletConnect = () => {
   }, [user]);
 
   const connectWallet = async () => {
+    setIsConnecting(true);
     try {
-      setIsConnecting(true);
-      
-      const { solana } = window as any;
-      
-      if (!solana?.isPhantom) {
-        toast({
-          title: "Phantom Not Found",
-          description: "Please install Phantom wallet extension to continue.",
-          variant: "destructive",
-        });
-        return;
+      const phantomWallet = wallets.find(w => 
+        w.adapter.name.toLowerCase().includes('phantom')
+      );
+      if (phantomWallet) {
+        select(phantomWallet.adapter.name);
       }
-
-      const response = await solana.connect();
-      const address = response.publicKey.toString();
+      await connect();
+      
+      const address = publicKey?.toBase58() || (window as any)?.solana?.publicKey?.toString();
+      
+      if (!address) {
+        throw new Error('Failed to retrieve wallet address');
+      }
       
       // Check if this wallet is already connected to another account
       const { data: existingWallet, error: checkError } = await supabase
@@ -88,8 +90,7 @@ export const WalletConnect = () => {
           description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
           variant: "destructive",
         });
-        // Disconnect the wallet from Phantom
-        await solana.disconnect();
+        await disconnect();
         return;
       }
 
@@ -104,14 +105,13 @@ export const WalletConnect = () => {
         });
 
       if (error) {
-        // Handle unique constraint violation (23505 is PostgreSQL unique violation code)
         if (error.code === '23505' && error.message.includes('unique_wallet_address')) {
           toast({
             title: "Wallet Already Connected",
             description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
             variant: "destructive",
           });
-          await solana.disconnect();
+          await disconnect();
           return;
         }
         throw error;
@@ -136,8 +136,7 @@ export const WalletConnect = () => {
 
   const disconnectWallet = async () => {
     try {
-      const { solana } = window as any;
-      await solana?.disconnect();
+      await disconnect();
 
       if (user) {
         // Remove from profile_wallets

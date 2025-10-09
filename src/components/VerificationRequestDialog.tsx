@@ -282,6 +282,23 @@ export function VerificationRequestDialog({
     setEligibility(null);
   };
 
+  const handleConnectWallet = async () => {
+    try {
+      const phantomWallet = wallet.wallets.find(w => 
+        w.adapter.name.toLowerCase().includes('phantom')
+      );
+      if (phantomWallet) {
+        wallet.select(phantomWallet.adapter.name);
+      }
+      await wallet.connect();
+      toast.success('Wallet connected');
+    } catch (e: any) {
+      toast.error('Wallet connection failed', { 
+        description: e.message || 'Please try again.' 
+      });
+    }
+  };
+
   const renderBlueFlow = () => {
     if (step === 1) {
       return (
@@ -296,22 +313,52 @@ export function VerificationRequestDialog({
             </p>
           </div>
 
-          {paymentSignature ? (
+          {!publicKey && !paymentSignature && (
+            <>
+              <Button 
+                onClick={handleConnectWallet} 
+                disabled={loading || wallet.connecting} 
+                className="w-full" 
+                variant="secondary"
+              >
+                {wallet.connecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  'Connect Wallet'
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Connect your Phantom wallet to proceed with payment.
+              </p>
+            </>
+          )}
+
+          {publicKey && !paymentSignature && (
+            <>
+              <p className="text-xs text-muted-foreground text-center">
+                Paying from {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+              </p>
+              <Button onClick={handlePayment} disabled={loading} className="w-full">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : (
+                  `Pay ${REQUIRED_AMOUNT} SOL`
+                )}
+              </Button>
+            </>
+          )}
+
+          {paymentSignature && (
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
               <span>Payment verified!</span>
             </div>
-          ) : (
-            <Button onClick={handlePayment} disabled={loading || !publicKey} className="w-full">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Payment...
-                </>
-              ) : (
-                `Pay ${REQUIRED_AMOUNT} SOL`
-              )}
-            </Button>
           )}
         </div>
       );
