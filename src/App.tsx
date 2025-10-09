@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, useMemo } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -12,6 +12,10 @@ import Sidebar from '@/components/Sidebar';
 import BottomNavigation from '@/components/BottomNavigation';
 import { AuthDialog } from '@/components/AuthDialog';
 import { useAuthDialog } from '@/store/authDialogStore';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { clusterApiUrl } from '@solana/web3.js';
 
 // Lazy load pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -167,16 +171,24 @@ function ShortsLayout() {
 }
 
 const App = () => {
+  const network = WalletAdapterNetwork.Mainnet;
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AuthDialog />
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect={false}>
+          <BrowserRouter>
+            <AuthProvider>
+              <Toaster />
+              <Sonner />
+              <AuthDialog />
+              <AppContent />
+            </AuthProvider>
+          </BrowserRouter>
+        </WalletProvider>
+      </ConnectionProvider>
     </QueryClientProvider>
   );
 };
