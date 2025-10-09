@@ -5,6 +5,7 @@ import { Database } from '@/integrations/supabase/types';
 import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
 import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimization';
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -14,6 +15,7 @@ interface StreamCardProps {
       username: string;
       display_name: string | null;
       avatar_url: string | null;
+      verification_type?: string | null;
     };
   };
   compact?: boolean;
@@ -84,8 +86,11 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
             <h3 className={`font-bold line-clamp-2 leading-tight group-hover:text-primary transition-colors ${compact ? 'text-xs mb-0.5' : 'text-sm mb-1'}`}>
               {stream.title}
             </h3>
-            <p className={`text-muted-foreground font-medium ${compact ? 'text-xs' : 'text-xs'}`}>
+            <p className={`text-muted-foreground font-medium flex items-center gap-1 ${compact ? 'text-xs' : 'text-xs'}`}>
               {streamer?.display_name || streamer?.username || 'Loading...'}
+              {streamer?.verification_type && streamer.verification_type !== 'none' && (
+                <VerificationBadge verificationType={streamer.verification_type as 'blue' | 'red'} size="sm" />
+              )}
             </p>
             {stream.category && !compact && (
               <div className="flex items-center gap-2 mt-1.5">

@@ -9,6 +9,7 @@ import { useFollow } from "@/hooks/useFollow";
 import DonationModal from "@/components/DonationModal";
 import GuestPromptDialog from "@/components/GuestPromptDialog";
 import { useState } from "react";
+import { VerificationBadge } from "@/components/VerificationBadge";
 
 interface CreatorCardProps {
   profile: {
@@ -20,6 +21,7 @@ interface CreatorCardProps {
     bio: string | null;
     follower_count: number;
     is_verified: boolean;
+    verification_type?: string | null;
     public_wallet_address: string | null;
   };
 }
@@ -66,8 +68,8 @@ export function CreatorCard({ profile }: CreatorCardProps) {
                   <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
                     {displayName}
                   </h3>
-                  {profile.is_verified && (
-                    <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                  {profile.verification_type && profile.verification_type !== 'none' && (
+                    <VerificationBadge verificationType={profile.verification_type as 'blue' | 'red'} size="md" />
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground truncate">

@@ -4,10 +4,13 @@ import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/utils/formatters';
 import { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
-    'username' | 'display_name' | 'avatar_url'>;
+    'username' | 'display_name' | 'avatar_url'> & {
+    verification_type?: string | null;
+  };
 };
 
 interface ShortCardProps {
@@ -147,8 +150,11 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
               />
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">
+              <p className="text-xs font-medium truncate flex items-center gap-1">
                 {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
+                {short.profiles?.verification_type && short.profiles.verification_type !== 'none' && (
+                  <VerificationBadge verificationType={short.profiles.verification_type as 'blue' | 'red'} size="sm" />
+                )}
               </p>
             </div>
           </div>

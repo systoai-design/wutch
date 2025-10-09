@@ -20,6 +20,7 @@ import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
+import { VerificationBadge } from './VerificationBadge';
 
 const Navigation = () => {
   const location = useLocation();
@@ -41,7 +42,7 @@ const Navigation = () => {
     if (!user) return;
     const { data } = await supabase
       .from('profiles')
-      .select('avatar_url, username, display_name')
+      .select('avatar_url, username, display_name, verification_type')
       .eq('id', user.id)
       .single();
     setUserProfile(data);
