@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
@@ -21,12 +22,14 @@ import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
 import { VerificationBadge } from './VerificationBadge';
+import { AdminBadge } from './AdminBadge';
 
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut, isGuest } = useAuth();
+  const { isAdmin } = useAdmin();
   const { toggle, toggleMobile } = useSidebar();
   const { open: openAuthDialog } = useAuthDialog();
   const [searchQuery, setSearchQuery] = useState('');
@@ -223,6 +226,7 @@ const Navigation = () => {
                   <div className="px-2 py-2 border-b">
                     <p className="text-sm font-medium leading-none flex items-center gap-1.5">
                       {userProfile?.display_name || userProfile?.username || 'User'}
+                      {isAdmin && <AdminBadge size="sm" />}
                       {userProfile?.verification_type && userProfile.verification_type !== 'none' && (
                         <VerificationBadge verificationType={userProfile.verification_type as 'blue' | 'red'} size="sm" />
                       )}

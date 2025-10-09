@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -31,7 +32,10 @@ export function VerificationRequestDialog({
   verificationType,
 }: VerificationRequestDialogProps) {
   const { user } = useAuth();
-  const { publicKey, sendTransaction } = useWallet();
+  const { isAdmin } = useAdmin();
+  const wallet = useWallet();
+  const publicKey = wallet?.publicKey;
+  const sendTransaction = wallet?.sendTransaction;
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [eligibility, setEligibility] = useState<any>(null);
@@ -219,6 +223,21 @@ export function VerificationRequestDialog({
   };
 
   const renderBlueFlow = () => {
+    // Admins skip payment step
+    if (isAdmin) {
+      return (
+        <div className="space-y-4">
+          <div className="bg-primary/10 p-4 rounded-lg space-y-2 border border-primary/20">
+            <h4 className="font-semibold text-primary">Administrator Access</h4>
+            <p className="text-sm text-muted-foreground">
+              As a platform administrator, you can claim the blue verification badge without payment. Simply fill out the required information below.
+            </p>
+          </div>
+          {renderLegalInfoForm()}
+        </div>
+      );
+    }
+
     if (step === 1) {
       return (
         <div className="space-y-4">
@@ -257,6 +276,21 @@ export function VerificationRequestDialog({
   };
 
   const renderRedFlow = () => {
+    // Admins skip eligibility check
+    if (isAdmin) {
+      return (
+        <div className="space-y-4">
+          <div className="bg-primary/10 p-4 rounded-lg space-y-2 border border-primary/20">
+            <h4 className="font-semibold text-primary">Administrator Access</h4>
+            <p className="text-sm text-muted-foreground">
+              As a platform administrator, you can claim the red verification badge without meeting eligibility requirements. Simply fill out the required information below.
+            </p>
+          </div>
+          {renderLegalInfoForm()}
+        </div>
+      );
+    }
+
     if (!eligibility) {
       return (
         <div className="flex items-center justify-center py-8">
