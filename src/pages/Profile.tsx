@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -160,6 +160,8 @@ const ProfilePage = () => {
   const [viewingImage, setViewingImage] = useState<{ url: string; alt: string } | null>(null);
   
   const activeTab = searchParams.get('tab') || 'streams';
+
+  const tabsScrollRef = useRef<HTMLDivElement | null>(null);
 
   const handleViewImage = (url: string, alt: string) => {
     setViewingImage({ url, alt });
@@ -435,6 +437,18 @@ const ProfilePage = () => {
     setSearchParams({ tab: value });
   };
 
+  useEffect(() => {
+    const container = tabsScrollRef.current;
+    if (!container) return;
+    const active = container.querySelector('[role="tab"][data-state="active"]') as HTMLElement | null;
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+      if (active.getAttribute('value') === 'streams') {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      }
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen">
       {/* Banner */}
@@ -585,25 +599,27 @@ const ProfilePage = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="flex w-full overflow-x-auto gap-2 p-1 scroll-smooth scrollbar-hide">
-            <TabsTrigger value="streams" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-              Streams {streams.length > 0 && `(${streams.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="videos" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-              Videos {videos.length > 0 && `(${videos.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="shorts" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-              Shorts {shorts.length > 0 && `(${shorts.length})`}
-            </TabsTrigger>
-            {isOwnProfile && (
-              <TabsTrigger value="analytics" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-                Analytics
+          <div ref={tabsScrollRef} className="relative -mx-4 px-4 md:mx-0 md:px-0 overflow-x-auto scroll-smooth scrollbar-hide snap-x snap-mandatory touch-pan-x">
+            <TabsList className="inline-flex gap-2 p-1">
+              <TabsTrigger value="streams" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                Streams {streams.length > 0 && `(${streams.length})`}
               </TabsTrigger>
-            )}
-            <TabsTrigger value="about" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-              About
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger value="videos" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                Videos {videos.length > 0 && `(${videos.length})`}
+              </TabsTrigger>
+              <TabsTrigger value="shorts" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                Shorts {shorts.length > 0 && `(${shorts.length})`}
+              </TabsTrigger>
+              {isOwnProfile && (
+                <TabsTrigger value="analytics" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                  Analytics
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="about" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                About
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="streams" className="mt-6">
             {isLoadingStreams ? (
