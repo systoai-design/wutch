@@ -585,22 +585,22 @@ const ProfilePage = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="flex w-full overflow-x-auto gap-1 scrollbar-hide pb-px">
-            <TabsTrigger value="streams" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 px-4 md:px-6">
+          <TabsList className="flex w-full overflow-x-auto gap-2 p-0 px-1 -mx-1 scroll-smooth scrollbar-hide">
+            <TabsTrigger value="streams" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
               Streams {streams.length > 0 && `(${streams.length})`}
             </TabsTrigger>
-            <TabsTrigger value="videos" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 px-4 md:px-6">
+            <TabsTrigger value="videos" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
               Videos {videos.length > 0 && `(${videos.length})`}
             </TabsTrigger>
-            <TabsTrigger value="shorts" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 px-4 md:px-6">
+            <TabsTrigger value="shorts" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
               Shorts {shorts.length > 0 && `(${shorts.length})`}
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="analytics" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 px-4 md:px-6">
+              <TabsTrigger value="analytics" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                 Analytics
               </TabsTrigger>
             )}
-            <TabsTrigger value="about" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 px-4 md:px-6">
+            <TabsTrigger value="about" className="text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
               About
             </TabsTrigger>
           </TabsList>
