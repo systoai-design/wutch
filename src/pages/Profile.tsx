@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2 } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2, CalendarDays, Settings as SettingsIcon, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -25,7 +25,8 @@ import { WalletEducationPanel } from '@/components/WalletEducationPanel';
 import { PublicWalletButton } from '@/components/PublicWalletButton';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow, format } from 'date-fns';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
@@ -618,6 +619,11 @@ const ProfilePage = () => {
               <TabsTrigger value="about" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                 About
               </TabsTrigger>
+              {isOwnProfile && (
+                <TabsTrigger value="settings" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                  Settings
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
 
@@ -709,9 +715,151 @@ const ProfilePage = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="about" className="mt-2 space-y-6">
-            {isOwnProfile && (
-              <Card className="p-6 space-y-4">
+          <TabsContent value="about" className="mt-6 space-y-6">
+            {/* Bio Section */}
+            <Card className="p-6">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                About
+              </h3>
+              {profile.bio ? (
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {profile.bio}
+                </p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  {isOwnProfile ? 'Add a bio to tell people about yourself' : 'No bio added yet'}
+                </p>
+              )}
+            </Card>
+
+            {/* Account Information */}
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                Profile Information
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Joined</span>
+                  <span className="font-medium">
+                    {format(new Date(profile.created_at), 'MMMM d, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Followers</span>
+                  <span className="font-medium">{profile.follower_count || 0}</span>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground">Verification Status</span>
+                  <Badge variant={profile.is_verified ? 'default' : 'secondary'} className="gap-1">
+                    {profile.is_verified && <CheckCircle2 className="h-3 w-3" />}
+                    {profile.is_verified ? 'Verified' : 'Not Verified'}
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* Social Links */}
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Social Links
+              </h3>
+              {(socialLinks.twitter || socialLinks.discord || socialLinks.website) ? (
+                <div className="space-y-3">
+                  {socialLinks.twitter && (
+                    <a
+                      href={socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors group"
+                    >
+                      <Twitter className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="flex-1 text-sm font-medium">Twitter</span>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                  {socialLinks.discord && (
+                    <a
+                      href={socialLinks.discord}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors group"
+                    >
+                      <span className="h-5 w-5 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors font-bold text-lg">D</span>
+                      <span className="flex-1 text-sm font-medium">Discord</span>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                  {socialLinks.website && (
+                    <a
+                      href={socialLinks.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors group"
+                    >
+                      <Globe className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="flex-1 text-sm font-medium">Website</span>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground italic text-sm">
+                  {isOwnProfile ? 'Add social links in Edit Profile' : 'No social links added'}
+                </p>
+              )}
+            </Card>
+
+            {/* Public Wallet / Donation Section */}
+            {profile.public_wallet_address && (
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-primary" />
+                  Support this Creator
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Send SOL donations directly to @{profile.username}
+                </p>
+                <PublicWalletButton 
+                  walletAddress={profile.public_wallet_address}
+                  username={profile.username}
+                />
+              </Card>
+            )}
+
+            {/* Promotional Link */}
+            {profile.promotional_link && (
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-primary" />
+                  Featured Link
+                </h3>
+                <a
+                  href={profile.promotional_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors group border border-primary/20"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-primary">
+                      {profile.promotional_link_text || 'Check this out!'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {profile.promotional_link}
+                    </p>
+                  </div>
+                  <ExternalLink className="h-5 w-5 text-primary shrink-0" />
+                </a>
+              </Card>
+            )}
+          </TabsContent>
+
+          {isOwnProfile && (
+            <TabsContent value="settings" className="mt-6 space-y-6">
+              <Card className="p-6 space-y-6">
+                {/* 2FA Section */}
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
@@ -750,54 +898,26 @@ const ProfilePage = () => {
                   )}
                 </div>
 
-                <ProfileWalletDisplay userId={profile.id} />
+                {/* Wallet Section */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-primary" />
+                    Wallet Management
+                  </h3>
+                  <ProfileWalletDisplay userId={profile.id} />
+                </div>
 
-                <DonationSettings />
-              </Card>
-            )}
-
-            {!isOwnProfile && <WalletEducationPanel />}
-
-            {(socialLinks.twitter || socialLinks.discord || socialLinks.website) && (
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4">Social Links</h3>
-                <div className="space-y-2">
-                  {socialLinks.twitter && (
-                    <a
-                      href={socialLinks.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                    >
-                      <Twitter className="h-4 w-4" />
-                      Twitter
-                    </a>
-                  )}
-                  {socialLinks.discord && (
-                    <a
-                      href={socialLinks.discord}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                    >
-                      Discord
-                    </a>
-                  )}
-                  {socialLinks.website && (
-                    <a
-                      href={socialLinks.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
-                    >
-                      <Globe className="h-4 w-4" />
-                      Website
-                    </a>
-                  )}
+                {/* Donation Settings */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <SettingsIcon className="h-5 w-5 text-primary" />
+                    Donation Settings
+                  </h3>
+                  <DonationSettings />
                 </div>
               </Card>
-            )}
-          </TabsContent>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
