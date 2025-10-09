@@ -585,22 +585,22 @@ const ProfilePage = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="inline-flex w-full justify-start overflow-x-auto">
-            <TabsTrigger value="streams" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
+          <TabsList className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 w-full gap-2">
+            <TabsTrigger value="streams" className="text-xs md:text-sm whitespace-nowrap">
               Streams {streams.length > 0 && `(${streams.length})`}
             </TabsTrigger>
-            <TabsTrigger value="videos" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
+            <TabsTrigger value="videos" className="text-xs md:text-sm whitespace-nowrap">
               Videos {videos.length > 0 && `(${videos.length})`}
             </TabsTrigger>
-            <TabsTrigger value="shorts" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
+            <TabsTrigger value="shorts" className="text-xs md:text-sm whitespace-nowrap">
               Shorts {shorts.length > 0 && `(${shorts.length})`}
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="analytics" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
+              <TabsTrigger value="analytics" className="text-xs md:text-sm whitespace-nowrap">
                 Analytics
               </TabsTrigger>
             )}
-            <TabsTrigger value="about" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
+            <TabsTrigger value="about" className="text-xs md:text-sm whitespace-nowrap">
               About
             </TabsTrigger>
           </TabsList>
