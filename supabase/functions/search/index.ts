@@ -32,14 +32,15 @@ serve(async (req) => {
 
     const results: any = {
       livestreams: [],
-      shorts: [],
+      short_videos: [],
       wutch_videos: [],
       profiles: []
     };
 
     // Search livestreams
     if (type === 'all' || type === 'livestreams') {
-      const { data: livestreams } = await supabaseClient
+      console.log('Searching livestreams for:', query);
+      const { data: livestreams, error: livestreamsError } = await supabaseClient
         .from('livestreams')
         .select(`
           *,
@@ -53,12 +54,14 @@ serve(async (req) => {
         .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
         .limit(10);
 
+      console.log('Livestreams results:', { count: livestreams?.length, error: livestreamsError });
       results.livestreams = livestreams || [];
     }
 
     // Search short videos
     if (type === 'all' || type === 'shorts') {
-      const { data: shorts } = await supabaseClient
+      console.log('Searching short videos for:', query);
+      const { data: shorts, error: shortsError } = await supabaseClient
         .from('short_videos')
         .select(`
           *,
@@ -72,12 +75,14 @@ serve(async (req) => {
         .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
         .limit(10);
 
-      results.shorts = shorts || [];
+      console.log('Short videos results:', { count: shorts?.length, error: shortsError });
+      results.short_videos = shorts || [];
     }
 
     // Search wutch videos
     if (type === 'all' || type === 'wutch') {
-      const { data: wutchVideos } = await supabaseClient
+      console.log('Searching wutch videos for:', query);
+      const { data: wutchVideos, error: wutchError } = await supabaseClient
         .from('wutch_videos')
         .select(`
           *,
@@ -92,6 +97,7 @@ serve(async (req) => {
         .eq('status', 'published')
         .limit(10);
 
+      console.log('Wutch videos results:', { count: wutchVideos?.length, error: wutchError });
       results.wutch_videos = wutchVideos || [];
     }
 
