@@ -209,6 +209,34 @@ export function VerificationRequestDialog({
     }
   };
 
+  const handleAdminGrantBadge = async () => {
+    if (!user || !isAdmin) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-grant-badge', {
+        body: { verificationType }
+      });
+
+      if (error) throw error;
+
+      toast.success(`${verificationType === 'blue' ? 'Blue' : 'Red'} badge granted!`, {
+        description: 'Your badge has been activated. Refresh to see it on your profile.',
+      });
+
+      onOpenChange(false);
+      resetForm();
+      
+      // Refresh the page to show the new badge
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error: any) {
+      console.error('Admin grant error:', error);
+      toast.error('Failed to grant badge', { description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setStep(1);
     setLegalName('');
@@ -223,17 +251,31 @@ export function VerificationRequestDialog({
   };
 
   const renderBlueFlow = () => {
-    // Admins skip payment step
+    // Admins can grant themselves badge directly without forms
     if (isAdmin) {
       return (
         <div className="space-y-4">
-          <div className="bg-primary/10 p-4 rounded-lg space-y-2 border border-primary/20">
+          <div className="bg-primary/10 p-4 rounded-lg space-y-3 border border-primary/20">
             <h4 className="font-semibold text-primary">Administrator Access</h4>
             <p className="text-sm text-muted-foreground">
-              As a platform administrator, you can claim the blue verification badge without payment. Simply fill out the required information below.
+              As a platform administrator, you can instantly grant yourself the blue verification badge without payment or document submission.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              ✓ No payment required<br />
+              ✓ No documents needed<br />
+              ✓ Instant activation
             </p>
           </div>
-          {renderLegalInfoForm()}
+          <Button onClick={handleAdminGrantBadge} disabled={loading} className="w-full">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Granting Badge...
+              </>
+            ) : (
+              'Grant Blue Badge'
+            )}
+          </Button>
         </div>
       );
     }
@@ -276,17 +318,31 @@ export function VerificationRequestDialog({
   };
 
   const renderRedFlow = () => {
-    // Admins skip eligibility check
+    // Admins can grant themselves badge directly without eligibility checks
     if (isAdmin) {
       return (
         <div className="space-y-4">
-          <div className="bg-primary/10 p-4 rounded-lg space-y-2 border border-primary/20">
+          <div className="bg-primary/10 p-4 rounded-lg space-y-3 border border-primary/20">
             <h4 className="font-semibold text-primary">Administrator Access</h4>
             <p className="text-sm text-muted-foreground">
-              As a platform administrator, you can claim the red verification badge without meeting eligibility requirements. Simply fill out the required information below.
+              As a platform administrator, you can instantly grant yourself the red verification badge without meeting eligibility requirements or document submission.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              ✓ No eligibility checks required<br />
+              ✓ No documents needed<br />
+              ✓ Instant activation
             </p>
           </div>
-          {renderLegalInfoForm()}
+          <Button onClick={handleAdminGrantBadge} disabled={loading} className="w-full">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Granting Badge...
+              </>
+            ) : (
+              'Grant Red Badge'
+            )}
+          </Button>
         </div>
       );
     }
