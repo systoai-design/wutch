@@ -7,6 +7,7 @@ import { Search as SearchIcon, Loader2 } from "lucide-react";
 import StreamCard from "@/components/StreamCard";
 import { ShortCard } from "@/components/ShortCard";
 import { CreatorCard } from "@/components/CreatorCard";
+import { WutchVideoCard } from "@/components/WutchVideoCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -18,7 +19,7 @@ export default function Search() {
   const [query, setQuery] = useState(initialQuery);
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any>({ livestreams: [], short_videos: [], profiles: [] });
+  const [results, setResults] = useState<any>({ livestreams: [], short_videos: [], wutch_videos: [], profiles: [] });
 
   useEffect(() => {
     document.title = query ? `Search: ${query} - Wutch` : "Search - Wutch";
@@ -32,7 +33,7 @@ export default function Search() {
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
-      setResults({ livestreams: [], short_videos: [], profiles: [] });
+      setResults({ livestreams: [], short_videos: [], wutch_videos: [], profiles: [] });
       return;
     }
 
@@ -51,10 +52,10 @@ export default function Search() {
       if (!response.ok) throw new Error('Search failed');
       
       const data = await response.json();
-      setResults(data || { livestreams: [], short_videos: [], profiles: [] });
+      setResults(data || { livestreams: [], short_videos: [], wutch_videos: [], profiles: [] });
     } catch (error) {
       console.error("Search error:", error);
-      setResults({ livestreams: [], short_videos: [], profiles: [] });
+      setResults({ livestreams: [], short_videos: [], wutch_videos: [], profiles: [] });
     } finally {
       setLoading(false);
     }
@@ -68,6 +69,7 @@ export default function Search() {
   const totalResults = 
     (results.livestreams?.length || 0) + 
     (results.short_videos?.length || 0) + 
+    (results.wutch_videos?.length || 0) + 
     (results.profiles?.length || 0);
 
   return (
@@ -114,6 +116,9 @@ export default function Search() {
                 <TabsTrigger value="shorts">
                   Shorts ({results.short_videos?.length || 0})
                 </TabsTrigger>
+                <TabsTrigger value="wutch">
+                  Wutch ({results.wutch_videos?.length || 0})
+                </TabsTrigger>
                 <TabsTrigger value="creators">
                   Creators ({results.profiles?.length || 0})
                 </TabsTrigger>
@@ -159,6 +164,17 @@ export default function Search() {
                         </div>
                       </div>
                     )}
+
+                    {results.wutch_videos?.length > 0 && (
+                      <div>
+                        <h2 className="text-xl font-semibold mb-4">Wutch Videos</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {results.wutch_videos.map((video: any) => (
+                            <WutchVideoCard key={video.id} video={video} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </TabsContent>
@@ -188,6 +204,21 @@ export default function Search() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {results.short_videos?.map((short: any) => (
                       <ShortCard key={short.id} short={short} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Wutch Tab */}
+              <TabsContent value="wutch">
+                {results.wutch_videos?.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-muted-foreground">No wutch videos found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {results.wutch_videos?.map((video: any) => (
+                      <WutchVideoCard key={video.id} video={video} />
                     ))}
                   </div>
                 )}

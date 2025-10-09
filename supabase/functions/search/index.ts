@@ -33,6 +33,7 @@ serve(async (req) => {
     const results: any = {
       livestreams: [],
       shorts: [],
+      wutch_videos: [],
       profiles: []
     };
 
@@ -74,12 +75,32 @@ serve(async (req) => {
       results.shorts = shorts || [];
     }
 
+    // Search wutch videos
+    if (type === 'all' || type === 'wutch') {
+      const { data: wutchVideos } = await supabaseClient
+        .from('wutch_videos')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
+        .eq('status', 'published')
+        .limit(10);
+
+      results.wutch_videos = wutchVideos || [];
+    }
+
     // Search users - support both 'users' and 'creators' for backwards compatibility
     if (type === 'all' || type === 'users' || type === 'creators') {
       console.log('Searching profiles for:', query);
       
       const { data: users, error: usersError } = await supabaseClient
-        .from('profiles')
+        .from('public_profiles')
         .select('*')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%,bio.ilike.%${query}%`)
         .limit(10);

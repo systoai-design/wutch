@@ -4,10 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Coins, TrendingUp, Video, Users, Gift, DollarSign, Eye, PlaySquare } from 'lucide-react';
+import { Coins, TrendingUp, Video, Users, Gift, DollarSign, Eye, PlaySquare, Monitor, Lock } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { EarningsOverview } from './EarningsOverview';
+import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface EarningsData {
   bountyEarnings: number;
@@ -17,6 +19,7 @@ interface EarningsData {
   totalEarnings: number;
   totalStreamViews: number;
   totalShortViews: number;
+  totalWutchViews: number;
   transactions: Array<{
     id: string;
     source: string;
@@ -33,6 +36,7 @@ interface ProfileAnalyticsProps {
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))'];
 
 export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [earningsData, setEarningsData] = useState<EarningsData>({
     bountyEarnings: 0,
@@ -42,8 +46,21 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
     totalEarnings: 0,
     totalStreamViews: 0,
     totalShortViews: 0,
+    totalWutchViews: 0,
     transactions: [],
   });
+
+  // Privacy check: only the owner can view analytics
+  if (user?.id !== userId) {
+    return (
+      <Alert className="my-6">
+        <Lock className="h-4 w-4" />
+        <AlertDescription>
+          Analytics are private and only visible to the profile owner.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   useEffect(() => {
     fetchEarningsData();
@@ -106,6 +123,14 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
 
       const totalShortViews = shortViews?.reduce((sum, video) => sum + (video.view_count || 0), 0) || 0;
 
+      // Fetch wutch video views
+      const { data: wutchViews } = await supabase
+        .from('wutch_videos')
+        .select('view_count')
+        .eq('user_id', userId);
+
+      const totalWutchViews = wutchViews?.reduce((sum, video) => sum + (video.view_count || 0), 0) || 0;
+
       // Calculate totals
       const bountyTotal = (bountyClaims || []).reduce((sum, claim) => sum + parseFloat(String(claim.reward_amount || 0)), 0);
       const livestreamTotal = (livestreamDonations || []).reduce((sum, donation) => sum + parseFloat(String(donation.amount || 0)), 0);
@@ -152,6 +177,7 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
         totalEarnings: bountyTotal + livestreamTotal + shortTotal + shareTotal,
         totalStreamViews,
         totalShortViews,
+        totalWutchViews,
         transactions: allTransactions,
       });
     } catch (error) {
@@ -266,7 +292,7 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
       </div>
 
       {/* View Statistics */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-chart-5/10">
@@ -287,6 +313,17 @@ export const ProfileAnalytics = ({ userId }: ProfileAnalyticsProps) => {
           </div>
           <div className="text-2xl font-bold">{earningsData.totalShortViews.toLocaleString()}</div>
           <p className="text-xs text-muted-foreground mt-1">Cumulative views across all shorts</p>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-chart-2/10">
+              <Monitor className="h-5 w-5 text-chart-2" />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">Total Wutch Views</span>
+          </div>
+          <div className="text-2xl font-bold">{earningsData.totalWutchViews.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground mt-1">Views across all Wutch videos</p>
         </Card>
       </div>
 
