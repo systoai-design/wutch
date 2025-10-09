@@ -1211,6 +1211,57 @@ export type Database = {
           },
         ]
       }
+      verification_requests_audit_log: {
+        Row: {
+          access_reason: string | null
+          access_type: string
+          accessed_at: string
+          accessed_by: string
+          accessed_columns: string[] | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          verification_request_id: string
+        }
+        Insert: {
+          access_reason?: string | null
+          access_type: string
+          accessed_at?: string
+          accessed_by: string
+          accessed_columns?: string[] | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          verification_request_id: string
+        }
+        Update: {
+          access_reason?: string | null
+          access_type?: string
+          accessed_at?: string
+          accessed_by?: string
+          accessed_columns?: string[] | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          verification_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_audit_log_verification_request_id_fkey"
+            columns: ["verification_request_id"]
+            isOneToOne: false
+            referencedRelation: "verification_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_audit_log_verification_request_id_fkey"
+            columns: ["verification_request_id"]
+            isOneToOne: false
+            referencedRelation: "verification_requests_admin_summary"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       view_earnings: {
         Row: {
           content_id: string
@@ -1515,11 +1566,102 @@ export type Database = {
           },
         ]
       }
+      verification_requests_admin_summary: {
+        Row: {
+          follower_count_at_request: number | null
+          id: string | null
+          legal_email_masked: string | null
+          legal_name_masked: string | null
+          meets_eligibility_criteria: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          submitted_at: string | null
+          total_watch_hours: number | null
+          user_id: string | null
+          verification_type: string | null
+        }
+        Insert: {
+          follower_count_at_request?: number | null
+          id?: string | null
+          legal_email_masked?: never
+          legal_name_masked?: never
+          meets_eligibility_criteria?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          total_watch_hours?: number | null
+          user_id?: string | null
+          verification_type?: string | null
+        }
+        Update: {
+          follower_count_at_request?: number | null
+          id?: string | null
+          legal_email_masked?: never
+          legal_name_masked?: never
+          meets_eligibility_criteria?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          total_watch_hours?: number | null
+          user_id?: string | null
+          verification_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_to_revenue_pool: {
         Args: { p_amount: number; p_fee_source: string; p_source_id: string }
         Returns: undefined
+      }
+      admin_view_verification_request: {
+        Args: { access_reason: string; request_id: string }
+        Returns: {
+          id: string
+          legal_address: string
+          legal_email: string
+          legal_id_document_url: string
+          legal_id_type: string
+          legal_name: string
+          legal_phone: string
+          reviewed_at: string
+          status: string
+          submitted_at: string
+          user_id: string
+          verification_type: string
+        }[]
       }
       create_notification: {
         Args:
