@@ -658,6 +658,8 @@ export type Database = {
           total_earnings: number
           updated_at: string | null
           username: string
+          verification_type: string | null
+          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -678,6 +680,8 @@ export type Database = {
           total_earnings?: number
           updated_at?: string | null
           username: string
+          verification_type?: string | null
+          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -698,6 +702,8 @@ export type Database = {
           total_earnings?: number
           updated_at?: string | null
           username?: string
+          verification_type?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -1068,6 +1074,116 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_requests: {
+        Row: {
+          created_at: string | null
+          follower_count_at_request: number | null
+          id: string
+          legal_address: string | null
+          legal_email: string
+          legal_id_document_url: string | null
+          legal_id_number_encrypted: string | null
+          legal_id_type: string | null
+          legal_name: string
+          legal_phone: string | null
+          meets_eligibility_criteria: boolean | null
+          payment_amount: number | null
+          payment_transaction_signature: string | null
+          payment_verified_at: string | null
+          payment_wallet_address: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string | null
+          total_watch_hours: number | null
+          updated_at: string | null
+          user_id: string
+          verification_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          follower_count_at_request?: number | null
+          id?: string
+          legal_address?: string | null
+          legal_email: string
+          legal_id_document_url?: string | null
+          legal_id_number_encrypted?: string | null
+          legal_id_type?: string | null
+          legal_name: string
+          legal_phone?: string | null
+          meets_eligibility_criteria?: boolean | null
+          payment_amount?: number | null
+          payment_transaction_signature?: string | null
+          payment_verified_at?: string | null
+          payment_wallet_address?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_watch_hours?: number | null
+          updated_at?: string | null
+          user_id: string
+          verification_type: string
+        }
+        Update: {
+          created_at?: string | null
+          follower_count_at_request?: number | null
+          id?: string
+          legal_address?: string | null
+          legal_email?: string
+          legal_id_document_url?: string | null
+          legal_id_number_encrypted?: string | null
+          legal_id_type?: string | null
+          legal_name?: string
+          legal_phone?: string | null
+          meets_eligibility_criteria?: boolean | null
+          payment_amount?: number | null
+          payment_transaction_signature?: string | null
+          payment_verified_at?: string | null
+          payment_wallet_address?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_watch_hours?: number | null
+          updated_at?: string | null
+          user_id?: string
+          verification_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       view_earnings: {
         Row: {
           content_id: string
@@ -1266,6 +1382,8 @@ export type Database = {
           public_wallet_address: string | null
           social_links: Json | null
           username: string | null
+          verification_type: string | null
+          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1281,6 +1399,8 @@ export type Database = {
           public_wallet_address?: string | null
           social_links?: Json | null
           username?: string | null
+          verification_type?: string | null
+          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1296,6 +1416,8 @@ export type Database = {
           public_wallet_address?: string | null
           social_links?: Json | null
           username?: string | null
+          verification_type?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -1373,16 +1495,24 @@ export type Database = {
         Returns: undefined
       }
       create_notification: {
-        Args: {
-          p_actor_id?: string
-          p_content_id?: string
-          p_content_type?: string
-          p_message: string
-          p_metadata?: Json
-          p_title: string
-          p_type: string
-          p_user_id: string
-        }
+        Args:
+          | {
+              p_actor_id?: string
+              p_content_id?: string
+              p_content_type?: string
+              p_message: string
+              p_metadata?: Json
+              p_title: string
+              p_type: string
+              p_user_id: string
+            }
+          | {
+              p_message: string
+              p_metadata?: Json
+              p_title: string
+              p_type: string
+              p_user_id: string
+            }
         Returns: undefined
       }
       credit_view_earnings: {
@@ -1489,6 +1619,10 @@ export type Database = {
       }
       process_payout: {
         Args: { p_payout_id: string; p_transaction_signature: string }
+        Returns: undefined
+      }
+      update_profile_verification: {
+        Args: { p_user_id: string; p_verification_type: string }
         Returns: undefined
       }
     }

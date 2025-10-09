@@ -31,6 +31,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Leaderboards = lazy(() => import('./pages/Leaderboards'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const AdminVerification = lazy(() => import('./pages/AdminVerification'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,6 +128,7 @@ function AppContent() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<Search />} />
           <Route path="/leaderboards" element={<Leaderboards />} />
+          <Route path="/admin/verification" element={<ProtectedRoute><AdminVerification /></ProtectedRoute>} />
           <Route path="/trending" element={<Home />} />
           <Route path="/upcoming" element={<Home />} />
           <Route path="/recent" element={<Home />} />

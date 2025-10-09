@@ -34,6 +34,7 @@ type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'> & {
   verification_type?: string | null;
+  verified_at?: string | null;
 };
 
 const StreamDetail = () => {
@@ -100,12 +101,12 @@ const StreamDetail = () => {
         // Fetch streamer profile (public fields only via view)
         const { data: streamerData } = await supabase
           .from('public_profiles')
-          .select('id, username, display_name, avatar_url, follower_count, social_links, is_verified, banner_url, bio, created_at, promotional_link, promotional_link_text, public_wallet_address')
+          .select('id, username, display_name, avatar_url, follower_count, social_links, is_verified, banner_url, bio, created_at, promotional_link, promotional_link_text, public_wallet_address, verification_type, verified_at')
           .eq('id', streamData.user_id)
           .maybeSingle();
 
         if (streamerData) {
-          setStreamer(streamerData);
+          setStreamer(streamerData as PublicProfile);
         }
 
         // Fetch related streams

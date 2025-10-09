@@ -27,9 +27,17 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, format } from 'date-fns';
+import { VerificationBadge } from '@/components/VerificationBadge';
+import { VerificationRequestDialog } from '@/components/VerificationRequestDialog';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
+type Profile = Database['public']['Tables']['profiles']['Row'] & {
+  verification_type?: string | null;
+  verified_at?: string | null;
+};
+type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'> & {
+  verification_type?: string | null;
+  verified_at?: string | null;
+};
 type DisplayProfile = Profile | PublicProfile;
 
 type LivestreamWithProfile = Database['public']['Tables']['livestreams']['Row'] & {
@@ -229,11 +237,10 @@ const ProfilePage = () => {
           }
         }
 
-        // Fetch profile by username
-        // First fetch using public view
+        // Fetch profile from public_profiles view
         const { data: publicProfileData, error: profileError } = await supabase
           .from('public_profiles')
-          .select('*')
+          .select('id, username, display_name, avatar_url, bio, follower_count, is_verified, social_links, banner_url, created_at, promotional_link, promotional_link_text, public_wallet_address, verification_type, verified_at')
           .eq('username', username || '')
           .single();
 
@@ -253,11 +260,11 @@ const ProfilePage = () => {
             .single();
           
           if (fullProfileData) {
-            profileData = fullProfileData;
+            profileData = fullProfileData as any;
           }
         }
 
-        setProfile(profileData);
+        setProfile(profileData as DisplayProfile);
         setFollowerCount(profileData.follower_count || 0);
 
         // Fetch user's streams with profile info
@@ -523,6 +530,41 @@ const ProfilePage = () => {
                 isOwnProfile={isOwnProfile}
                 className="mt-4"
               />
+
+              {/* Verification Section */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  Verification
+                </h3>
+                <div className="p-4 bg-muted rounded-lg">
+                  {profile.verification_type && profile.verification_type !== 'none' ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">Verified Account</p>
+                        <VerificationBadge verificationType={profile.verification_type as any} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {profile.verification_type === 'blue' 
+                          ? 'Your identity has been verified'
+                          : 'You earned this badge through engagement and hard work'}
+                      </p>
+                      {profile.verified_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Verified on {format(new Date(profile.verified_at), 'MMMM d, yyyy')}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Get verified to build trust with your audience
+                      </p>
+                      <VerificationRequestDialog />
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-2 items-center">
                 {isOwnProfile && 'total_earnings' in profile ? (
