@@ -54,13 +54,13 @@ export function VerificationRequestDialog({
   const REQUIRED_AMOUNT = 0.05;
 
   useEffect(() => {
-    if (open && verificationType === 'red') {
+    if (open && verificationType === 'red' && !isAdmin) {
       checkEligibility();
     }
-  }, [open, verificationType]);
+  }, [open, verificationType, isAdmin]);
 
   const checkEligibility = async () => {
-    if (!user) return;
+    if (!user || isAdmin) return;
 
     if (!session?.access_token) {
       toast.error('Your session expired. Please sign in again.');
@@ -238,10 +238,7 @@ export function VerificationRequestDialog({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-grant-badge', {
-        body: { verificationType },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
+        body: { verificationType }
       });
 
       if (error) {

@@ -543,12 +543,14 @@ const ProfilePage = () => {
 
 
               <div className="flex flex-wrap gap-2 items-center">
-                {isOwnProfile && 'total_earnings' in profile ? (
+                {isOwnProfile ? (
                   <>
-                    <EditProfileDialog 
-                      profile={profile as Profile} 
-                      onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
-                    />
+                    {'total_earnings' in profile && (
+                      <EditProfileDialog 
+                        profile={profile as Profile} 
+                        onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
+                      />
+                    )}
                     {!profile.is_verified && (
                       <Button 
                         variant="outline" 
