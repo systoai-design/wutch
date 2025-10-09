@@ -60,10 +60,12 @@ export function VerificationRequestDialog({
 
     setLoading(true);
     try {
-      const response = await (supabase.rpc as any)('check_red_badge_eligibility', { p_user_id: user.id });
+      // Using edge function call instead of direct RPC
+      const { data, error } = await supabase.functions.invoke('check-eligibility', {
+        body: { userId: user.id }
+      });
       
-      if (response.error) throw response.error;
-      const data = response.data as any;
+      if (error) throw error;
       setEligibility(data);
 
       if (!data?.eligible) {

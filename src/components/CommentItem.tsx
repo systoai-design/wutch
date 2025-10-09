@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 interface CommentItemProps {
   comment: {
@@ -18,6 +19,7 @@ interface CommentItemProps {
       username: string;
       display_name: string;
       avatar_url: string;
+      verification_type?: string | null;
     };
   };
   onDelete?: () => void;
@@ -63,8 +65,11 @@ export default function CommentItem({ comment, onDelete }: CommentItemProps) {
       </Avatar>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-semibold text-sm truncate">
+          <span className="font-semibold text-sm truncate flex items-center gap-1">
             {comment.profiles?.display_name || "Unknown User"}
+            {comment.profiles?.verification_type && comment.profiles.verification_type !== 'none' && (
+              <VerificationBadge verificationType={comment.profiles.verification_type as 'blue' | 'red'} size="sm" />
+            )}
           </span>
           <span className="text-xs text-muted-foreground shrink-0">
             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}

@@ -28,10 +28,13 @@ import { shareStreamToTwitter } from '@/utils/shareUtils';
 import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'>;
+type PublicProfile = Omit<Profile, 'total_earnings' | 'pending_earnings' | 'total_donations_received' | 'last_payout_at' | 'updated_at'> & {
+  verification_type?: string | null;
+};
 
 const StreamDetail = () => {
   const params = useParams();
@@ -247,7 +250,12 @@ const StreamDetail = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold text-sm sm:text-base">{displayName}</p>
+                    <p className="font-semibold text-sm sm:text-base flex items-center gap-1.5">
+                      {displayName}
+                      {streamer?.verification_type && streamer.verification_type !== 'none' && (
+                        <VerificationBadge verificationType={streamer.verification_type as 'blue' | 'red'} size="sm" />
+                      )}
+                    </p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {followerCount.toLocaleString()} {isMobile ? '' : 'followers'}
                     </p>

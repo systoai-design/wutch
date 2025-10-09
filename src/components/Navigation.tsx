@@ -220,6 +220,17 @@ const Navigation = () => {
                 </DropdownMenuItem>
               ) : (
                 <>
+                  <div className="px-2 py-2 border-b">
+                    <p className="text-sm font-medium leading-none flex items-center gap-1.5">
+                      {userProfile?.display_name || userProfile?.username || 'User'}
+                      {userProfile?.verification_type && userProfile.verification_type !== 'none' && (
+                        <VerificationBadge verificationType={userProfile.verification_type as 'blue' | 'red'} size="sm" />
+                      )}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground mt-1">
+                      @{userProfile?.username}
+                    </p>
+                  </div>
                   <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
                     <Link to="/profile">Profile</Link>
                   </DropdownMenuItem>

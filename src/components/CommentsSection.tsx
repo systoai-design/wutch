@@ -8,6 +8,7 @@ import { Loader2, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import CommentItem from "@/components/CommentItem";
 import GuestPromptDialog from "@/components/GuestPromptDialog";
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 interface Comment {
   id: string;
@@ -18,6 +19,7 @@ interface Comment {
     username: string;
     display_name: string;
     avatar_url: string;
+    verification_type?: string | null;
   };
 }
 
