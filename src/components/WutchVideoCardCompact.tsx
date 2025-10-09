@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye } from 'lucide-react';
@@ -11,6 +12,7 @@ interface WutchVideoCardCompactProps {
     id: string;
     title: string;
     thumbnail_url?: string;
+    video_url?: string;
     duration?: number;
     view_count: number;
     created_at: string;
@@ -38,11 +40,70 @@ const formatViewCount = (count: number) => {
 };
 
 export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompactProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
   const videoUrl = generateContentUrl('wutch', {
     id: video.id,
     title: video.title,
     profiles: video.profiles ? { username: video.profiles.username } : undefined
   });
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (videoRef.current && video.video_url) {
+      videoRef.current.currentTime = 0;
+      
+      const attemptPlay = () => {
+        videoRef.current!.play().then(() => {
+          setIsPlaying(true);
+          // Stop after 10 seconds
+          timeoutRef.current = setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.currentTime = 0;
+              setIsPlaying(false);
+            }
+          }, 10000);
+        }).catch(() => {
+          // Ignore autoplay failures
+        });
+      };
+
+      // Check if video is ready to play
+      if (videoRef.current.readyState >= 2) {
+        attemptPlay();
+      } else {
+        const handleCanPlay = () => {
+          attemptPlay();
+          videoRef.current?.removeEventListener('loadeddata', handleCanPlay);
+        };
+        videoRef.current.addEventListener('loadeddata', handleCanPlay);
+      }
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setIsPlaying(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
 
   return (
     <Link
@@ -51,24 +112,36 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
         "flex gap-2 group hover:bg-muted/50 rounded-lg p-2 transition-colors",
         className
       )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Thumbnail */}
+      {/* Thumbnail/Video */}
       <div className="relative flex-shrink-0 w-40 aspect-video rounded-lg overflow-hidden bg-muted">
-        {video.thumbnail_url ? (
+        {!isPlaying && video.thumbnail_url ? (
           <img
             src={optimizeImage(video.thumbnail_url, { width: 160, height: 90 })}
             alt={video.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="eager"
           />
-        ) : (
+        ) : video.video_url && isHovering ? (
+          <video
+            ref={videoRef}
+            src={video.video_url}
+            className="w-full h-full object-cover"
+            preload={isHovering ? "metadata" : "none"}
+            playsInline
+            muted
+            loop={false}
+          />
+        ) : !video.thumbnail_url ? (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Eye className="h-6 w-6 text-muted-foreground" />
           </div>
-        )}
+        ) : null}
         
         {/* Duration Badge */}
-        {video.duration && (
+        {video.duration && !isPlaying && (
           <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
             {formatDuration(video.duration)}
           </div>

@@ -69,19 +69,33 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     setIsHovering(true);
     if (videoRef.current && video.video_url) {
       videoRef.current.currentTime = 0;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        // Stop after 10 seconds
-        timeoutRef.current = setTimeout(() => {
-          if (videoRef.current) {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-            setIsPlaying(false);
-          }
-        }, 10000);
-      }).catch(() => {
-        // Ignore autoplay failures
-      });
+      
+      const attemptPlay = () => {
+        videoRef.current!.play().then(() => {
+          setIsPlaying(true);
+          // Stop after 10 seconds
+          timeoutRef.current = setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.currentTime = 0;
+              setIsPlaying(false);
+            }
+          }, 10000);
+        }).catch(() => {
+          // Ignore autoplay failures
+        });
+      };
+
+      // Check if video is ready to play
+      if (videoRef.current.readyState >= 2) {
+        attemptPlay();
+      } else {
+        const handleCanPlay = () => {
+          attemptPlay();
+          videoRef.current?.removeEventListener('loadeddata', handleCanPlay);
+        };
+        videoRef.current.addEventListener('loadeddata', handleCanPlay);
+      }
     }
   };
 
