@@ -19,6 +19,7 @@ import xLogo from '@/assets/x-logo.png';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationBell } from './NotificationBell';
 
 const Navigation = () => {
   const location = useLocation();
@@ -134,6 +135,9 @@ const Navigation = () => {
           <div className="block">
             <WalletConnect />
           </div>
+
+          {/* Notification Bell */}
+          {!isGuest && <NotificationBell />}
 
           {/* PumpFun Icon */}
           <Button
