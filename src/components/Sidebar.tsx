@@ -68,7 +68,7 @@ const Sidebar = () => {
           Categories
         </h3>
         <div className="space-y-1">
-          {CATEGORIES.slice(0, 8).map((category) => {
+          {CATEGORIES.map((category) => {
             const isActive = activeCategory === category.name;
             return (
               <Link
@@ -153,7 +153,7 @@ const Sidebar = () => {
                 Categories
               </h3>
               <div className="space-y-1">
-                {CATEGORIES.slice(0, 8).map((category) => {
+                {CATEGORIES.map((category) => {
                   const isActive = activeCategory === category.name;
                   return (
                     <Link
@@ -177,7 +177,7 @@ const Sidebar = () => {
 
           {(isCollapsed && !isHovering) && (
             <div className="mt-8 space-y-1">
-              {CATEGORIES.slice(0, 8).map((category) => {
+              {CATEGORIES.map((category) => {
                 const isActive = activeCategory === category.name;
                 return (
                   <Tooltip key={category.name}>
