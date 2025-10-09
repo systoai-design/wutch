@@ -585,22 +585,22 @@ const ProfilePage = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className={`${isOwnProfile ? 'grid-cols-4 md:grid-cols-5' : 'grid-cols-4'} grid w-full overflow-x-auto`}>
-            <TabsTrigger value="streams" className="text-xs md:text-sm">
+          <TabsList className="inline-flex w-full justify-start overflow-x-auto">
+            <TabsTrigger value="streams" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
               Streams {streams.length > 0 && `(${streams.length})`}
             </TabsTrigger>
-            <TabsTrigger value="videos" className="text-xs md:text-sm">
+            <TabsTrigger value="videos" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
               Videos {videos.length > 0 && `(${videos.length})`}
             </TabsTrigger>
-            <TabsTrigger value="shorts" className="text-xs md:text-sm">
+            <TabsTrigger value="shorts" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
               Shorts {shorts.length > 0 && `(${shorts.length})`}
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="analytics" className="text-xs md:text-sm">
+              <TabsTrigger value="analytics" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
                 Analytics
               </TabsTrigger>
             )}
-            <TabsTrigger value="about" className="text-xs md:text-sm">
+            <TabsTrigger value="about" className="text-xs md:text-sm flex-shrink-0 min-w-fit px-4">
               About
             </TabsTrigger>
           </TabsList>
