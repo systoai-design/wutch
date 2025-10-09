@@ -31,7 +31,7 @@ export function VerificationRequestDialog({
   onOpenChange,
   verificationType,
 }: VerificationRequestDialogProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { isAdmin } = useAdmin();
   const wallet = useWallet();
   const publicKey = wallet?.publicKey;
@@ -62,11 +62,19 @@ export function VerificationRequestDialog({
   const checkEligibility = async () => {
     if (!user) return;
 
+    if (!session?.access_token) {
+      toast.error('Your session expired. Please sign in again.');
+      return;
+    }
+
     setLoading(true);
     try {
       // Using edge function call instead of direct RPC
       const { data, error } = await supabase.functions.invoke('check-eligibility', {
-        body: { userId: user.id }
+        body: { userId: user.id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
       
       if (error) throw error;
@@ -77,9 +85,11 @@ export function VerificationRequestDialog({
           description: `You need ${data?.required_watch_hours} watch hours and ${data?.required_followers} followers. You currently have ${data?.total_watch_hours?.toFixed(1)} hours and ${data?.follower_count} followers.`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking eligibility:', error);
-      toast.error('Failed to check eligibility');
+      toast.error('Failed to check eligibility', {
+        description: error.message || 'Please try again'
+      });
     } finally {
       setLoading(false);
     }
@@ -161,6 +171,11 @@ export function VerificationRequestDialog({
   const handleSubmit = async () => {
     if (!user) return;
 
+    if (!session?.access_token) {
+      toast.error('Your session expired. Please sign in again.');
+      return;
+    }
+
     // Validate required fields
     if (!legalName || !legalEmail || !legalIdType || !legalIdNumber || !idDocument) {
       toast.error('Please fill in all required fields');
@@ -191,6 +206,9 @@ export function VerificationRequestDialog({
           paymentTransactionSignature: paymentSignature,
           paymentWalletAddress: publicKey?.toBase58(),
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -212,13 +230,24 @@ export function VerificationRequestDialog({
   const handleAdminGrantBadge = async () => {
     if (!user || !isAdmin) return;
 
+    if (!session?.access_token) {
+      toast.error('Your session expired. Please sign in again.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-grant-badge', {
-        body: { verificationType }
+        body: { verificationType },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Admin grant error details:', error);
+        throw error;
+      }
 
       toast.success(`${verificationType === 'blue' ? 'Blue' : 'Red'} badge granted!`, {
         description: 'Your badge has been activated. Refresh to see it on your profile.',
@@ -231,7 +260,10 @@ export function VerificationRequestDialog({
       setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error('Admin grant error:', error);
-      toast.error('Failed to grant badge', { description: error.message });
+      const description = error.message?.includes('Unauthorized') || error.status === 401
+        ? 'Session expired. Please sign out and sign back in.'
+        : error.message || 'Please try again';
+      toast.error('Failed to grant badge', { description });
     } finally {
       setLoading(false);
     }
