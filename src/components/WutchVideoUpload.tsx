@@ -330,29 +330,29 @@ export const WutchVideoUpload = () => {
       </div>
 
       {/* Thumbnail Upload */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={generateCoverImage}
-            disabled={isGenerating || !formData.title}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate with AI
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="space-y-3">
+        <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+        
+        <Button
+          type="button"
+          variant="outline"
+          size="default"
+          onClick={generateCoverImage}
+          disabled={isGenerating || !formData.title}
+          className="w-full"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Generating AI Cover Image...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4 mr-2" />
+              {!formData.title ? 'Enter a title to generate with AI' : 'Generate Cover Image with AI'}
+            </>
+          )}
+        </Button>
         {thumbnailPreview ? (
           <div className="relative w-full max-w-sm">
             <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full rounded-lg border border-border" />
