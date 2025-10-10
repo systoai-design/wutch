@@ -23,6 +23,8 @@ interface WutchVideoCardCompactProps {
       username: string;
       display_name?: string;
       avatar_url?: string;
+      verification_type?: 'blue' | 'red' | 'none' | null;
+      is_verified?: boolean;
     };
   };
   className?: string;
@@ -172,7 +174,7 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
             </p>
             <UserBadges
               userId={video.user_id}
-              verificationType={undefined}
+              verificationType={video.profiles?.verification_type as 'blue' | 'red' | 'none' | null}
               isAdmin={isAdmin}
               isModerator={isModerator}
               size="sm"

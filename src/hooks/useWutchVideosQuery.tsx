@@ -8,6 +8,8 @@ type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
     username: string;
     display_name?: string;
     avatar_url?: string;
+    verification_type?: 'blue' | 'red' | 'none' | null;
+    is_verified?: boolean;
   };
 };
 
@@ -44,7 +46,7 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
       const userIds = [...new Set(data.map(v => v.user_id))];
       const { data: profilesData } = await supabase
         .from('public_profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, verification_type, is_verified')
         .in('id', userIds);
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
