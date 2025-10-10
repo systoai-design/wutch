@@ -7,6 +7,8 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface LeaderboardEntry {
   user_id: string;
+  verification_type?: 'blue' | 'red' | 'none' | null;
+  is_verified?: boolean;
   total_earned: number;
   claims_count: number;
   profile?: {
@@ -55,7 +57,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
           </div>
           <UserBadges
             userId={entry.user_id}
-            verificationType={undefined}
+            verificationType={entry.verification_type}
             isAdmin={isAdmin}
             isModerator={isModerator}
             size="sm"

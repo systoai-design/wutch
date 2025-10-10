@@ -12,6 +12,8 @@ interface MostEarnedEntry {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verification_type: 'blue' | 'red' | 'none' | null;
+  is_verified: boolean;
   total_earned: number;
   paid_out: number;
   pending: number;
@@ -23,6 +25,8 @@ interface MostDonatedEntry {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verification_type: 'blue' | 'red' | 'none' | null;
+  is_verified: boolean;
   total_received: number;
   donation_count: number;
   rank: number;
@@ -33,6 +37,8 @@ interface MostRewardsGivenEntry {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verification_type: 'blue' | 'red' | 'none' | null;
+  is_verified: boolean;
   total_rewards_given: number;
   bounties_total: number;
   bounties_count: number;
@@ -46,6 +52,8 @@ interface BountyClaimerEntry {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verification_type: 'blue' | 'red' | 'none' | null;
+  is_verified: boolean;
   total_earned: number;
   claim_count: number;
 }
@@ -78,7 +86,7 @@ export default function Leaderboards() {
           .select(`
             user_id,
             reward_amount,
-            profiles!inner(username, display_name, avatar_url)
+            profiles!inner(username, display_name, avatar_url, verification_type, is_verified)
           `)
           .eq('is_correct', true)
       ]);
@@ -88,9 +96,9 @@ export default function Leaderboards() {
       if (rewardsRes.error) throw rewardsRes.error;
       if (claimersRes.error) throw claimersRes.error;
 
-      setMostEarned(earnedRes.data || []);
-      setMostDonated(donatedRes.data || []);
-      setMostRewards(rewardsRes.data || []);
+      setMostEarned((earnedRes.data || []) as MostEarnedEntry[]);
+      setMostDonated((donatedRes.data || []) as MostDonatedEntry[]);
+      setMostRewards((rewardsRes.data || []) as MostRewardsGivenEntry[]);
 
       // Process bounty claimers
       const claimerMap = new Map<string, BountyClaimerEntry>();
@@ -105,6 +113,8 @@ export default function Leaderboards() {
             username: claim.profiles.username,
             display_name: claim.profiles.display_name,
             avatar_url: claim.profiles.avatar_url,
+            verification_type: claim.profiles.verification_type,
+            is_verified: claim.profiles.is_verified,
             total_earned: claim.reward_amount,
             claim_count: 1,
           });
@@ -301,6 +311,8 @@ export default function Leaderboards() {
                     username: entry.username,
                     display_name: entry.display_name,
                     avatar_url: entry.avatar_url,
+                    verification_type: entry.verification_type,
+                    is_verified: entry.is_verified,
                     rank: entry.rank,
                     primaryValue: entry.total_earned,
                     primaryLabel: 'Total Earned',
@@ -331,6 +343,8 @@ export default function Leaderboards() {
                     username: entry.username,
                     display_name: entry.display_name,
                     avatar_url: entry.avatar_url,
+                    verification_type: entry.verification_type,
+                    is_verified: entry.is_verified,
                     rank: entry.rank,
                     primaryValue: entry.total_received,
                     primaryLabel: 'Received',
@@ -361,6 +375,8 @@ export default function Leaderboards() {
                     username: entry.username,
                     display_name: entry.display_name,
                     avatar_url: entry.avatar_url,
+                    verification_type: entry.verification_type,
+                    is_verified: entry.is_verified,
                     rank: entry.rank,
                     primaryValue: entry.total_rewards_given,
                     primaryLabel: 'Given',
@@ -391,6 +407,8 @@ export default function Leaderboards() {
                     username: entry.username,
                     display_name: entry.display_name,
                     avatar_url: entry.avatar_url,
+                    verification_type: entry.verification_type,
+                    is_verified: entry.is_verified,
                     rank: index + 1,
                     primaryValue: entry.total_earned,
                     primaryLabel: 'Claimed',

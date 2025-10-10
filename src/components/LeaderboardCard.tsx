@@ -3,12 +3,16 @@ import { Card } from '@/components/ui/card';
 import { Trophy, Medal, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface LeaderboardEntry {
   user_id: string;
   username: string;
   display_name: string;
   avatar_url: string | null;
+  verification_type: 'blue' | 'red' | 'none' | null;
+  is_verified: boolean;
   rank: number;
   primaryValue: number;
   primaryLabel: string;
@@ -21,6 +25,7 @@ interface LeaderboardCardProps {
 
 export function LeaderboardCard({ entry }: LeaderboardCardProps) {
   const isMobile = useIsMobile();
+  const { isAdmin, isModerator } = useUserRoles(entry.user_id);
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-500" />;
@@ -49,7 +54,17 @@ export function LeaderboardCard({ entry }: LeaderboardCardProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate text-sm">{entry.display_name}</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-semibold truncate text-sm">{entry.display_name}</h3>
+                <UserBadges 
+                  userId={entry.user_id}
+                  verificationType={entry.verification_type}
+                  isAdmin={isAdmin}
+                  isModerator={isModerator}
+                  size="sm"
+                  showTooltip={false}
+                />
+              </div>
               <p className="text-xs text-muted-foreground truncate">@{entry.username}</p>
             </div>
           </div>
@@ -81,7 +96,17 @@ export function LeaderboardCard({ entry }: LeaderboardCardProps) {
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">{entry.display_name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold truncate">{entry.display_name}</h3>
+            <UserBadges 
+              userId={entry.user_id}
+              verificationType={entry.verification_type}
+              isAdmin={isAdmin}
+              isModerator={isModerator}
+              size="md"
+              showTooltip={true}
+            />
+          </div>
           <p className="text-sm text-muted-foreground truncate">@{entry.username}</p>
           {entry.secondaryText && (
             <p className="text-xs text-muted-foreground truncate">{entry.secondaryText}</p>

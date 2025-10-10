@@ -2172,10 +2172,12 @@ export type Database = {
           avatar_url: string
           display_name: string
           donation_count: number
+          is_verified: boolean
           rank: number
           total_received: number
           user_id: string
           username: string
+          verification_type: string
         }[]
       }
       get_most_earned_leaderboard: {
@@ -2183,12 +2185,14 @@ export type Database = {
         Returns: {
           avatar_url: string
           display_name: string
+          is_verified: boolean
           paid_out: number
           pending: number
           rank: number
           total_earned: number
           user_id: string
           username: string
+          verification_type: string
         }[]
       }
       get_most_rewards_given_leaderboard: {
@@ -2200,10 +2204,12 @@ export type Database = {
           campaigns_count: number
           campaigns_total: number
           display_name: string
+          is_verified: boolean
           rank: number
           total_rewards_given: number
           user_id: string
           username: string
+          verification_type: string
         }[]
       }
       get_platform_earnings_stats: {
