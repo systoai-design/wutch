@@ -54,7 +54,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
     } else if (notification.content_id && notification.content_type) {
       if (notification.content_type === 'livestream') {
         navigate(`/stream/${notification.content_id}`);
-      } else if (notification.content_type === 'shortvideo') {
+      } else if (notification.content_type === 'shortvideo' || notification.content_type === 'short_video') {
         navigate(`/shorts?video=${notification.content_id}`);
       } else if (notification.content_type === 'wutch_video') {
         navigate(`/wutch/${notification.content_id}`);
