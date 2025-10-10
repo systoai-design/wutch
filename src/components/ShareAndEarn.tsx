@@ -30,12 +30,13 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { ClaimShareRewards } from "./ClaimShareRewards";
 
 interface ShareAndEarnProps {
-  livestreamId: string;
-  streamTitle: string;
-  streamUrl: string;
+  contentId: string;
+  contentType: 'livestream' | 'short_video' | 'wutch_video';
+  contentTitle: string;
+  contentUrl: string;
 }
 
-export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndEarnProps) {
+export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl }: ShareAndEarnProps) {
   const [campaign, setCampaign] = useState<any>(null);
   const [userShares, setUserShares] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
@@ -77,7 +78,8 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
       const { data, error } = await supabase
         .from("sharing_campaigns")
         .select("*")
-        .eq("livestream_id", livestreamId)
+        .eq("content_id", contentId)
+        .eq("content_type", contentType)
         .eq("is_active", true)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -107,7 +109,8 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
       const { data: activeCampaign } = await supabase
         .from("sharing_campaigns")
         .select("id")
-        .eq("livestream_id", livestreamId)
+        .eq("content_id", contentId)
+        .eq("content_type", contentType)
         .eq("is_active", true)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -135,7 +138,7 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
     loadCampaign();
     checkWallet();
     loadUserShares();
-  }, [livestreamId, user]);
+  }, [contentId, contentType, user]);
 
   const handleVerifyShare = async () => {
     if (!twitterHandle.trim()) {
@@ -162,7 +165,7 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
           campaign_id: campaign.id,
           share_platform: "twitter",
           reward_amount: campaign.reward_per_share,
-          share_url: streamUrl,
+          share_url: contentUrl,
           status: "verified",
           twitter_handle: cleanHandle,
           verified_at: new Date().toISOString(),
@@ -251,9 +254,16 @@ export function ShareAndEarn({ livestreamId, streamTitle, streamUrl }: ShareAndE
       return;
     }
 
-    const text = `Watch "${streamTitle}" live on Wutch! 🔴 Earn crypto while watching amazing content!`;
-    const url = streamUrl;
-    const hashtags = "Wutch,Web3,Crypto,Livestream";
+    // Generate appropriate share text based on content type
+    const shareTexts = {
+      livestream: `Watch "${contentTitle}" live on Wutch! 🔴`,
+      short_video: `Check out "${contentTitle}" on Wutch! 🎬`,
+      wutch_video: `Watch "${contentTitle}" on Wutch! 📺`
+    };
+
+    const text = `${shareTexts[contentType]} Earn crypto while watching amazing content!`;
+    const url = contentUrl;
+    const hashtags = "Wutch,Web3,Crypto";
 
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
     

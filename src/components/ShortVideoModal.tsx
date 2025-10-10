@@ -10,6 +10,10 @@ import { shareShortToTwitter } from '@/utils/shareUtils';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect, useRef } from 'react';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
+import { generateContentUrl } from '@/utils/urlHelpers';
+import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
+import { ShareAndEarn } from '@/components/ShareAndEarn';
+import { useAuth } from '@/hooks/useAuth';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -37,6 +41,7 @@ export function ShortVideoModal({
   commentCount,
   canDelete,
 }: ShortVideoModalProps) {
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0); // Start muted for autoplay
@@ -135,6 +140,13 @@ export function ShortVideoModal({
   }, [short?.like_count, setLikeCount]);
 
   if (!short) return null;
+
+  const isOwner = user && short.user_id === user.id;
+  const shortUrl = `${window.location.origin}${generateContentUrl('shorts', { 
+    id: short.id, 
+    title: short.title, 
+    profiles: short.profiles ? { username: short.profiles.username } : undefined 
+  })}`;
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;
@@ -403,6 +415,24 @@ export function ShortVideoModal({
                   <ExternalLink className="h-7 w-7" />
                 </a>
               </Button>
+            )}
+
+            {/* Share campaign - Owner can create, viewers can earn */}
+            {isOwner && (
+              <CreateSharingCampaign 
+                contentId={short.id}
+                contentType="short_video"
+                contentTitle={short.title}
+              />
+            )}
+            
+            {!isOwner && (
+              <ShareAndEarn 
+                contentId={short.id}
+                contentType="short_video"
+                contentTitle={short.title}
+                contentUrl={shortUrl}
+              />
             )}
 
             {canDelete && onDelete && (

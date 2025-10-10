@@ -38,6 +38,25 @@ export const shareStreamToTwitter = ({ id, title, creatorName, username }: Share
   window.open(twitterUrl, "_blank", "width=550,height=420");
 };
 
+interface ShareWutchVideoParams {
+  id: string;
+  title: string;
+  creatorName: string;
+  username?: string;
+}
+
+export const shareWutchVideoToTwitter = ({ id, title, creatorName, username }: ShareWutchVideoParams) => {
+  const url = username 
+    ? `${window.location.origin}${generateContentUrl('wutch', { id, title, profiles: { username } })}`
+    : `${window.location.origin}/video/${id}`;
+  const text = `Watch "${title}" by ${creatorName} on Wutch! 📺`;
+  const hashtags = "Wutch,Web3,Crypto,Video";
+  
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+  
+  window.open(twitterUrl, "_blank", "width=550,height=420");
+};
+
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
     await navigator.clipboard.writeText(text);

@@ -19,10 +19,12 @@ import { campaignSchema } from '@/utils/donationValidation';
 import { z } from 'zod';
 
 interface CreateSharingCampaignProps {
-  livestreamId: string;
+  contentId: string;
+  contentType: 'livestream' | 'short_video' | 'wutch_video';
+  contentTitle: string;
 }
 
-export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignProps) => {
+export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: CreateSharingCampaignProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
@@ -51,7 +53,7 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
           rewardPerShare,
           totalBudget,
           maxSharesPerUser,
-          livestreamId,
+          livestreamId: contentId, // Use contentId for validation
         });
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -117,7 +119,9 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         .from('sharing_campaigns')
         .insert({
           creator_id: user.id,
-          livestream_id: livestreamId,
+          content_id: contentId,
+          content_type: contentType,
+          livestream_id: contentType === 'livestream' ? contentId : null, // Backward compatibility
           reward_per_share: rewardPerShare,
           total_budget: totalBudget,
           max_shares_per_user: maxSharesPerUser,
@@ -179,7 +183,8 @@ export const CreateSharingCampaign = ({ livestreamId }: CreateSharingCampaignPro
         <DialogHeader>
           <DialogTitle>Create Sharing Campaign</DialogTitle>
           <DialogDescription>
-            Set rewards for users who share your stream on social media
+            Reward your community for sharing "{contentTitle}". Set a budget and reward amount, 
+            and viewers can earn SOL for verified shares on social media.
           </DialogDescription>
         </DialogHeader>
 

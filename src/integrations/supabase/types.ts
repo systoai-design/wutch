@@ -828,12 +828,14 @@ export type Database = {
       }
       sharing_campaigns: {
         Row: {
+          content_id: string
+          content_type: string
           created_at: string
           creator_id: string
           escrow_transaction_signature: string | null
           id: string
           is_active: boolean
-          livestream_id: string
+          livestream_id: string | null
           max_shares_per_user: number | null
           platform_fee_amount: number
           reward_per_share: number
@@ -842,12 +844,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          content_id?: string
+          content_type?: string
           created_at?: string
           creator_id: string
           escrow_transaction_signature?: string | null
           id?: string
           is_active?: boolean
-          livestream_id: string
+          livestream_id?: string | null
           max_shares_per_user?: number | null
           platform_fee_amount?: number
           reward_per_share?: number
@@ -856,12 +860,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          content_id?: string
+          content_type?: string
           created_at?: string
           creator_id?: string
           escrow_transaction_signature?: string | null
           id?: string
           is_active?: boolean
-          livestream_id?: string
+          livestream_id?: string | null
           max_shares_per_user?: number | null
           platform_fee_amount?: number
           reward_per_share?: number

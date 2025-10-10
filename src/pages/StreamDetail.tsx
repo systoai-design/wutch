@@ -323,14 +323,19 @@ const StreamDetail = () => {
 
                 {/* Share campaign - Owner can create, viewers can earn */}
                 {isOwner && stream && (
-                  <CreateSharingCampaign livestreamId={stream.id} />
+                  <CreateSharingCampaign 
+                    contentId={stream.id}
+                    contentType="livestream"
+                    contentTitle={stream.title}
+                  />
                 )}
                 
                 {!isOwner && stream && (
                   <ShareAndEarn 
-                    livestreamId={stream.id}
-                    streamTitle={stream.title}
-                    streamUrl={`${window.location.origin}${generateContentUrl('stream', { id: stream.id, title: stream.title, profiles: streamer ? { username: streamer.username } : undefined })}`}
+                    contentId={stream.id}
+                    contentType="livestream"
+                    contentTitle={stream.title}
+                    contentUrl={`${window.location.origin}${generateContentUrl('stream', { id: stream.id, title: stream.title, profiles: streamer ? { username: streamer.username } : undefined })}`}
                   />
                 )}
 

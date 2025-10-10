@@ -16,7 +16,10 @@ import { ThumbsUp, Share2, ExternalLink, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from '@/components/CommentsSection';
 import { useToast } from '@/hooks/use-toast';
-import { parseContentUrl } from '@/utils/urlHelpers';
+import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
+import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
+import { ShareAndEarn } from '@/components/ShareAndEarn';
+import { shareWutchVideoToTwitter } from '@/utils/shareUtils';
 
 const WutchVideoDetail = () => {
   const params = useParams<{ id: string }>();
@@ -280,6 +283,13 @@ const WutchVideoDetail = () => {
     );
   }
 
+  const isOwner = user && video.user_id === user.id;
+  const videoUrl = `${window.location.origin}${generateContentUrl('wutch', { 
+    id: video.id, 
+    title: video.title, 
+    profiles: creator ? { username: creator.username } : undefined 
+  })}`;
+
   return (
     <div className="min-h-screen pb-20 lg:pb-6 bg-background">
       <div className="max-w-screen-2xl mx-auto p-4 md:p-6">
@@ -331,10 +341,45 @@ const WutchVideoDetail = () => {
                     <ThumbsUp className="h-4 w-4 mr-2" />
                     {likeCount}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      if (creator) {
+                        shareWutchVideoToTwitter({
+                          id: video.id,
+                          title: video.title,
+                          creatorName: creator.display_name || creator.username,
+                          username: creator.username,
+                        });
+                        toast({
+                          title: "Opening Twitter",
+                          description: "Share this video with your followers!",
+                        });
+                      }
+                    }}
+                  >
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
+
+                  {/* Share campaign - Owner can create, viewers can earn */}
+                  {isOwner && (
+                    <CreateSharingCampaign 
+                      contentId={video.id}
+                      contentType="wutch_video"
+                      contentTitle={video.title}
+                    />
+                  )}
+                  
+                  {!isOwner && (
+                    <ShareAndEarn 
+                      contentId={video.id}
+                      contentType="wutch_video"
+                      contentTitle={video.title}
+                      contentUrl={videoUrl}
+                    />
+                  )}
                 </div>
               </div>
 
