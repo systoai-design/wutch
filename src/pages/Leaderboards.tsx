@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, TrendingUp, Heart, Gift, RefreshCw } from 'lucide-react';
@@ -58,6 +57,8 @@ export default function Leaderboards() {
   const [topClaimers, setTopClaimers] = useState<BountyClaimerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const fetchLeaderboards = async (showRefreshing = false) => {
@@ -168,6 +169,42 @@ export default function Leaderboards() {
     };
   }, []);
 
+  // Intersection observer for swipe detection
+  useEffect(() => {
+    if (!contentScrollRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            const index = parseInt(entry.target.getAttribute('data-tab-index') || '0');
+            setActiveTab(index);
+          }
+        });
+      },
+      {
+        root: contentScrollRef.current,
+        threshold: 0.5,
+      }
+    );
+
+    const panels = contentScrollRef.current.querySelectorAll('.tab-panel');
+    panels.forEach((panel) => observer.observe(panel));
+
+    return () => observer.disconnect();
+  }, [mostEarned.length, mostDonated.length, mostRewards.length, topClaimers.length]);
+
+  const handleTabClick = (index: number) => {
+    setActiveTab(index);
+    if (contentScrollRef.current) {
+      const targetScroll = contentScrollRef.current.clientWidth * index;
+      contentScrollRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const handleRefresh = () => {
     fetchLeaderboards(true);
   };
@@ -217,138 +254,154 @@ export default function Leaderboards() {
         </Button>
       </div>
 
-      <Tabs defaultValue="earned" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
-          <TabsTrigger value="earned" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Most Earned</span>
-            <span className="sm:hidden">Earned</span>
-          </TabsTrigger>
-          <TabsTrigger value="donated" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Most Donated</span>
-            <span className="sm:hidden">Donated</span>
-          </TabsTrigger>
-          <TabsTrigger value="rewards" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Most Rewards</span>
-            <span className="sm:hidden">Rewards</span>
-          </TabsTrigger>
-          <TabsTrigger value="claimers" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Top Claimers</span>
-            <span className="sm:hidden">Claimers</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Tab Headers */}
+      <div className="flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-4 mb-4 sm:mb-6 scrollbar-hide border-b">
+        {[
+          { icon: <TrendingUp className="h-4 w-4" />, label: 'Most Earned', index: 0 },
+          { icon: <Heart className="h-4 w-4" />, label: 'Most Donated', index: 1 },
+          { icon: <Gift className="h-4 w-4" />, label: 'Most Rewards', index: 2 },
+          { icon: <Trophy className="h-4 w-4" />, label: 'Top Claimers', index: 3 },
+        ].map((tab) => (
+          <button
+            key={tab.index}
+            onClick={() => handleTabClick(tab.index)}
+            className={`flex-shrink-0 snap-start min-w-[140px] lg:min-w-0 flex items-center justify-center gap-2 px-4 py-3 text-sm transition-colors ${
+              activeTab === tab.index 
+                ? 'border-b-2 border-primary text-primary font-semibold' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="earned" className="space-y-3">
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Creators who earned the most SOL from all sources (views, bounties, shares)
-          </p>
-          {mostEarned.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No earnings data yet</p>
-            </Card>
-          ) : (
-            mostEarned.map((entry) => (
-              <LeaderboardCard
-                key={entry.user_id}
-                entry={{
-                  user_id: entry.user_id,
-                  username: entry.username,
-                  display_name: entry.display_name,
-                  avatar_url: entry.avatar_url,
-                  rank: entry.rank,
-                  primaryValue: entry.total_earned,
-                  primaryLabel: 'Total Earned',
-                  secondaryText: `Paid: ${entry.paid_out.toFixed(3)} SOL • Pending: ${entry.pending.toFixed(3)} SOL`,
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
+      {/* Swipeable Content Panels */}
+      <div 
+        ref={contentScrollRef}
+        className="flex overflow-x-scroll snap-x snap-mandatory scroll-smooth scrollbar-hide"
+      >
+        {/* Tab 0: Most Earned */}
+        <div className="min-w-full snap-start snap-always tab-panel" data-tab-index="0">
+          <div className="space-y-3 px-1">
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
+              Creators who earned the most SOL from all sources (views, bounties, shares)
+            </p>
+            {mostEarned.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No earnings data yet</p>
+              </Card>
+            ) : (
+              mostEarned.map((entry) => (
+                <LeaderboardCard
+                  key={entry.user_id}
+                  entry={{
+                    user_id: entry.user_id,
+                    username: entry.username,
+                    display_name: entry.display_name,
+                    avatar_url: entry.avatar_url,
+                    rank: entry.rank,
+                    primaryValue: entry.total_earned,
+                    primaryLabel: 'Total Earned',
+                    secondaryText: `Paid: ${entry.paid_out.toFixed(3)} SOL • Pending: ${entry.pending.toFixed(3)} SOL`,
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </div>
 
-        <TabsContent value="donated" className="space-y-3">
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Creators who received the most donations from the community
-          </p>
-          {mostDonated.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No donation data yet</p>
-            </Card>
-          ) : (
-            mostDonated.map((entry) => (
-              <LeaderboardCard
-                key={entry.user_id}
-                entry={{
-                  user_id: entry.user_id,
-                  username: entry.username,
-                  display_name: entry.display_name,
-                  avatar_url: entry.avatar_url,
-                  rank: entry.rank,
-                  primaryValue: entry.total_received,
-                  primaryLabel: 'Received',
-                  secondaryText: `${entry.donation_count} donation${entry.donation_count !== 1 ? 's' : ''}`,
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
+        {/* Tab 1: Most Donated */}
+        <div className="min-w-full snap-start snap-always tab-panel" data-tab-index="1">
+          <div className="space-y-3 px-1">
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
+              Creators who received the most donations from the community
+            </p>
+            {mostDonated.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No donation data yet</p>
+              </Card>
+            ) : (
+              mostDonated.map((entry) => (
+                <LeaderboardCard
+                  key={entry.user_id}
+                  entry={{
+                    user_id: entry.user_id,
+                    username: entry.username,
+                    display_name: entry.display_name,
+                    avatar_url: entry.avatar_url,
+                    rank: entry.rank,
+                    primaryValue: entry.total_received,
+                    primaryLabel: 'Received',
+                    secondaryText: `${entry.donation_count} donation${entry.donation_count !== 1 ? 's' : ''}`,
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </div>
 
-        <TabsContent value="rewards" className="space-y-3">
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Most generous creators distributing bounties and campaign rewards
-          </p>
-          {mostRewards.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No rewards data yet</p>
-            </Card>
-          ) : (
-            mostRewards.map((entry) => (
-              <LeaderboardCard
-                key={entry.user_id}
-                entry={{
-                  user_id: entry.user_id,
-                  username: entry.username,
-                  display_name: entry.display_name,
-                  avatar_url: entry.avatar_url,
-                  rank: entry.rank,
-                  primaryValue: entry.total_rewards_given,
-                  primaryLabel: 'Given',
-                  secondaryText: `${entry.bounties_count} bounties • ${entry.campaigns_count} campaigns`,
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
+        {/* Tab 2: Most Rewards */}
+        <div className="min-w-full snap-start snap-always tab-panel" data-tab-index="2">
+          <div className="space-y-3 px-1">
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
+              Most generous creators distributing bounties and campaign rewards
+            </p>
+            {mostRewards.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No rewards data yet</p>
+              </Card>
+            ) : (
+              mostRewards.map((entry) => (
+                <LeaderboardCard
+                  key={entry.user_id}
+                  entry={{
+                    user_id: entry.user_id,
+                    username: entry.username,
+                    display_name: entry.display_name,
+                    avatar_url: entry.avatar_url,
+                    rank: entry.rank,
+                    primaryValue: entry.total_rewards_given,
+                    primaryLabel: 'Given',
+                    secondaryText: `${entry.bounties_count} bounties • ${entry.campaigns_count} campaigns`,
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </div>
 
-        <TabsContent value="claimers" className="space-y-3">
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Top bounty hunters who claimed the most rewards
-          </p>
-          {topClaimers.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No bounty claims yet</p>
-            </Card>
-          ) : (
-            topClaimers.map((entry, index) => (
-              <LeaderboardCard
-                key={entry.user_id}
-                entry={{
-                  user_id: entry.user_id,
-                  username: entry.username,
-                  display_name: entry.display_name,
-                  avatar_url: entry.avatar_url,
-                  rank: index + 1,
-                  primaryValue: entry.total_earned,
-                  primaryLabel: 'Claimed',
-                  secondaryText: `${entry.claim_count} successful claim${entry.claim_count !== 1 ? 's' : ''}`,
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
+        {/* Tab 3: Top Claimers */}
+        <div className="min-w-full snap-start snap-always tab-panel" data-tab-index="3">
+          <div className="space-y-3 px-1">
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
+              Top bounty hunters who claimed the most rewards
+            </p>
+            {topClaimers.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No bounty claims yet</p>
+              </Card>
+            ) : (
+              topClaimers.map((entry, index) => (
+                <LeaderboardCard
+                  key={entry.user_id}
+                  entry={{
+                    user_id: entry.user_id,
+                    username: entry.username,
+                    display_name: entry.display_name,
+                    avatar_url: entry.avatar_url,
+                    rank: index + 1,
+                    primaryValue: entry.total_earned,
+                    primaryLabel: 'Claimed',
+                    secondaryText: `${entry.claim_count} successful claim${entry.claim_count !== 1 ? 's' : ''}`,
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export const ChatWidget = () => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed ${isMobile ? 'bottom-20' : 'bottom-6'} right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform flex items-center justify-center z-50`}
+        className="fixed bottom-20 lg:bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform flex items-center justify-center z-50"
         aria-label="Open Wutch support chat"
       >
         <MessageCircle className="w-6 h-6" />
