@@ -6,7 +6,7 @@ import { DesktopShortPlayer } from '@/components/DesktopShortPlayer';
 import ShortsHeader from '@/components/ShortsHeader';
 import CommentsSection from '@/components/CommentsSection';
 import DonationModal from '@/components/DonationModal';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -410,18 +410,21 @@ const Shorts = () => {
         </button>
       )}
 
-      {/* Comments Dialog for Desktop */}
+      {/* Comments Sheet for Desktop - Slides from Right */}
       {selectedShort && isCommentsOpen && (
-        <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-          <DialogContent className="max-w-md h-[90vh] p-0">
-            <div className="h-full overflow-y-auto p-4">
+        <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+          <SheetContent side="right" className="w-[400px] sm:w-[450px] h-full p-0 flex flex-col">
+            <SheetHeader className="px-4 pt-6 pb-4 border-b">
+              <SheetTitle>Comments</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden">
               <CommentsSection
                 contentId={selectedShort.id}
                 contentType="shortvideo"
               />
             </div>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       )}
 
       {/* Donation Modal */}

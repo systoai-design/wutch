@@ -106,6 +106,18 @@ export default function CommentsSection({ contentId, contentType }: CommentsSect
 
     setSubmitting(true);
     try {
+      // Verify session is valid before attempting to post
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to comment",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("comments").insert({
         user_id: user.id,
         content_id: contentId,
@@ -113,18 +125,29 @@ export default function CommentsSection({ contentId, contentType }: CommentsSect
         text: newComment.trim(),
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error posting comment:", error);
+        
+        // Provide specific error messages
+        if (error.message?.includes("permission") || error.message?.includes("policy")) {
+          throw new Error("You don't have permission to comment on this content");
+        } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
+          throw new Error("Network error. Please check your connection");
+        } else {
+          throw error;
+        }
+      }
 
       setNewComment("");
       toast({
         title: "Comment posted",
         description: "Your comment has been added",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error posting comment:", error);
       toast({
-        title: "Error",
-        description: "Failed to post comment",
+        title: "Failed to post comment",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     } finally {
