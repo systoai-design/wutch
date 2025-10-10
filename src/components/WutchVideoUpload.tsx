@@ -184,6 +184,40 @@ export const WutchVideoUpload = () => {
         .from('wutch-videos')
         .getPublicUrl(videoPath);
 
+      // Call moderation API
+      toast({
+        title: 'Checking content safety...',
+        description: 'This will only take a moment',
+      });
+
+      const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
+        'moderate-content',
+        {
+          body: {
+            videoUrl,
+            contentType: 'wutch_video',
+            contentId: null,
+          }
+        }
+      );
+
+      if (moderationError || !moderationData?.success) {
+        // Delete uploaded video
+        await supabase.storage.from('wutch-videos').remove([videoPath]);
+        throw new Error('Content moderation failed. Please try again.');
+      }
+
+      // Check if content violated guidelines
+      if (moderationData.moderation.isViolation) {
+        // Delete uploaded video
+        await supabase.storage.from('wutch-videos').remove([videoPath]);
+        
+        throw new Error(
+          `Content rejected: ${moderationData.moderation.violationCategories.join(', ')}. ` +
+          `${moderationData.moderation.reasoning}`
+        );
+      }
+
       // Generate thumbnail from video if not provided
       let thumbnailUrl = null;
       let thumbnailToUpload = thumbnailFile;
@@ -254,7 +288,7 @@ export const WutchVideoUpload = () => {
       await new Promise(resolve => { video.onloadedmetadata = resolve; });
       const duration = Math.floor(video.duration);
 
-      // Create database record
+      // Create database record with approved moderation status
       const { data, error } = await supabase
         .from('wutch_videos')
         .insert({
@@ -269,11 +303,23 @@ export const WutchVideoUpload = () => {
           promotional_link: formData.promotional_link || null,
           promotional_link_text: formData.promotional_link_text,
           status: 'published',
+          moderation_status: 'approved',
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Store moderation record
+      await supabase
+        .from('content_moderation')
+        .insert({
+          content_type: 'wutch_video',
+          content_id: data.id,
+          user_id: user.id,
+          status: 'approved',
+          moderation_labels: moderationData.moderation,
+        });
 
       toast({
         title: 'Success!',

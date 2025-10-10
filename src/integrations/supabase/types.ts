@@ -222,6 +222,45 @@ export type Database = {
           },
         ]
       }
+      content_moderation: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          moderation_labels: Json | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          moderation_labels?: Json | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          moderation_labels?: Json | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -361,6 +400,8 @@ export type Database = {
           id: string
           is_live: boolean | null
           like_count: number | null
+          moderation_id: string | null
+          moderation_status: string | null
           promotional_link: string | null
           promotional_link_text: string | null
           pump_fun_url: string
@@ -382,6 +423,8 @@ export type Database = {
           id?: string
           is_live?: boolean | null
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           pump_fun_url: string
@@ -403,6 +446,8 @@ export type Database = {
           id?: string
           is_live?: boolean | null
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           pump_fun_url?: string
@@ -417,6 +462,20 @@ export type Database = {
           viewer_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "livestreams_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "content_moderation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "livestreams_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "moderation_queue"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "livestreams_user_id_fkey"
             columns: ["user_id"]
@@ -881,6 +940,8 @@ export type Database = {
           duration: number | null
           id: string
           like_count: number | null
+          moderation_id: string | null
+          moderation_status: string | null
           promotional_link: string | null
           promotional_link_text: string | null
           thumbnail_url: string | null
@@ -897,6 +958,8 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           thumbnail_url?: string | null
@@ -913,6 +976,8 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           thumbnail_url?: string | null
@@ -924,6 +989,20 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "short_videos_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "content_moderation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_videos_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "moderation_queue"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "short_videos_user_id_fkey"
             columns: ["user_id"]
@@ -1424,6 +1503,8 @@ export type Database = {
           duration: number | null
           id: string
           like_count: number | null
+          moderation_id: string | null
+          moderation_status: string | null
           promotional_link: string | null
           promotional_link_text: string | null
           status: string | null
@@ -1443,6 +1524,8 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           status?: string | null
@@ -1462,6 +1545,8 @@ export type Database = {
           duration?: number | null
           id?: string
           like_count?: number | null
+          moderation_id?: string | null
+          moderation_status?: string | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           status?: string | null
@@ -1474,10 +1559,43 @@ export type Database = {
           video_url?: string
           view_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wutch_videos_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "content_moderation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wutch_videos_moderation_id_fkey"
+            columns: ["moderation_id"]
+            isOneToOne: false
+            referencedRelation: "moderation_queue"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
+      moderation_queue: {
+        Row: {
+          avatar_url: string | null
+          content_id: string | null
+          content_title: string | null
+          content_type: string | null
+          content_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          moderation_labels: Json | null
+          rejection_reason: string | null
+          status: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null

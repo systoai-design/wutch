@@ -1,0 +1,119 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { videoUrl, contentType, contentId } = await req.json();
+    
+    console.log('Moderating content:', { videoUrl, contentType, contentId });
+    
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    // Use Gemini 2.5 Flash for multimodal content moderation
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a content moderation AI. Analyze the provided image/video frame and detect if it violates community guidelines. 
+
+Detect these violation categories:
+- NSFW/Adult: pornography, nudity, sexual content
+- Violence: gore, blood, weapons, physical harm
+- Hate: hate symbols, extremist content, terrorism
+- Drugs: illegal drugs, drug paraphernalia
+- Dangerous: self-harm, dangerous activities
+
+Return JSON ONLY in this exact format:
+{
+  "isViolation": boolean,
+  "violationCategories": string[],
+  "confidenceScores": { [category]: number },
+  "reasoning": string
+}`
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Analyze this content for violations:' },
+              { type: 'image_url', image_url: { url: videoUrl } }
+            ]
+          }
+        ],
+      }),
+    });
+
+    if (response.status === 429) {
+      console.error('Rate limit exceeded');
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please try again later.' 
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (response.status === 402) {
+      console.error('Payment required');
+      return new Response(JSON.stringify({ 
+        error: 'Payment required. Please contact support.' 
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
+      throw new Error(`AI gateway returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('AI moderation response:', data);
+    
+    const messageContent = data.choices?.[0]?.message?.content;
+    if (!messageContent) {
+      throw new Error('No content in AI response');
+    }
+
+    // Parse the JSON from the AI response
+    const moderationResult = JSON.parse(messageContent);
+
+    console.log('Moderation result:', moderationResult);
+
+    return new Response(JSON.stringify({
+      success: true,
+      moderation: moderationResult
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error: any) {
+    console.error('Moderation error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Moderation failed',
+      details: error.toString()
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

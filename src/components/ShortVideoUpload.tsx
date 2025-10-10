@@ -128,6 +128,40 @@ export const ShortVideoUpload = () => {
         .from('short-videos')
         .getPublicUrl(videoPath);
 
+      // Call moderation API
+      toast({
+        title: 'Checking content safety...',
+        description: 'This will only take a moment',
+      });
+
+      const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
+        'moderate-content',
+        {
+          body: {
+            videoUrl,
+            contentType: 'short_video',
+            contentId: null,
+          }
+        }
+      );
+
+      if (moderationError || !moderationData?.success) {
+        // Delete uploaded video
+        await supabase.storage.from('short-videos').remove([videoPath]);
+        throw new Error('Content moderation failed. Please try again.');
+      }
+
+      // Check if content violated guidelines
+      if (moderationData.moderation.isViolation) {
+        // Delete uploaded video
+        await supabase.storage.from('short-videos').remove([videoPath]);
+        
+        throw new Error(
+          `Content rejected: ${moderationData.moderation.violationCategories.join(', ')}. ` +
+          `${moderationData.moderation.reasoning}`
+        );
+      }
+
       // Generate thumbnail from video if not provided
       let thumbnailUrl = null;
       let thumbnailToUpload = thumbnailFile;
@@ -204,8 +238,8 @@ export const ShortVideoUpload = () => {
         video.src = URL.createObjectURL(videoFile);
       });
 
-      // Create short video record
-      const { error: dbError } = await supabase
+      // Create short video record with approved moderation status
+      const { data: videoData, error: dbError } = await supabase
         .from('short_videos')
         .insert({
           user_id: user.id,
@@ -216,9 +250,23 @@ export const ShortVideoUpload = () => {
           promotional_link: formData.promotional_link ? sanitizeUrl(formData.promotional_link) : null,
           promotional_link_text: formData.promotional_link_text || null,
           duration,
-        });
+          moderation_status: 'approved',
+        })
+        .select()
+        .single();
 
       if (dbError) throw dbError;
+
+      // Store moderation record
+      await supabase
+        .from('content_moderation')
+        .insert({
+          content_type: 'short_video',
+          content_id: videoData.id,
+          user_id: user.id,
+          status: 'approved',
+          moderation_labels: moderationData.moderation,
+        });
 
       toast({
         title: 'Short Video Uploaded!',
