@@ -6,6 +6,8 @@ import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
 import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimization';
 import { VerificationBadge } from '@/components/VerificationBadge';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -25,6 +27,7 @@ interface StreamCardProps {
 
 const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampaign = false }: StreamCardProps) => {
   const navigate = useNavigate();
+  const { isAdmin, isModerator } = useUserRoles(stream.user_id);
   const streamUrl = generateContentUrl('stream', {
     id: stream.id,
     title: stream.title,
@@ -88,9 +91,13 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
             </h3>
             <p className={`text-muted-foreground font-medium flex items-center gap-1 ${compact ? 'text-xs' : 'text-xs'}`}>
               {streamer?.display_name || streamer?.username || 'Loading...'}
-              {streamer?.verification_type && streamer.verification_type !== 'none' && (
-                <VerificationBadge verificationType={streamer.verification_type as 'blue' | 'red'} size="sm" />
-              )}
+              <UserBadges
+                userId={stream.user_id}
+                verificationType={streamer?.verification_type as 'blue' | 'red' | 'none' | null}
+                isAdmin={isAdmin}
+                isModerator={isModerator}
+                size="sm"
+              />
             </p>
             {stream.category && !compact && (
               <div className="flex items-center gap-2 mt-1.5">

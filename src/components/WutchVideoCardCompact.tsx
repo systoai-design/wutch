@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { generateContentUrl } from '@/utils/urlHelpers';
 import { optimizeImage } from '@/utils/imageOptimization';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface WutchVideoCardCompactProps {
   video: {
@@ -44,6 +46,7 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const { isAdmin, isModerator } = useUserRoles(video.user_id);
   
   const videoUrl = generateContentUrl('wutch', {
     id: video.id,
@@ -167,6 +170,13 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
             <p className="text-xs text-muted-foreground truncate">
               {video.profiles.display_name || video.profiles.username}
             </p>
+            <UserBadges
+              userId={video.user_id}
+              verificationType={undefined}
+              isAdmin={isAdmin}
+              isModerator={isModerator}
+              size="sm"
+            />
           </div>
         )}
 

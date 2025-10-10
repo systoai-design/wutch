@@ -9,6 +9,8 @@ import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
 import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimization';
 import { VerificationBadge } from '@/components/VerificationBadge';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface WutchVideoCardProps {
   video: {
@@ -52,6 +54,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const CategoryIcon = video.category ? getCategoryIcon(video.category) : null;
+  const { isAdmin, isModerator } = useUserRoles(video.user_id);
   
   const videoUrl = generateContentUrl('wutch', {
     id: video.id,
@@ -174,9 +177,13 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
             
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               {video.profiles?.display_name || video.profiles?.username || 'Unknown Creator'}
-              {video.profiles?.verification_type && video.profiles.verification_type !== 'none' && (
-                <VerificationBadge verificationType={video.profiles.verification_type as 'blue' | 'red'} size="sm" />
-              )}
+              <UserBadges
+                userId={video.user_id}
+                verificationType={video.profiles?.verification_type as 'blue' | 'red' | 'none' | null}
+                isAdmin={isAdmin}
+                isModerator={isModerator}
+                size="sm"
+              />
             </p>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

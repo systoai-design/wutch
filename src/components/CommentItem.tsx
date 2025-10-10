@@ -9,6 +9,8 @@ import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { VerificationBadge } from '@/components/VerificationBadge';
 import ReportButton from './ReportButton';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface CommentItemProps {
   comment: {
@@ -29,6 +31,7 @@ interface CommentItemProps {
 export default function CommentItem({ comment, onDelete }: CommentItemProps) {
   const { user } = useAuth();
   const { isModerator } = useModerator();
+  const { isAdmin, isModerator: isCommentUserModerator } = useUserRoles(comment.user_id);
   const isOwner = user?.id === comment.user_id;
   const canDelete = isOwner || isModerator;
 
@@ -68,9 +71,13 @@ export default function CommentItem({ comment, onDelete }: CommentItemProps) {
         <div className="flex items-baseline gap-2 mb-1">
           <span className="font-semibold text-sm truncate flex items-center gap-1">
             {comment.profiles?.display_name || "Unknown User"}
-            {comment.profiles?.verification_type && comment.profiles.verification_type !== 'none' && (
-              <VerificationBadge verificationType={comment.profiles.verification_type as 'blue' | 'red'} size="sm" />
-            )}
+            <UserBadges
+              userId={comment.user_id}
+              verificationType={comment.profiles?.verification_type as 'blue' | 'red' | 'none' | null}
+              isAdmin={isAdmin}
+              isModerator={isCommentUserModerator}
+              size="sm"
+            />
           </span>
           <span className="text-xs text-muted-foreground shrink-0">
             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}

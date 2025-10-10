@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VerificationBadge } from '@/components/VerificationBadge';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -23,6 +25,7 @@ interface NotificationItemProps {
 export function NotificationItem({ notification }: NotificationItemProps) {
   const { markAsRead, deleteNotification } = useNotifications();
   const navigate = useNavigate();
+  const { isAdmin, isModerator } = useUserRoles(notification.actor_id || undefined);
 
   const getIcon = () => {
     switch (notification.type) {
@@ -96,8 +99,19 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm">{notification.title}</p>
-        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <p className="font-medium text-sm">{notification.title}</p>
+          {notification.actor_id && (
+            <UserBadges
+              userId={notification.actor_id}
+              verificationType={undefined}
+              isAdmin={isAdmin}
+              isModerator={isModerator}
+              size="sm"
+            />
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground line-clamp-2">
           {notification.message}
         </p>
         <p className="text-xs text-muted-foreground mt-1">

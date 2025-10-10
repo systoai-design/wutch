@@ -10,6 +10,8 @@ import DonationModal from "@/components/DonationModal";
 import GuestPromptDialog from "@/components/GuestPromptDialog";
 import { useState } from "react";
 import { VerificationBadge } from "@/components/VerificationBadge";
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface CreatorCardProps {
   profile: {
@@ -34,6 +36,7 @@ export function CreatorCard({ profile }: CreatorCardProps) {
   
   const { isFollowing, isLoading: followLoading, toggleFollow, showGuestDialog, setShowGuestDialog } = useFollow(profile.id);
   const [showDonation, setShowDonation] = useState(false);
+  const { isAdmin, isModerator } = useUserRoles(profile.id);
 
   return (
     <>
@@ -68,9 +71,13 @@ export function CreatorCard({ profile }: CreatorCardProps) {
                   <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
                     {displayName}
                   </h3>
-                  {profile.verification_type && profile.verification_type !== 'none' && (
-                    <VerificationBadge verificationType={profile.verification_type as 'blue' | 'red'} size="md" />
-                  )}
+                  <UserBadges
+                    userId={profile.id}
+                    verificationType={profile.verification_type as 'blue' | 'red' | 'none' | null}
+                    isAdmin={isAdmin}
+                    isModerator={isModerator}
+                    size="md"
+                  />
                 </div>
                 <p className="text-sm text-muted-foreground truncate">
                   @{profile.username}

@@ -29,6 +29,8 @@ import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { VerificationBadge } from '@/components/VerificationBadge';
+import { UserBadges } from '@/components/UserBadges';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -51,6 +53,7 @@ const StreamDetail = () => {
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [guestPromptAction, setGuestPromptAction] = useState<'like' | 'donate'>('like');
+  const { isAdmin: isStreamerAdmin, isModerator: isStreamerModerator } = useUserRoles(stream?.user_id);
 
   // Track viewing session
   const { 
@@ -253,9 +256,13 @@ const StreamDetail = () => {
                   <div>
                     <p className="font-semibold text-sm sm:text-base flex items-center gap-1.5">
                       {displayName}
-                      {streamer?.verification_type && streamer.verification_type !== 'none' && (
-                        <VerificationBadge verificationType={streamer.verification_type as 'blue' | 'red'} size="sm" />
-                      )}
+                      <UserBadges
+                        userId={stream.user_id}
+                        verificationType={streamer?.verification_type as 'blue' | 'red' | 'none' | null}
+                        isAdmin={isStreamerAdmin}
+                        isModerator={isStreamerModerator}
+                        size="sm"
+                      />
                     </p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {followerCount.toLocaleString()} {isMobile ? '' : 'followers'}

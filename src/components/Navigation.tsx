@@ -24,6 +24,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
 import { VerificationBadge } from './VerificationBadge';
 import { AdminBadge } from './AdminBadge';
+import { ModeratorBadge } from './ModeratorBadge';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 const Navigation = () => {
   const location = useLocation();
@@ -36,6 +38,7 @@ const Navigation = () => {
   const { open: openAuthDialog } = useAuthDialog();
   const [searchQuery, setSearchQuery] = useState('');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const { isAdmin: isUserAdmin, isModerator: isUserModerator } = useUserRoles(user?.id);
 
   useEffect(() => {
     if (user && !isGuest) {
@@ -228,7 +231,8 @@ const Navigation = () => {
                   <div className="px-2 py-2 border-b">
                     <p className="text-sm font-medium leading-none flex items-center gap-1.5">
                       {userProfile?.display_name || userProfile?.username || 'User'}
-                      {isAdmin && <AdminBadge size="sm" />}
+                      {isUserAdmin && <AdminBadge size="sm" />}
+                      {!isUserAdmin && isUserModerator && <ModeratorBadge size="sm" />}
                       {userProfile?.verification_type && userProfile.verification_type !== 'none' && (
                         <VerificationBadge verificationType={userProfile.verification_type as 'blue' | 'red'} size="sm" />
                       )}
