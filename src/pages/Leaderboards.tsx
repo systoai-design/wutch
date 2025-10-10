@@ -174,23 +174,23 @@ export default function Leaderboards() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-primary" />
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             Leaderboards
           </h1>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="p-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="w-12 h-12 rounded-full" />
+            <Card key={i} className="p-3 sm:p-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 <div className="flex-1">
-                  <Skeleton className="h-5 w-32 mb-2" />
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 sm:h-5 w-24 sm:w-32 mb-2" />
+                  <Skeleton className="h-3 sm:h-4 w-16 sm:w-24" />
                 </div>
-                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-5 sm:h-6 w-16 sm:w-24" />
               </div>
             </Card>
           ))}
@@ -200,10 +200,10 @@ export default function Leaderboards() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Trophy className="h-8 w-8 text-primary" />
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           Leaderboards
         </h1>
         <Button
@@ -212,37 +212,37 @@ export default function Leaderboards() {
           onClick={handleRefresh}
           disabled={refreshing}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <span className="ml-2 hidden sm:inline">Refresh</span>
         </Button>
       </div>
 
       <Tabs defaultValue="earned" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
-          <TabsTrigger value="earned" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
+          <TabsTrigger value="earned" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Most Earned</span>
             <span className="sm:hidden">Earned</span>
           </TabsTrigger>
-          <TabsTrigger value="donated" className="flex items-center gap-2">
-            <Heart className="h-4 w-4" />
+          <TabsTrigger value="donated" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Most Donated</span>
             <span className="sm:hidden">Donated</span>
           </TabsTrigger>
-          <TabsTrigger value="rewards" className="flex items-center gap-2">
-            <Gift className="h-4 w-4" />
+          <TabsTrigger value="rewards" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Most Rewards</span>
             <span className="sm:hidden">Rewards</span>
           </TabsTrigger>
-          <TabsTrigger value="claimers" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
+          <TabsTrigger value="claimers" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Top Claimers</span>
             <span className="sm:hidden">Claimers</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="earned" className="space-y-3">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Creators who earned the most SOL from all sources (views, bounties, shares)
           </p>
           {mostEarned.length === 0 ? (
@@ -269,7 +269,7 @@ export default function Leaderboards() {
         </TabsContent>
 
         <TabsContent value="donated" className="space-y-3">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Creators who received the most donations from the community
           </p>
           {mostDonated.length === 0 ? (
@@ -296,7 +296,7 @@ export default function Leaderboards() {
         </TabsContent>
 
         <TabsContent value="rewards" className="space-y-3">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Most generous creators distributing bounties and campaign rewards
           </p>
           {mostRewards.length === 0 ? (
@@ -323,7 +323,7 @@ export default function Leaderboards() {
         </TabsContent>
 
         <TabsContent value="claimers" className="space-y-3">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Top bounty hunters who claimed the most rewards
           </p>
           {topClaimers.length === 0 ? (

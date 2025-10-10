@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Trophy, Medal, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -19,6 +20,8 @@ interface LeaderboardCardProps {
 }
 
 export function LeaderboardCard({ entry }: LeaderboardCardProps) {
+  const isMobile = useIsMobile();
+
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-500" />;
     if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />;
@@ -30,6 +33,39 @@ export function LeaderboardCard({ entry }: LeaderboardCardProps) {
     return `${amount.toFixed(3)} SOL`;
   };
 
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <Card className="p-3 hover:shadow-md transition-shadow">
+        <Link to={`/profile/${entry.username}`} className="block">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 flex justify-center flex-shrink-0">
+              {getRankIcon(entry.rank)}
+            </div>
+            <Avatar className="h-10 w-10 flex-shrink-0">
+              <AvatarImage src={entry.avatar_url || undefined} />
+              <AvatarFallback>
+                {entry.username.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold truncate text-sm">{entry.display_name}</h3>
+              <p className="text-xs text-muted-foreground truncate">@{entry.username}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between ml-11 pt-1 border-t border-border/50">
+            <span className="text-xs font-bold text-primary">{formatSOL(entry.primaryValue)}</span>
+            {entry.secondaryText && (
+              <span className="text-xs text-muted-foreground truncate ml-2">{entry.secondaryText}</span>
+            )}
+          </div>
+        </Link>
+      </Card>
+    );
+  }
+
+  // Desktop/Tablet Layout
   return (
     <Card className="p-4 hover:shadow-lg transition-all hover:scale-[1.02]">
       <Link to={`/profile/${entry.username}`} className="flex items-center gap-4">
@@ -48,11 +84,11 @@ export function LeaderboardCard({ entry }: LeaderboardCardProps) {
           <h3 className="font-semibold truncate">{entry.display_name}</h3>
           <p className="text-sm text-muted-foreground truncate">@{entry.username}</p>
           {entry.secondaryText && (
-            <p className="text-xs text-muted-foreground">{entry.secondaryText}</p>
+            <p className="text-xs text-muted-foreground truncate">{entry.secondaryText}</p>
           )}
         </div>
 
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <p className="text-xs text-muted-foreground">{entry.primaryLabel}</p>
           <p className="text-lg font-bold text-primary">{formatSOL(entry.primaryValue)}</p>
         </div>
