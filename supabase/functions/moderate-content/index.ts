@@ -51,7 +51,30 @@ serve(async (req) => {
       });
     }
     
-    // Continue with AI moderation for 'new' and 'flagged' users
+    // Check if content is a video file (skip AI moderation for videos)
+    const isVideoFile = videoUrl.match(/\.(mp4|webm|mov|avi|mkv|flv)$/i) || 
+                        contentType === 'wutch_video' || 
+                        contentType === 'short_video';
+
+    if (isVideoFile) {
+      console.log('Video content detected - skipping AI moderation');
+      return new Response(JSON.stringify({
+        success: true,
+        skipped: true,
+        userTier: userTier || 'new',
+        reason: 'Video content - AI moderation not applicable',
+        moderation: {
+          isViolation: false,
+          violationCategories: [],
+          confidenceScores: {},
+          reasoning: 'Video files cannot be analyzed by image-based AI - auto-approved'
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Continue with AI moderation for 'new' and 'flagged' users (images/thumbnails only)
     console.log('Performing AI moderation for user tier:', userTier);
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
