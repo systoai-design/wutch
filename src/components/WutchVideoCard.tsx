@@ -72,32 +72,19 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     if (videoRef.current && video.video_url) {
       videoRef.current.currentTime = 0;
       
-      const attemptPlay = () => {
-        videoRef.current!.play().then(() => {
-          setIsPlaying(true);
-          // Stop after 10 seconds
-          timeoutRef.current = setTimeout(() => {
-            if (videoRef.current) {
-              videoRef.current.pause();
-              videoRef.current.currentTime = 0;
-              setIsPlaying(false);
-            }
-          }, 10000);
-        }).catch(() => {
-          // Ignore autoplay failures
-        });
-      };
-
-      // Check if video is ready to play
-      if (videoRef.current.readyState >= 2) {
-        attemptPlay();
-      } else {
-        const handleCanPlay = () => {
-          attemptPlay();
-          videoRef.current?.removeEventListener('loadeddata', handleCanPlay);
-        };
-        videoRef.current.addEventListener('loadeddata', handleCanPlay);
-      }
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+        // Stop after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }, 10000);
+      }).catch(() => {
+        // Browser blocked autoplay
+      });
     }
   };
 
@@ -123,26 +110,39 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
       <div className="space-y-3">
         {/* Thumbnail/Video */}
         <div className="relative aspect-video overflow-hidden rounded-xl bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500">
-          {!isPlaying && video.thumbnail_url ? (
+          {/* Thumbnail - always visible unless playing */}
+          {video.thumbnail_url && (
             <img
               src={optimizeImage(video.thumbnail_url, imagePresets.thumbnail)}
               srcSet={generateSrcSet(video.thumbnail_url)}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={video.title}
               loading="eager"
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+              className={cn(
+                "h-full w-full object-cover transition-all duration-300 group-hover:scale-105",
+                isPlaying && "opacity-0"
+              )}
             />
-          ) : video.video_url ? (
+          )}
+          
+          {/* Video - always rendered but hidden when not playing */}
+          {video.video_url && (
             <video
               ref={videoRef}
               src={video.video_url}
-              className="h-full w-full object-cover"
-              preload={isHovering ? "metadata" : "none"}
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
+                !isPlaying && "opacity-0 pointer-events-none"
+              )}
+              preload="metadata"
               playsInline
               muted
               loop={false}
             />
-          ) : (
+          )}
+          
+          {/* Fallback for no thumbnail */}
+          {!video.thumbnail_url && !video.video_url && (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
               <span className="text-4xl font-bold text-primary/40">W</span>
             </div>

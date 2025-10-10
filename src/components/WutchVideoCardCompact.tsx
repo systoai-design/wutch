@@ -64,32 +64,19 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
     if (videoRef.current && video.video_url) {
       videoRef.current.currentTime = 0;
       
-      const attemptPlay = () => {
-        videoRef.current!.play().then(() => {
-          setIsPlaying(true);
-          // Stop after 10 seconds
-          timeoutRef.current = setTimeout(() => {
-            if (videoRef.current) {
-              videoRef.current.pause();
-              videoRef.current.currentTime = 0;
-              setIsPlaying(false);
-            }
-          }, 10000);
-        }).catch(() => {
-          // Ignore autoplay failures
-        });
-      };
-
-      // Check if video is ready to play
-      if (videoRef.current.readyState >= 2) {
-        attemptPlay();
-      } else {
-        const handleCanPlay = () => {
-          attemptPlay();
-          videoRef.current?.removeEventListener('loadeddata', handleCanPlay);
-        };
-        videoRef.current.addEventListener('loadeddata', handleCanPlay);
-      }
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+        // Stop after 10 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }, 10000);
+      }).catch(() => {
+        // Browser blocked autoplay
+      });
     }
   };
 
@@ -117,28 +104,41 @@ export const WutchVideoCardCompact = ({ video, className }: WutchVideoCardCompac
     >
       {/* Thumbnail/Video */}
       <div className="relative flex-shrink-0 w-40 aspect-video rounded-lg overflow-hidden bg-muted">
-        {!isPlaying && video.thumbnail_url ? (
+        {/* Thumbnail - always visible unless playing */}
+        {video.thumbnail_url && (
           <img
             src={optimizeImage(video.thumbnail_url, { width: 160, height: 90 })}
             alt={video.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className={cn(
+              "w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
+              isPlaying && "opacity-0"
+            )}
             loading="eager"
           />
-        ) : video.video_url && isHovering ? (
+        )}
+        
+        {/* Video - always rendered but hidden when not playing */}
+        {video.video_url && (
           <video
             ref={videoRef}
             src={video.video_url}
-            className="w-full h-full object-cover"
-            preload={isHovering ? "metadata" : "none"}
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+              !isPlaying && "opacity-0 pointer-events-none"
+            )}
+            preload="metadata"
             playsInline
             muted
             loop={false}
           />
-        ) : !video.thumbnail_url ? (
+        )}
+        
+        {/* Fallback for no thumbnail */}
+        {!video.thumbnail_url && !video.video_url && (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Eye className="h-6 w-6 text-muted-foreground" />
           </div>
-        ) : null}
+        )}
         
         {/* Duration Badge */}
         {video.duration && !isPlaying && (
