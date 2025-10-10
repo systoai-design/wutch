@@ -112,13 +112,27 @@ const WutchVideoDetail = () => {
       }
 
       // Fetch related videos (same category)
-      const { data: relatedData } = await supabase
+      let { data: relatedData } = await supabase
         .from('wutch_videos')
         .select('*')
         .neq('id', id)
         .eq('status', 'published')
         .eq('category', videoData.category || '')
         .limit(10);
+
+      // Fallback: If no category-specific videos found, fetch popular suggested videos
+      if (!relatedData || relatedData.length === 0) {
+        const { data: suggestedData } = await supabase
+          .from('wutch_videos')
+          .select('*')
+          .neq('id', id)
+          .neq('user_id', videoData.user_id)
+          .eq('status', 'published')
+          .order('view_count', { ascending: false })
+          .limit(10);
+        
+        relatedData = suggestedData;
+      }
 
       if (relatedData) {
         const userIds = [...new Set(relatedData.map((v: any) => v.user_id))];
