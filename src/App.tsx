@@ -38,6 +38,8 @@ const Leaderboards = lazy(() => import('./pages/Leaderboards'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminVerification = lazy(() => import('./pages/AdminVerification'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
+const AdminRoleManagement = lazy(() => import('./pages/AdminRoleManagement'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -136,6 +138,8 @@ function AppContent() {
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/admin/verification" element={<ProtectedRoute><AdminVerification /></ProtectedRoute>} />
           <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
+          <Route path="/admin/roles" element={<ProtectedRoute><AdminRoleManagement /></ProtectedRoute>} />
           <Route path="/trending" element={<Home />} />
           <Route path="/upcoming" element={<Home />} />
           <Route path="/recent" element={<Home />} />

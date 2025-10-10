@@ -4,10 +4,11 @@ import { Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/hooks/useAdmin';
+import { useModerator } from '@/hooks/useModerator';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { VerificationBadge } from '@/components/VerificationBadge';
+import ReportButton from './ReportButton';
 
 interface CommentItemProps {
   comment: {
@@ -27,9 +28,9 @@ interface CommentItemProps {
 
 export default function CommentItem({ comment, onDelete }: CommentItemProps) {
   const { user } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isModerator } = useModerator();
   const isOwner = user?.id === comment.user_id;
-  const canDelete = isOwner || isAdmin;
+  const canDelete = isOwner || isModerator;
 
   const handleDelete = async () => {
     try {
@@ -78,7 +79,17 @@ export default function CommentItem({ comment, onDelete }: CommentItemProps) {
         <p className="text-sm break-words">{comment.text}</p>
       </div>
       
-      {canDelete && (
+      <div className="flex items-center gap-2">
+        {!isOwner && user && (
+          <ReportButton
+            contentType="comment"
+            contentId={comment.id}
+            variant="ghost"
+            size="icon"
+          />
+        )}
+        
+        {canDelete && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
@@ -90,7 +101,7 @@ export default function CommentItem({ comment, onDelete }: CommentItemProps) {
               <AlertDialogTitle>Delete Comment</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete this comment? This action cannot be undone.
-                {isAdmin && !isOwner && " (Admin delete)"}
+                {isModerator && !isOwner && " (Moderator delete)"}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -99,7 +110,8 @@ export default function CommentItem({ comment, onDelete }: CommentItemProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -281,6 +281,51 @@ export type Database = {
         }
         Relationships: []
       }
+      content_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string | null
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -536,6 +581,53 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_actions: {
+        Row: {
+          action_type: string
+          content_id: string | null
+          content_type: string | null
+          created_at: string | null
+          id: string
+          moderator_id: string
+          notes: string | null
+          reason: string | null
+          report_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          moderator_id: string
+          notes?: string | null
+          reason?: string | null
+          report_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          moderator_id?: string
+          notes?: string | null
+          reason?: string | null
+          report_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "content_reports"
             referencedColumns: ["id"]
           },
         ]
@@ -1301,6 +1393,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_warnings: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          reason: string
+          severity: string
+          user_id: string
+          warned_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          reason: string
+          severity?: string
+          user_id: string
+          warned_by: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string
+          severity?: string
+          user_id?: string
+          warned_by?: string
+        }
+        Relationships: []
       }
       verification_codes: {
         Row: {
@@ -2130,8 +2255,40 @@ export type Database = {
         Args: { video_id: string }
         Returns: undefined
       }
+      is_moderator: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      log_moderation_action: {
+        Args: {
+          p_action_type: string
+          p_content_id?: string
+          p_content_type?: string
+          p_notes?: string
+          p_reason?: string
+          p_report_id?: string
+          p_target_user_id?: string
+        }
+        Returns: string
+      }
+      manage_user_role: {
+        Args: {
+          p_action: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       process_payout: {
         Args: { p_payout_id: string; p_transaction_signature: string }
+        Returns: undefined
+      }
+      resolve_content_report: {
+        Args: {
+          p_report_id: string
+          p_resolution_notes?: string
+          p_status: string
+        }
         Returns: undefined
       }
       update_profile_verification: {

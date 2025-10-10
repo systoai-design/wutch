@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Moon, Sun, User, LogOut, Plus } from 'lucide-react';
+import { Search, Menu, Moon, Sun, User, LogOut, Plus, Shield, ShieldCheck, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useModerator } from '@/hooks/useModerator';
 import { useSidebar } from '@/store/sidebarStore';
 import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
@@ -30,6 +31,7 @@ const Navigation = () => {
   const { isDark, toggleTheme } = useThemeStore();
   const { user, signOut, isGuest } = useAuth();
   const { isAdmin } = useAdmin();
+  const { isModerator } = useModerator();
   const { toggle, toggleMobile } = useSidebar();
   const { open: openAuthDialog } = useAuthDialog();
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,6 +240,33 @@ const Navigation = () => {
                   <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
                     <Link to="/profile">Profile</Link>
                   </DropdownMenuItem>
+                  
+                  {isModerator && (
+                    <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                      <Link to="/admin/reports">
+                        <Flag className="h-4 w-4 mr-2" />
+                        Reports
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                        <Link to="/admin/verification">
+                          <ShieldCheck className="h-4 w-4 mr-2" />
+                          Verification
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                        <Link to="/admin/roles">
+                          <Shield className="h-4 w-4 mr-2" />
+                          Roles
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer py-3 min-h-[44px]">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
