@@ -5,7 +5,7 @@ export interface Notification {
   title: string;
   message: string;
   actor_id: string | null;
-  content_type: 'livestream' | 'short_video' | 'wutch_video' | null;
+  content_type: 'livestream' | 'shortvideo' | 'wutch_video' | null;
   content_id: string | null;
   metadata: Record<string, any> | null;
   is_read: boolean;
