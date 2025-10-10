@@ -90,7 +90,7 @@ export function EarningsOverview({ userId }: EarningsOverviewProps) {
 
     if (!error && data && typeof data.setting_value === 'object' && data.setting_value !== null) {
       const settingValue = data.setting_value as { amount?: number };
-      setMinPayoutAmount(settingValue.amount || 10);
+      setMinPayoutAmount(settingValue.amount || 1);
     }
   };
 
