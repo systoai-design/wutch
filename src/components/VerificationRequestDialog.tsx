@@ -51,7 +51,7 @@ export function VerificationRequestDialog({
   const [paymentSignature, setPaymentSignature] = useState('');
 
   const PLATFORM_WALLET = '899PTTcBgFauWKL2jyjtuJTyWTuQAEBqyY8bPsPvCH1G';
-  const REQUIRED_AMOUNT = 0.05;
+  const REQUIRED_AMOUNT = isAdmin ? 0.001 : 0.05;
 
   useEffect(() => {
     if (open && verificationType === 'red' && !isAdmin) {

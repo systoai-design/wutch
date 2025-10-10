@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 const PLATFORM_WALLET = "899PTTcBgFauWKL2jyjtuJTyWTuQAEBqyY8bPsPvCH1G";
-const REQUIRED_AMOUNT = 0.05;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,6 +29,12 @@ serve(async (req) => {
     if (!user) {
       throw new Error('Unauthorized');
     }
+
+    // Check if user is admin to determine required amount
+    const { data: isAdmin } = await supabaseClient
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+    
+    const REQUIRED_AMOUNT = isAdmin ? 0.001 : 0.05;
 
     const { transactionSignature, walletAddress } = await req.json();
 
