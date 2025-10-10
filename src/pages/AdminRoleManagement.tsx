@@ -243,7 +243,7 @@ export default function AdminRoleManagement() {
                       <Select
                         onValueChange={(value) => {
                           const [action, role] = value.split(':');
-                          handleRoleChange(user.id, action as 'grant' | 'revoke', role);
+                          handleRoleChange(user.id, action as 'grant' | 'revoke', role as 'admin' | 'moderator');
                         }}
                       >
                         <SelectTrigger className="w-[180px]">
