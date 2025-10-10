@@ -12,6 +12,7 @@ import Sidebar from '@/components/Sidebar';
 import BottomNavigation from '@/components/BottomNavigation';
 import { AuthDialog } from '@/components/AuthDialog';
 import { useAuthDialog } from '@/store/authDialogStore';
+import { ChatWidget } from '@/components/ChatWidget';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -161,6 +162,7 @@ function AppLayout() {
         </main>
       </div>
       <BottomNavigation />
+      <ChatWidget />
     </div>
   );
 }
