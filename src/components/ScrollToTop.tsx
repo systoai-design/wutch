@@ -30,7 +30,7 @@ export const ScrollToTop = () => {
   return (
     <Button
       onClick={scrollToTop}
-      className="fixed bottom-20 right-4 z-40 rounded-full w-12 h-12 shadow-lg hover:shadow-xl transition-all duration-300 lg:bottom-8"
+      className="fixed bottom-[136px] right-4 z-40 rounded-full w-12 h-12 shadow-lg hover:shadow-xl transition-all duration-300 lg:bottom-24"
       size="icon"
       aria-label="Scroll to top"
     >

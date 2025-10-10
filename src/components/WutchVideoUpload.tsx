@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Video } from 'lucide-react';
+import { Upload, X, Video, Sparkles, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CATEGORY_NAMES } from '@/constants/categories';
 
@@ -32,6 +32,8 @@ export const WutchVideoUpload = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,6 +86,57 @@ export const WutchVideoUpload = () => {
   const removeThumbnail = () => {
     setThumbnailFile(null);
     setThumbnailPreview('');
+    setGeneratedImage(null);
+  };
+
+  const generateCoverImage = async () => {
+    if (!formData.title) {
+      toast({ 
+        title: 'Title required', 
+        description: 'Please enter a title first',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-cover-image', {
+        body: {
+          title: formData.title,
+          description: formData.description,
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (!data?.imageUrl) {
+        throw new Error('No image URL received');
+      }
+      
+      setGeneratedImage(data.imageUrl);
+      setThumbnailPreview(data.imageUrl);
+      
+      // Convert base64 to File object for upload
+      const response = await fetch(data.imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'generated-thumbnail.png', { type: 'image/png' });
+      setThumbnailFile(file);
+      
+      toast({ 
+        title: 'Cover image generated!', 
+        description: 'You can regenerate or upload your own'
+      });
+    } catch (error: any) {
+      console.error('Generation error:', error);
+      toast({
+        title: 'Generation failed',
+        description: error.message || 'Failed to generate cover image',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -278,19 +331,52 @@ export const WutchVideoUpload = () => {
 
       {/* Thumbnail Upload */}
       <div className="space-y-2">
-        <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={generateCoverImage}
+            disabled={isGenerating || !formData.title}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate with AI
+              </>
+            )}
+          </Button>
+        </div>
         {thumbnailPreview ? (
           <div className="relative w-full max-w-sm">
-            <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full rounded-lg" />
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              className="absolute top-2 right-2"
-              onClick={removeThumbnail}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full rounded-lg border border-border" />
+            <div className="absolute top-2 right-2 flex gap-2">
+              {generatedImage && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={generateCoverImage}
+                  disabled={isGenerating}
+                >
+                  Regenerate
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                onClick={removeThumbnail}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ) : (
           <label
@@ -298,7 +384,7 @@ export const WutchVideoUpload = () => {
             className="flex flex-col items-center justify-center w-full max-w-sm aspect-video border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
           >
             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">Click to upload thumbnail</span>
+            <span className="text-sm text-muted-foreground">Click to upload or use AI generation above</span>
             <input
               id="thumbnail"
               type="file"
