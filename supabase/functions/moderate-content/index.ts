@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,9 +12,47 @@ serve(async (req) => {
   }
 
   try {
-    const { videoUrl, contentType, contentId } = await req.json();
+    const { videoUrl, contentType, contentId, userId } = await req.json();
     
-    console.log('Moderating content:', { videoUrl, contentType, contentId });
+    console.log('Moderating content:', { videoUrl, contentType, contentId, userId });
+    
+    // Initialize Supabase client to check user tier
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Check user's moderation tier first
+    const { data: userTier, error: tierError } = await supabaseClient
+      .rpc('get_user_moderation_tier', { user_id: userId });
+    
+    if (tierError) {
+      console.error('Error fetching user tier:', tierError);
+    }
+    
+    console.log('User moderation tier:', userTier);
+    
+    // Skip moderation for trusted users (verified or established)
+    if (userTier === 'verified' || userTier === 'established') {
+      console.log(`User is ${userTier} - skipping AI moderation`);
+      return new Response(JSON.stringify({
+        success: true,
+        skipped: true,
+        userTier: userTier,
+        reason: `User is ${userTier} - auto-approved`,
+        moderation: {
+          isViolation: false,
+          violationCategories: [],
+          confidenceScores: {},
+          reasoning: 'Content from trusted user - no moderation needed'
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Continue with AI moderation for 'new' and 'flagged' users
+    console.log('Performing AI moderation for user tier:', userTier);
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -101,6 +140,8 @@ Return JSON ONLY in this exact format:
 
     return new Response(JSON.stringify({
       success: true,
+      skipped: false,
+      userTier: userTier || 'new',
       moderation: moderationResult
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

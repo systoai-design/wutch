@@ -184,12 +184,7 @@ export const WutchVideoUpload = () => {
         .from('wutch-videos')
         .getPublicUrl(videoPath);
 
-      // Call moderation API
-      toast({
-        title: 'Checking content safety...',
-        description: 'This will only take a moment',
-      });
-
+      // Call content moderation API (tier-based)
       const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
         'moderate-content',
         {
@@ -197,21 +192,35 @@ export const WutchVideoUpload = () => {
             videoUrl,
             contentType: 'wutch_video',
             contentId: null,
+            userId: user.id,
           }
         }
       );
 
       if (moderationError || !moderationData?.success) {
-        // Delete uploaded video
+        console.error('Moderation error:', moderationError);
         await supabase.storage.from('wutch-videos').remove([videoPath]);
         throw new Error('Content moderation failed. Please try again.');
       }
 
-      // Check if content violated guidelines
-      if (moderationData.moderation.isViolation) {
-        // Delete uploaded video
+      // Handle skipped moderation for trusted users
+      if (moderationData.skipped) {
+        console.log('Moderation skipped:', moderationData.reason);
+        toast({
+          title: '✅ Instant Publish',
+          description: 'Your content is going live immediately!',
+        });
+      } else {
+        toast({
+          title: 'Checking content safety...',
+          description: 'This will only take a moment',
+        });
+      }
+
+      // Only block if actual violation (not if skipped)
+      if (moderationData.moderation.isViolation && !moderationData.skipped) {
+        console.error('Content violation detected:', moderationData.moderation);
         await supabase.storage.from('wutch-videos').remove([videoPath]);
-        
         throw new Error(
           `Content rejected: ${moderationData.moderation.violationCategories.join(', ')}. ` +
           `${moderationData.moderation.reasoning}`
@@ -310,16 +319,18 @@ export const WutchVideoUpload = () => {
 
       if (error) throw error;
 
-      // Store moderation record
-      await supabase
-        .from('content_moderation')
-        .insert({
-          content_type: 'wutch_video',
-          content_id: data.id,
-          user_id: user.id,
-          status: 'approved',
-          moderation_labels: moderationData.moderation,
-        });
+    // Store moderation record with tier info
+    await supabase
+      .from('content_moderation')
+      .insert({
+        content_type: 'wutch_video',
+        content_id: data.id,
+        user_id: user.id,
+        status: moderationData.skipped ? 'skipped' : 'approved',
+        skipped_reason: moderationData.reason || null,
+        user_tier: moderationData.userTier || 'unknown',
+        moderation_labels: moderationData.moderation,
+      });
 
       toast({
         title: 'Success!',

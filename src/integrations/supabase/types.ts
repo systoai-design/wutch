@@ -165,6 +165,13 @@ export type Database = {
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bounty_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       comments: {
@@ -220,6 +227,13 @@ export type Database = {
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       content_moderation: {
@@ -232,8 +246,10 @@ export type Database = {
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          skipped_reason: string | null
           status: string
           user_id: string
+          user_tier: string | null
         }
         Insert: {
           content_id: string
@@ -244,8 +260,10 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          skipped_reason?: string | null
           status?: string
           user_id: string
+          user_tier?: string | null
         }
         Update: {
           content_id?: string
@@ -256,8 +274,10 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          skipped_reason?: string | null
           status?: string
           user_id?: string
+          user_tier?: string | null
         }
         Relationships: []
       }
@@ -313,6 +333,13 @@ export type Database = {
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "donations_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       follows: {
@@ -347,6 +374,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "follows_following_id_fkey"
             columns: ["following_id"]
             isOneToOne: false
@@ -358,6 +392,13 @@ export type Database = {
             columns: ["following_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -490,6 +531,13 @@ export type Database = {
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "livestreams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -548,6 +596,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -559,6 +614,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -610,6 +672,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -735,12 +804,15 @@ export type Database = {
           avatar_url: string | null
           banner_url: string | null
           bio: string | null
+          content_violation_count: number | null
           created_at: string | null
           display_name: string | null
           follower_count: number | null
           id: string
           is_verified: boolean | null
           last_payout_at: string | null
+          last_violation_at: string | null
+          moderation_tier: string | null
           pending_earnings: number
           promotional_link: string | null
           promotional_link_text: string | null
@@ -748,6 +820,7 @@ export type Database = {
           social_links: Json | null
           total_donations_received: number | null
           total_earnings: number
+          trust_score: number | null
           updated_at: string | null
           username: string
           verification_type: string | null
@@ -757,12 +830,15 @@ export type Database = {
           avatar_url?: string | null
           banner_url?: string | null
           bio?: string | null
+          content_violation_count?: number | null
           created_at?: string | null
           display_name?: string | null
           follower_count?: number | null
           id: string
           is_verified?: boolean | null
           last_payout_at?: string | null
+          last_violation_at?: string | null
+          moderation_tier?: string | null
           pending_earnings?: number
           promotional_link?: string | null
           promotional_link_text?: string | null
@@ -770,6 +846,7 @@ export type Database = {
           social_links?: Json | null
           total_donations_received?: number | null
           total_earnings?: number
+          trust_score?: number | null
           updated_at?: string | null
           username: string
           verification_type?: string | null
@@ -779,12 +856,15 @@ export type Database = {
           avatar_url?: string | null
           banner_url?: string | null
           bio?: string | null
+          content_violation_count?: number | null
           created_at?: string | null
           display_name?: string | null
           follower_count?: number | null
           id?: string
           is_verified?: boolean | null
           last_payout_at?: string | null
+          last_violation_at?: string | null
+          moderation_tier?: string | null
           pending_earnings?: number
           promotional_link?: string | null
           promotional_link_text?: string | null
@@ -792,6 +872,7 @@ export type Database = {
           social_links?: Json | null
           total_donations_received?: number | null
           total_earnings?: number
+          trust_score?: number | null
           updated_at?: string | null
           username?: string
           verification_type?: string | null
@@ -891,6 +972,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sharing_campaigns_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sharing_campaigns_livestream_id_fkey"
             columns: ["livestream_id"]
             isOneToOne: false
@@ -935,6 +1023,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_video_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -1023,6 +1118,13 @@ export type Database = {
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "short_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       stream_bounties: {
@@ -1084,6 +1186,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
           {
@@ -1182,6 +1291,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -1314,6 +1430,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "verification_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1325,6 +1448,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -1427,6 +1557,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "view_earnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -1715,6 +1852,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stream_bounties_livestream_id_fkey"
             columns: ["livestream_id"]
             isOneToOne: false
@@ -1722,6 +1866,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_trust_stats: {
+        Row: {
+          calculated_tier: string | null
+          content_violation_count: number | null
+          created_at: string | null
+          follower_count: number | null
+          id: string | null
+          is_verified: boolean | null
+          moderation_tier: string | null
+          total_uploads: number | null
+          total_views: number | null
+          trust_score: number | null
+          verification_type: string | null
+        }
+        Relationships: []
       }
       verification_requests_admin_summary: {
         Row: {
@@ -1782,6 +1942,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "verification_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1793,6 +1960,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -1858,6 +2032,15 @@ export type Database = {
         Args: { stream_id: string }
         Returns: undefined
       }
+      flag_user_violation: {
+        Args: {
+          p_content_id: string
+          p_content_type: string
+          p_reason: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       get_most_donated_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
@@ -1916,6 +2099,10 @@ export type Database = {
           total_rewards_given: number
         }[]
       }
+      get_user_moderation_tier: {
+        Args: { user_id: string }
+        Returns: string
+      }
       get_user_watch_time: {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number
@@ -1949,6 +2136,10 @@ export type Database = {
       }
       update_profile_verification: {
         Args: { p_user_id: string; p_verification_type: string }
+        Returns: undefined
+      }
+      update_user_moderation_tiers: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
