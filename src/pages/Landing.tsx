@@ -9,15 +9,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { OptimizedBountySection } from '@/components/OptimizedBountySection';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
+import { scrollToSection } from '@/utils/performanceOptimization';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 
-// Memoized stat card component
-const StatCard = memo(({ value, label, delay }: { value: string; label: string; delay: string }) => (
-  <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in" style={{ animationDelay: delay }}>
+// Memoized stat card component with animated counter
+const StatCard = memo(({ value, label, delay, isNumber = false }: { value: string | number; label: string; delay: string; isNumber?: boolean }) => (
+  <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in-up transition-all hover:scale-105" style={{ animationDelay: delay }}>
     <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-      {value}
+      {isNumber ? (
+        <AnimatedCounter value={typeof value === 'number' ? value : 0} prefix="$" />
+      ) : (
+        value
+      )}
     </div>
     <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">{label}</div>
   </div>
@@ -252,37 +258,37 @@ const Landing = () => {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
             <button
-              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('how-it-works')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               How It Works
             </button>
             <button
-              onClick={() => document.getElementById('share-campaigns')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('share-campaigns')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Share Campaigns
             </button>
             <button
-              onClick={() => document.getElementById('bounties')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('bounties')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Bounties
             </button>
             <button
-              onClick={() => document.getElementById('leaderboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('leaderboard')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Leaderboard
             </button>
             <button
-              onClick={() => document.getElementById('creator-rewards')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('creator-rewards')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Creator Rewards
             </button>
             <button
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => scrollToSection('features')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Features
@@ -344,12 +350,12 @@ const Landing = () => {
             Wutch rewards you with SOLANA for watching streams, creating content, claiming bounties, and sharing campaigns. Join the platform where everyone earns.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in px-2" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation pulse-glow">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in-up px-2" style={{ animationDelay: '0.3s' }}>
+            <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-all text-base touch-manipulation pulse-glow">
               <Link to="/app">🚀 Get Your First SOL</Link>
             </Button>
-            <Button asChild size="default" variant="outline" className="px-6 py-6 sm:py-2 hover:scale-105 transition-transform text-base touch-manipulation">
-              <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            <Button asChild size="default" variant="outline" className="px-6 py-6 sm:py-2 hover:scale-105 transition-all text-base touch-manipulation">
+              <button onClick={() => scrollToSection('how-it-works')}>
                 See How It Works
               </button>
             </Button>
@@ -358,9 +364,10 @@ const Landing = () => {
           {/* Stats with subtle background */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 pt-8 sm:pt-12 md:pt-16 max-w-3xl mx-auto px-2">
             <StatCard 
-              value={`$${stats.totalRewards.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+              value={stats.totalRewards}
               label="Total Paid Out"
               delay="0.4s"
+              isNumber={true}
             />
             <StatCard 
               value={`${stats.activeWatchers.toLocaleString()}+`}

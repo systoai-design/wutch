@@ -92,3 +92,28 @@ export const requestIdleCallback =
           });
         }, 1);
       };
+
+/**
+ * Smooth scroll to element with offset for sticky headers
+ */
+export const scrollToSection = (elementId: string, offset: number = 80): void => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  const bodyRect = document.body.getBoundingClientRect().top;
+  const elementRect = element.getBoundingClientRect().top;
+  const elementPosition = elementRect - bodyRect;
+  const offsetPosition = elementPosition - offset;
+
+  window.scrollTo({
+    top: offsetPosition,
+    behavior: 'smooth'
+  });
+};
+
+/**
+ * Check if user prefers reduced motion
+ */
+export const prefersReducedMotion = (): boolean => {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+};

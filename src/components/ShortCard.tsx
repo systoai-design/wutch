@@ -94,7 +94,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
 
   return (
     <Card 
-      className="group relative overflow-hidden cursor-pointer transition-transform hover:scale-[1.02] bg-card"
+      className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-card will-change-transform"
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

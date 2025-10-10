@@ -367,13 +367,14 @@ const Home = () => {
                         </h2>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        {filteredContent.streams.map((stream) => (
-                          <StreamCard 
-                            key={stream.id} 
-                            stream={stream} 
-                            hasBounty={stream.has_active_bounty} 
-                            hasShareCampaign={stream.has_active_share_campaign}
-                          />
+                        {filteredContent.streams.map((stream, index) => (
+                          <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                            <StreamCard 
+                              stream={stream} 
+                              hasBounty={stream.has_active_bounty} 
+                              hasShareCampaign={stream.has_active_share_campaign}
+                            />
+                          </div>
                         ))}
                       </div>
                     </section>
@@ -388,8 +389,10 @@ const Home = () => {
                         </h2>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        {filteredContent.videos.map((video) => (
-                          <WutchVideoCard key={video.id} video={video} />
+                        {filteredContent.videos.map((video, index) => (
+                          <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                            <WutchVideoCard video={video} />
+                          </div>
                         ))}
                       </div>
                     </section>
@@ -434,13 +437,14 @@ const Home = () => {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {liveStreams.slice(0, 9).map((stream) => (
-                    <StreamCard 
-                      key={stream.id} 
-                      stream={stream} 
-                      hasBounty={stream.has_active_bounty}
-                      hasShareCampaign={stream.has_active_share_campaign}
-                    />
+                  {liveStreams.slice(0, 9).map((stream, index) => (
+                    <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                      <StreamCard
+                        stream={stream} 
+                        hasBounty={stream.has_active_bounty} 
+                        hasShareCampaign={stream.has_active_share_campaign}
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -467,8 +471,8 @@ const Home = () => {
                     className="w-full"
                   >
                     <CarouselContent className="-ml-2 sm:-ml-3">
-                      {shorts.map((short) => (
-                        <CarouselItem key={short.id} className="pl-2 sm:pl-3 basis-[45%] xs:basis-[38%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%]">
+                      {shorts.map((short, index) => (
+                        <CarouselItem key={short.id} className="pl-2 sm:pl-3 basis-[45%] xs:basis-[38%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%] animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
                           <ShortCard short={short} />
                         </CarouselItem>
                       ))}
@@ -499,8 +503,8 @@ const Home = () => {
                     className="w-full"
                   >
                     <CarouselContent className="-ml-2 sm:-ml-3">
-                      {wutchVideos.slice(0, 12).map((video) => (
-                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%]">
+                      {wutchVideos.slice(0, 12).map((video, index) => (
+                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%] animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
                           <WutchVideoCard video={video} />
                         </CarouselItem>
                       ))}
@@ -522,8 +526,10 @@ const Home = () => {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {upcomingStreams.slice(0, 9).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                  {upcomingStreams.slice(0, 9).map((stream, index) => (
+                    <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                      <StreamCard stream={stream} hasBounty={stream.has_active_bounty} />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -541,8 +547,10 @@ const Home = () => {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {endedStreams.slice(0, 9).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream} hasBounty={stream.has_active_bounty} />
+                  {endedStreams.slice(0, 9).map((stream, index) => (
+                    <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                      <StreamCard stream={stream} hasBounty={stream.has_active_bounty} />
+                    </div>
                   ))}
                 </div>
                 {endedStreams.length > 20 && (
