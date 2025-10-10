@@ -2,23 +2,18 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Moon, Sun, ArrowLeft } from "lucide-react";
 import { useThemeStore } from "@/store/themeStore";
-
 const PrivacyPolicy = () => {
   const navigate = useNavigate();
-  const { isDark, toggleTheme } = useThemeStore();
-
-  return (
-    <div className="min-h-screen bg-background">
+  const {
+    isDark,
+    toggleTheme
+  } = useThemeStore();
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="mr-2"
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="mr-2">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
@@ -26,17 +21,8 @@ const PrivacyPolicy = () => {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="rounded-full"
-            >
-              {isDark ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <Button onClick={() => navigate("/home")} className="ml-2">
               Launch App
@@ -183,9 +169,7 @@ const PrivacyPolicy = () => {
               <p className="text-muted-foreground mb-4">
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
-              <p className="text-muted-foreground">
-                Email: wutch.fun@gmail.com
-              </p>
+              <p className="text-muted-foreground">Email: support@wutch.fun</p>
             </section>
           </div>
         </div>
@@ -197,8 +181,6 @@ const PrivacyPolicy = () => {
           <p className="text-muted-foreground text-sm">© 2025 Wutch. All rights reserved.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default PrivacyPolicy;
