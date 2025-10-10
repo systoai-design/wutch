@@ -978,7 +978,7 @@ const ProfilePage = () => {
                         <p className="text-sm text-muted-foreground">
                           Get verified to build trust with your audience
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Button
                             onClick={() => {
                               setVerificationType('blue');
