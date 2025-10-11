@@ -59,6 +59,16 @@ export const WalletConnect = () => {
   const connectWallet = async () => {
     setIsConnecting(true);
     try {
+      // On mobile, check if we're in Phantom's in-app browser
+      const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
+      
+      // If on mobile and NOT in Phantom app, redirect to open dApp inside Phantom
+      if (isMobile && !isPhantomInApp) {
+        window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`);
+        setIsConnecting(false);
+        return;
+      }
+      
       // Select Phantom wallet - works on both mobile and desktop
       // Mobile Wallet Adapter is automatically available via wallet-standard
       const phantomWallet = wallets.find(w => 

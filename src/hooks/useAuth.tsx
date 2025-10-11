@@ -8,6 +8,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isLoading: boolean;
   isGuest: boolean;
+  isVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,9 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isGuest = !user && !isLoading;
+  const isVerified = Boolean(user?.email_confirmed_at);
 
   return (
-    <AuthContext.Provider value={{ user, session, signOut, isLoading, isGuest }}>
+    <AuthContext.Provider value={{ user, session, signOut, isLoading, isGuest, isVerified }}>
       {children}
     </AuthContext.Provider>
   );

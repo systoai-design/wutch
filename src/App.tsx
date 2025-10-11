@@ -2,6 +2,7 @@ import { useEffect, lazy, Suspense, useMemo } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useThemeStore } from '@/store/themeStore';
@@ -59,14 +60,21 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isVerified } = useAuth();
   const { open: openAuthDialog } = useAuthDialog();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading && !user) {
       openAuthDialog('signup');
+    } else if (!isLoading && user && !isVerified) {
+      toast({
+        title: "Email Verification Required",
+        description: "Please verify your email to continue. Check your inbox for the verification link.",
+        variant: "destructive",
+      });
     }
-  }, [user, isLoading, openAuthDialog]);
+  }, [user, isLoading, isVerified, openAuthDialog, toast]);
 
   if (isLoading) {
     return (
@@ -76,7 +84,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!user || !isVerified) {
     return <Navigate to="/app" replace />;
   }
 

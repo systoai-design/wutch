@@ -172,22 +172,16 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
-            <picture>
-              <source 
-                type="image/webp" 
-                srcSet={`${pumpFunLogoSmWebP} 1x, ${pumpFunLogoWebP} 2x`}
-              />
-              <img 
-                src={pumpFunLogoSm} 
-                srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
-                alt="PumpFun" 
-                className="h-4 w-4 sm:h-5 sm:w-5" 
-                width="20" 
-                height="20" 
-                loading="lazy" 
-                decoding="async" 
-              />
-            </picture>
+            <img 
+              src={pumpFunLogoSm} 
+              srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
+              alt="PumpFun" 
+              className="h-4 w-4 sm:h-5 sm:w-5" 
+              width="20" 
+              height="20" 
+              loading="lazy" 
+              decoding="async" 
+            />
           </Button>
 
           {/* Twitter/X Icon */}
@@ -198,22 +192,16 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
-            <picture>
-              <source 
-                type="image/webp" 
-                srcSet={`${xLogoSmWebP} 1x, ${xLogoWebP} 2x`}
-              />
-              <img 
-                src={xLogoSm} 
-                srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
-                alt="X" 
-                className="h-4 w-4 sm:h-5 sm:w-5" 
-                width="20" 
-                height="20" 
-                loading="lazy" 
-                decoding="async" 
-              />
-            </picture>
+            <img 
+              src={xLogoSm} 
+              srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
+              alt="X" 
+              className="h-4 w-4 sm:h-5 sm:w-5" 
+              width="20" 
+              height="20" 
+              loading="lazy" 
+              decoding="async" 
+            />
           </Button>
 
           {/* Create Button */}

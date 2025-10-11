@@ -77,8 +77,9 @@ Deno.serve(async (req) => {
     // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Generate password reset link
-    const redirectUrl = `${new URL(req.url).origin}/update-password`
+    // Generate password reset link - use request origin or fallback to site URL
+    const origin = req.headers.get('origin') ?? Deno.env.get('SITE_URL') ?? 'https://wutch.fun'
+    const redirectUrl = `${origin}/update-password`
     
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'Wutch <onboarding@resend.dev>',
+      from: 'Wutch <no-reply@wutch.fun>',
       to: [email],
       subject: 'Reset Your Wutch Password',
       html,
