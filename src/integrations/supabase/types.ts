@@ -585,6 +585,33 @@ export type Database = {
           },
         ]
       }
+      mfa_verification_attempts: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          id: string
+          last_attempt_at: string
+          locked_until: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          id?: string
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          id?: string
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       moderation_actions: {
         Row: {
           action_type: string
@@ -2118,6 +2145,10 @@ export type Database = {
           user_id: string
           verification_type: string
         }[]
+      }
+      cleanup_mfa_attempts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_notification: {
         Args:

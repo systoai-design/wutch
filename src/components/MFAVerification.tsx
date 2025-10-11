@@ -16,6 +16,7 @@ export function MFAVerification({ onVerificationComplete, onCancel }: MFAVerific
   const { toast } = useToast();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +35,20 @@ export function MFAVerification({ onVerificationComplete, onCancel }: MFAVerific
 
       if (challenge.error) throw challenge.error;
 
-      const verify = await supabase.auth.mfa.verify({
-        factorId: totpFactor.id,
-        challengeId: challenge.data.id,
-        code: code,
+      // Use rate-limited edge function
+      const { data, error } = await supabase.functions.invoke('mfa-verify', {
+        body: {
+          code: code,
+          factorId: totpFactor.id,
+          challengeId: challenge.data.id,
+        },
       });
 
-      if (verify.error) throw verify.error;
+      if (error) throw error;
+      if (data?.error) {
+        setRemainingAttempts(data.remaining_attempts ?? null);
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'Verified!',
@@ -48,8 +56,9 @@ export function MFAVerification({ onVerificationComplete, onCancel }: MFAVerific
       });
       onVerificationComplete();
     } catch (error: any) {
+      const isRateLimited = error.message?.includes('locked') || error.message?.includes('Too many');
       toast({
-        title: 'Verification Failed',
+        title: isRateLimited ? 'Account Temporarily Locked' : 'Verification Failed',
         description: error.message || 'Invalid code. Please try again.',
         variant: 'destructive',
       });
@@ -69,6 +78,12 @@ export function MFAVerification({ onVerificationComplete, onCancel }: MFAVerific
       <p className="text-muted-foreground">
         Enter the 6-digit code from your authenticator app to continue.
       </p>
+      
+      {remainingAttempts !== null && remainingAttempts < 5 && (
+        <p className="text-sm text-destructive">
+          {remainingAttempts} attempts remaining before account lockout
+        </p>
+      )}
 
       <form onSubmit={handleVerify} className="space-y-4">
         <div className="space-y-2">
