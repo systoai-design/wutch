@@ -18,10 +18,16 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import wutchLogoSm from '@/assets/wutch-logo-sm.png';
+import wutchLogoWebP from '@/assets/wutch-logo.webp';
+import wutchLogoSmWebP from '@/assets/wutch-logo-sm.webp';
 import xLogo from '@/assets/x-logo.png';
 import xLogoSm from '@/assets/x-logo-sm.png';
+import xLogoWebP from '@/assets/x-logo.webp';
+import xLogoSmWebP from '@/assets/x-logo-sm.webp';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import pumpFunLogoSm from '@/assets/pumpfun-logo-sm.png';
+import pumpFunLogoWebP from '@/assets/pumpfun-logo.webp';
+import pumpFunLogoSmWebP from '@/assets/pumpfun-logo-sm.webp';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
@@ -96,15 +102,21 @@ const Navigation = () => {
             <Menu className="h-6 w-6" />
           </Button>
           <Link to="/" className="flex items-center gap-2 group touch-manipulation">
-            <img 
-              src={wutchLogoSm}
-              srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
-              alt="Wutch" 
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
-              width="36"
-              height="36"
-              loading="eager"
-            />
+            <picture>
+              <source 
+                type="image/webp" 
+                srcSet={`${wutchLogoSmWebP} 1x, ${wutchLogoWebP} 2x`}
+              />
+              <img 
+                src={wutchLogoSm}
+                srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
+                alt="Wutch" 
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
+                width="36"
+                height="36"
+                loading="eager"
+              />
+            </picture>
             <span className="font-bold text-base sm:text-lg hidden xs:inline text-white">
               Wutch
             </span>
@@ -160,16 +172,22 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
-            <img 
-              src={pumpFunLogoSm} 
-              srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
-              alt="PumpFun" 
-              className="h-4 w-4 sm:h-5 sm:w-5" 
-              width="20" 
-              height="20" 
-              loading="lazy" 
-              decoding="async" 
-            />
+            <picture>
+              <source 
+                type="image/webp" 
+                srcSet={`${pumpFunLogoSmWebP} 1x, ${pumpFunLogoWebP} 2x`}
+              />
+              <img 
+                src={pumpFunLogoSm} 
+                srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
+                alt="PumpFun" 
+                className="h-4 w-4 sm:h-5 sm:w-5" 
+                width="20" 
+                height="20" 
+                loading="lazy" 
+                decoding="async" 
+              />
+            </picture>
           </Button>
 
           {/* Twitter/X Icon */}
@@ -180,16 +198,22 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
-            <img 
-              src={xLogoSm} 
-              srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
-              alt="X" 
-              className="h-4 w-4 sm:h-5 sm:w-5" 
-              width="20" 
-              height="20" 
-              loading="lazy" 
-              decoding="async" 
-            />
+            <picture>
+              <source 
+                type="image/webp" 
+                srcSet={`${xLogoSmWebP} 1x, ${xLogoWebP} 2x`}
+              />
+              <img 
+                src={xLogoSm} 
+                srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
+                alt="X" 
+                className="h-4 w-4 sm:h-5 sm:w-5" 
+                width="20" 
+                height="20" 
+                loading="lazy" 
+                decoding="async" 
+              />
+            </picture>
           </Button>
 
           {/* Create Button */}
