@@ -71,59 +71,49 @@ export const WalletConnect = () => {
       if (!address) {
         throw new Error('Failed to retrieve wallet address');
       }
+
+      // Create message to sign for wallet ownership verification
+      const message = `Verify wallet ownership for Wutch\nWallet: ${address}\nTimestamp: ${Date.now()}`;
+      const encodedMessage = new TextEncoder().encode(message);
+
+      // Request signature from Phantom wallet
+      const solana = (window as any)?.solana;
+      if (!solana?.signMessage) {
+        throw new Error('Wallet does not support message signing');
+      }
+
+      const { signature } = await solana.signMessage(encodedMessage, 'utf8');
       
-      // Check if this wallet is already connected to another account
-      const { data: existingWallet, error: checkError } = await supabase
-        .from('profile_wallets')
-        .select('user_id')
-        .eq('wallet_address', address)
-        .maybeSingle();
+      // Convert Uint8Array signature to base58 string using bs58 already in dependencies
+      const bs58 = (await import('bs58')).default;
+      const base58Signature = bs58.encode(signature);
 
-      if (checkError) {
-        console.error('Error checking existing wallet:', checkError);
-        throw new Error('Failed to verify wallet availability');
-      }
-
-      if (existingWallet && existingWallet.user_id !== user?.id) {
-        toast({
-          title: "Wallet Already Connected",
-          description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
-          variant: "destructive",
-        });
-        await disconnect();
-        return;
-      }
-
-      // Save wallet address to profile_wallets table (upsert by user_id)
-      const { error } = await supabase
-        .from('profile_wallets')
-        .upsert({
-          user_id: user?.id,
-          wallet_address: address,
-        }, {
-          onConflict: 'user_id'
-        });
+      // Verify signature on backend
+      const { data, error } = await supabase.functions.invoke('verify-wallet', {
+        body: {
+          walletAddress: address,
+          signature: base58Signature,
+          message: message,
+        },
+      });
 
       if (error) {
-        if (error.code === '23505' && error.message.includes('unique_wallet_address')) {
-          toast({
-            title: "Wallet Already Connected",
-            description: "This wallet is already connected to another account. Each wallet can only be linked to one account.",
-            variant: "destructive",
-          });
-          await disconnect();
-          return;
-        }
-        throw error;
+        console.error('Wallet verification error:', error);
+        throw new Error(error.message || 'Failed to verify wallet ownership');
+      }
+
+      if (!data?.success) {
+        throw new Error('Wallet verification failed');
       }
 
       setWalletAddress(address);
       toast({
         title: "Wallet Connected",
-        description: "Your Phantom wallet has been connected successfully.",
+        description: "Your Phantom wallet has been verified and connected successfully.",
       });
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
+      await disconnect();
       toast({
         title: "Connection Failed",
         description: error.message || "Failed to connect wallet. Please try again.",

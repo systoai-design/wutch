@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     console.log('Admin reset function called');
     
-    // Verify admin token
+    // SECURITY: Require both admin token AND authenticated admin user
     const adminToken = req.headers.get('x-admin-token');
     const expectedToken = Deno.env.get('ADMIN_MAINTENANCE_TOKEN');
     
@@ -26,7 +26,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Admin token verified, proceeding with reset');
+    // Verify authenticated user is an admin
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client to verify user authentication
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+
+    if (userError || !user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Admin token verified, checking user ${user.id} for admin role`);
 
     // Initialize Supabase admin client
     const supabaseAdmin = createClient(
@@ -39,6 +70,24 @@ Deno.serve(async (req) => {
         }
       }
     );
+
+    // Verify user has admin role
+    const { data: roles, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (roleError || !roles) {
+      console.error(`User ${user.id} is not an admin`);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Admin role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Admin user ${user.id} authorized for database reset`);
 
     const results = {
       usersDeleted: 0,

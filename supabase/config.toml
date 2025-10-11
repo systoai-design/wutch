@@ -29,7 +29,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.admin-reset]
-verify_jwt = false
+verify_jwt = true
+
+[functions.verify-wallet]
+verify_jwt = true
 
 [functions.send-password-reset-email]
 verify_jwt = false
