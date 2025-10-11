@@ -59,22 +59,13 @@ export const WalletConnect = () => {
   const connectWallet = async () => {
     setIsConnecting(true);
     try {
-      // On mobile, prioritize Mobile Wallet Adapter for deep linking
-      if (isMobile) {
-        const mobileAdapter = wallets.find(w => 
-          w.adapter.name.toLowerCase().includes('mobile')
-        );
-        if (mobileAdapter) {
-          select(mobileAdapter.adapter.name);
-        }
-      } else {
-        // On desktop, use Phantom browser extension
-        const phantomWallet = wallets.find(w => 
-          w.adapter.name.toLowerCase().includes('phantom')
-        );
-        if (phantomWallet) {
-          select(phantomWallet.adapter.name);
-        }
+      // Select Phantom wallet - works on both mobile and desktop
+      // Mobile Wallet Adapter is automatically available via wallet-standard
+      const phantomWallet = wallets.find(w => 
+        w.adapter.name.toLowerCase().includes('phantom')
+      );
+      if (phantomWallet) {
+        select(phantomWallet.adapter.name);
       }
       
       await connect();
