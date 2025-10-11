@@ -64,6 +64,10 @@ const Sidebar = () => {
                   src={item.imageSrc} 
                   alt={item.label} 
                   className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                  width="20"
+                  height="20"
+                  loading="lazy"
+                  decoding="async"
                 />
               )}
               <span>{item.label}</span>
@@ -144,6 +148,10 @@ const Sidebar = () => {
                       src={item.imageSrc} 
                       alt={item.label} 
                       className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                      width="20"
+                      height="20"
+                      loading="lazy"
+                      decoding="async"
                     />
                   )}
                   {!shouldCollapse && <span>{item.label}</span>}

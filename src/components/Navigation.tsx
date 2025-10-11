@@ -156,7 +156,7 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
-            <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" />
+            <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
           </Button>
 
           {/* Twitter/X Icon */}
@@ -167,7 +167,7 @@ const Navigation = () => {
             className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
-            <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" />
+            <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
           </Button>
 
           {/* Create Button */}

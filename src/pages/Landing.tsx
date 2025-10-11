@@ -303,7 +303,7 @@ const Landing = () => {
               aria-label="Visit PumpFun"
               className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
             >
-              <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" />
+              <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
             </Button>
             <Button
               variant="ghost"
@@ -312,7 +312,7 @@ const Landing = () => {
               aria-label="Follow us on X"
               className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
             >
-              <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" />
+              <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
             </Button>
             <Button
               variant="ghost"
@@ -1079,7 +1079,7 @@ const Landing = () => {
                     rel="noopener noreferrer"
                     className="hover:text-foreground transition-colors flex items-center gap-2"
                   >
-                    <img src={xLogo} alt="X" className="h-4 w-4" />
+                    <img src={xLogo} alt="X" className="h-4 w-4" width="16" height="16" loading="lazy" decoding="async" />
                     X (Twitter)
                   </a>
                 </li>
