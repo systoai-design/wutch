@@ -26,7 +26,14 @@
     <link rel="modulepreload" href="/src/main.tsx" fetchpriority="high">
     
     <!-- Load main CSS asynchronously to prevent render blocking -->
-    <link rel="stylesheet" href="/src/index.css" media="print" onload="this.media='all'">
+    <script>
+      (function() {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/src/index.css';
+        document.head.appendChild(link);
+      })();
+    </script>
     <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
     
     <!-- Inline critical CSS for instant FCP and LCP with forced visibility -->
