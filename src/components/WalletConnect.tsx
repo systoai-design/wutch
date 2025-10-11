@@ -5,14 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const wallet = useWallet();
-  const { publicKey, connect, disconnect, connecting, connected, select, wallets } = wallet;
+  const isMobile = useIsMobile();
+  const { publicKey, connect, disconnect, signMessage, select, wallets } = useWallet();
 
   useEffect(() => {
     const loadWalletData = async () => {
@@ -58,15 +59,27 @@ export const WalletConnect = () => {
   const connectWallet = async () => {
     setIsConnecting(true);
     try {
-      const phantomWallet = wallets.find(w => 
-        w.adapter.name.toLowerCase().includes('phantom')
-      );
-      if (phantomWallet) {
-        select(phantomWallet.adapter.name);
+      // On mobile, prioritize Mobile Wallet Adapter for deep linking
+      if (isMobile) {
+        const mobileAdapter = wallets.find(w => 
+          w.adapter.name.toLowerCase().includes('mobile')
+        );
+        if (mobileAdapter) {
+          select(mobileAdapter.adapter.name);
+        }
+      } else {
+        // On desktop, use Phantom browser extension
+        const phantomWallet = wallets.find(w => 
+          w.adapter.name.toLowerCase().includes('phantom')
+        );
+        if (phantomWallet) {
+          select(phantomWallet.adapter.name);
+        }
       }
+      
       await connect();
       
-      const address = publicKey?.toBase58() || (window as any)?.solana?.publicKey?.toString();
+      const address = publicKey?.toBase58();
       
       if (!address) {
         throw new Error('Failed to retrieve wallet address');
@@ -76,13 +89,21 @@ export const WalletConnect = () => {
       const message = `Verify wallet ownership for Wutch\nWallet: ${address}\nTimestamp: ${Date.now()}`;
       const encodedMessage = new TextEncoder().encode(message);
 
-      // Request signature from Phantom wallet
-      const solana = (window as any)?.solana;
-      if (!solana?.signMessage) {
-        throw new Error('Wallet does not support message signing');
-      }
+      let signature: Uint8Array;
 
-      const { signature } = await solana.signMessage(encodedMessage, 'utf8');
+      // Request signature - works for both mobile and desktop
+      if (signMessage) {
+        // Use wallet adapter's signMessage (works for mobile and desktop)
+        signature = await signMessage(encodedMessage);
+      } else {
+        // Fallback to window.solana for older desktop implementations
+        const solana = (window as any)?.solana;
+        if (!solana?.signMessage) {
+          throw new Error('Wallet does not support message signing');
+        }
+        const result = await solana.signMessage(encodedMessage, 'utf8');
+        signature = result.signature;
+      }
       
       // Convert Uint8Array signature to base58 string using bs58 already in dependencies
       const bs58 = (await import('bs58')).default;
@@ -179,6 +200,9 @@ export const WalletConnect = () => {
       <span className="hidden sm:inline">
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </span>
+      {isMobile && !isConnecting && (
+        <span className="sm:hidden">Connect</span>
+      )}
     </Button>
   );
 };

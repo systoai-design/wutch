@@ -16,6 +16,7 @@ import { ChatWidget } from '@/components/ChatWidget';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { SolanaMobileWalletAdapter } from '@solana-mobile/wallet-adapter-mobile';
 import { clusterApiUrl } from '@solana/web3.js';
 
 // Lazy load pages for code splitting
@@ -181,7 +182,42 @@ function ShortsLayout() {
 const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+  const wallets = useMemo(
+    () => [
+      new SolanaMobileWalletAdapter({
+        addressSelector: {
+          select: async (addresses) => addresses[0],
+        },
+        appIdentity: { 
+          name: 'Wutch', 
+          uri: window.location.origin 
+        },
+        authorizationResultCache: {
+          get: async () => {
+            const value = localStorage.getItem('solana-mobile-auth');
+            return value ? JSON.parse(value) : undefined;
+          },
+          set: async (authResult: any) => {
+            localStorage.setItem('solana-mobile-auth', JSON.stringify(authResult));
+          },
+          clear: async () => {
+            localStorage.removeItem('solana-mobile-auth');
+          },
+        },
+        chain: 'solana:mainnet',
+        onWalletNotFound: async () => {
+          // Open app store or show install prompt
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const storeUrl = isIOS 
+            ? 'https://apps.apple.com/app/phantom-solana-wallet/id1598432977'
+            : 'https://play.google.com/store/apps/details?id=app.phantom';
+          window.open(storeUrl, '_blank');
+        },
+      }),
+      new PhantomWalletAdapter(),
+    ],
+    []
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
