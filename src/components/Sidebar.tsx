@@ -57,19 +57,20 @@ const Sidebar = () => {
                   : 'hover:bg-accent hover:text-accent-foreground'
               )}
             >
-              {item.type === 'icon' ? (
-                <item.icon className="h-5 w-5 shrink-0" />
-              ) : (
-                <img 
-                  src={item.imageSrc} 
-                  alt={item.label} 
-                  className="h-5 w-5 shrink-0 object-contain rounded-xl"
-                  width="20"
-                  height="20"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
+            {item.type === 'icon' ? (
+              <item.icon className="h-5 w-5 shrink-0" />
+            ) : (
+              <img 
+                src={item.imageSrc} 
+                alt={item.label} 
+                className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                style={{ backgroundColor: 'transparent' }}
+                width="20"
+                height="20"
+                loading="lazy"
+                decoding="async"
+              />
+            )}
               <span>{item.label}</span>
             </Link>
           );
@@ -141,19 +142,20 @@ const Sidebar = () => {
                     shouldCollapse && 'justify-center px-2'
                   )}
                 >
-                  {item.type === 'icon' ? (
-                    <item.icon className="h-5 w-5 shrink-0" />
-                  ) : (
-                    <img 
-                      src={item.imageSrc} 
-                      alt={item.label} 
-                      className="h-5 w-5 shrink-0 object-contain rounded-xl"
-                      width="20"
-                      height="20"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  )}
+                {item.type === 'icon' ? (
+                  <item.icon className="h-5 w-5 shrink-0" />
+                ) : (
+                  <img 
+                    src={item.imageSrc} 
+                    alt={item.label} 
+                    className="h-5 w-5 shrink-0 object-contain rounded-xl"
+                    style={{ backgroundColor: 'transparent' }}
+                    width="20"
+                    height="20"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
                   {!shouldCollapse && <span>{item.label}</span>}
                 </Link>
               );

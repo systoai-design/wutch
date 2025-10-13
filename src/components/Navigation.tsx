@@ -18,16 +18,10 @@ import { WalletConnect } from '@/components/WalletConnect';
 import { useState, useEffect } from 'react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import wutchLogoSm from '@/assets/wutch-logo-sm.png';
-import wutchLogoWebP from '@/assets/wutch-logo.webp';
-import wutchLogoSmWebP from '@/assets/wutch-logo-sm.webp';
 import xLogo from '@/assets/x-logo.png';
 import xLogoSm from '@/assets/x-logo-sm.png';
-import xLogoWebP from '@/assets/x-logo.webp';
-import xLogoSmWebP from '@/assets/x-logo-sm.webp';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import pumpFunLogoSm from '@/assets/pumpfun-logo-sm.png';
-import pumpFunLogoWebP from '@/assets/pumpfun-logo.webp';
-import pumpFunLogoSmWebP from '@/assets/pumpfun-logo-sm.webp';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
@@ -102,21 +96,16 @@ const Navigation = () => {
             <Menu className="h-6 w-6" />
           </Button>
           <Link to="/" className="flex items-center gap-2 group touch-manipulation">
-            <picture>
-              <source 
-                type="image/webp" 
-                srcSet={`${wutchLogoSmWebP} 1x, ${wutchLogoWebP} 2x`}
-              />
-              <img 
-                src={wutchLogoSm}
-                srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
-                alt="Wutch" 
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
-                width="36"
-                height="36"
-                loading="eager"
-              />
-            </picture>
+            <img 
+              src={wutchLogoSm}
+              srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
+              alt="Wutch" 
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
+              style={{ backgroundColor: 'transparent' }}
+              width="36"
+              height="36"
+              loading="eager"
+            />
             <span className="font-bold text-base sm:text-lg hidden xs:inline text-white">
               Wutch
             </span>
@@ -177,6 +166,7 @@ const Navigation = () => {
               srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
               alt="PumpFun" 
               className="h-4 w-4 sm:h-5 sm:w-5" 
+              style={{ backgroundColor: 'transparent' }}
               width="20" 
               height="20" 
               loading="lazy" 
@@ -197,6 +187,7 @@ const Navigation = () => {
               srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
               alt="X" 
               className="h-4 w-4 sm:h-5 sm:w-5" 
+              style={{ backgroundColor: 'transparent' }}
               width="20" 
               height="20" 
               loading="lazy" 
