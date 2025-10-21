@@ -85,15 +85,15 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
 
       // Step 2: Check balance before attempting transaction
       const { Connection, clusterApiUrl, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
       const balance = await connection.getBalance(solana.publicKey);
       const balanceInSOL = balance / LAMPORTS_PER_SOL;
 
-      if (balanceInSOL < totalDeposit) {
-        throw new Error(
-          `Insufficient balance. You need ${totalDeposit.toFixed(4)} SOL but only have ${balanceInSOL.toFixed(4)} SOL. Get devnet SOL from https://faucet.solana.com/`
-        );
-      }
+    if (balanceInSOL < totalDeposit) {
+      throw new Error(
+        `Insufficient balance. You need ${totalDeposit.toFixed(4)} SOL but only have ${balanceInSOL.toFixed(4)} SOL. Please add SOL to your wallet.`
+      );
+    }
 
       toast({
         title: 'Preparing Deposit',
@@ -130,7 +130,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
           
           // Special handling for insufficient balance
           if (txData.availableSOL !== undefined) {
-            errorMessage = `Insufficient balance. Required: ${txData.requiredSOL} SOL, Available: ${txData.availableSOL.toFixed(4)} SOL. Get devnet SOL from https://faucet.solana.com/`;
+            errorMessage = `Insufficient balance. Required: ${txData.requiredSOL} SOL, Available: ${txData.availableSOL.toFixed(4)} SOL.`;
           }
         }
         
@@ -194,30 +194,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
     } catch (error: any) {
       console.error('Error creating campaign:', error);
       
-      let description: any = error.message || 'Could not create campaign';
-      
-      // Add faucet link for balance issues
-      if (error.message?.includes('Insufficient balance') || error.message?.includes('balance')) {
-        const match = error.message.match(/https:\/\/faucet\.solana\.com\//);
-        if (match) {
-          description = (
-            <div className="space-y-2">
-              <p>{error.message.replace(/\s*Get devnet SOL from.*$/, '')}</p>
-              <p className="text-xs">
-                Get devnet SOL from:{' '}
-                <a 
-                  href="https://faucet.solana.com/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Solana Faucet
-                </a>
-              </p>
-            </div>
-          );
-        }
-      }
+      const description = error.message || 'Could not create campaign';
       
       toast({
         title: 'Error',

@@ -32,9 +32,9 @@ serve(async (req) => {
       );
     }
 
-    // Connect to Solana devnet
+    // Connect to Solana mainnet-beta
     const connection = new web3.Connection(
-      web3.clusterApiUrl('devnet'),
+      web3.clusterApiUrl('mainnet-beta'),
       'confirmed'
     );
 
@@ -69,7 +69,7 @@ serve(async (req) => {
         available: balance,
         requiredSOL: amount,
         availableSOL: balance / web3.LAMPORTS_PER_SOL,
-        hint: 'Please add devnet SOL to your wallet using a faucet like https://faucet.solana.com/'
+        hint: 'Please add SOL to your wallet to continue.'
       };
       
       console.error('Insufficient balance:', errorResponse);
