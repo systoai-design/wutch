@@ -104,7 +104,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
       });
 
       // Step 3: Call charge-bounty-wallet to prepare deposit transaction
-      const ESCROW_WALLET = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+      const ESCROW_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
       
       const { data: txData, error: txError } = await supabase.functions.invoke(
         'charge-bounty-wallet',

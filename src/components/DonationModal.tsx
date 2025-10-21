@@ -86,7 +86,7 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
       // Calculate 95% to creator, 5% to platform
       const creatorAmount = amount * 0.95;
       const platformFee = amount * 0.05;
-      const ESCROW_WALLET = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+      const ESCROW_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
 
       toast({
         title: 'Processing Donation',
