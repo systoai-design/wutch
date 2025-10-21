@@ -141,9 +141,9 @@ serve(async (req) => {
     
     const escrowKeypair = Keypair.fromSecretKey(secretKey)
 
-    // Connect to Solana (mainnet-beta or devnet)
-    const SOLANA_RPC = Deno.env.get('SOLANA_RPC_URL') || 'https://api.devnet.solana.com'
-    const connection = new Connection(SOLANA_RPC, 'confirmed')
+    // Connect to Solana using secure RPC endpoint
+    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com'
+    const connection = new Connection(SOLANA_RPC_URL, 'confirmed')
 
     // Create recipient public key
     const recipientPubkey = new PublicKey(wallet_address)
@@ -180,6 +180,24 @@ serve(async (req) => {
     await connection.confirmTransaction(signature, 'confirmed')
 
     console.log('Transaction confirmed:', signature)
+
+    // Log successful transaction
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    await supabaseAdmin.from('escrow_transactions').insert({
+      transaction_type: 'payout_bounty',
+      amount: bounty.reward_per_participant,
+      from_wallet: escrowKeypair.publicKey.toString(),
+      to_wallet: wallet_address,
+      transaction_signature: signature,
+      user_id,
+      bounty_id,
+      status: 'confirmed',
+      confirmed_at: new Date().toISOString()
+    })
 
     // Record successful claim
     const { error: claimError } = await supabaseClient

@@ -387,6 +387,97 @@ export type Database = {
           },
         ]
       }
+      escrow_transactions: {
+        Row: {
+          amount: number
+          bounty_id: string | null
+          campaign_id: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          from_wallet: string | null
+          id: string
+          status: string | null
+          to_wallet: string | null
+          transaction_signature: string | null
+          transaction_type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          bounty_id?: string | null
+          campaign_id?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          from_wallet?: string | null
+          id?: string
+          status?: string | null
+          to_wallet?: string | null
+          transaction_signature?: string | null
+          transaction_type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bounty_id?: string | null
+          campaign_id?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          from_wallet?: string | null
+          id?: string
+          status?: string | null
+          to_wallet?: string | null
+          transaction_signature?: string | null
+          transaction_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrow_transactions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "public_stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sharing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string | null

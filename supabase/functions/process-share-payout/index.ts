@@ -7,6 +7,61 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Security function: Validate payout security limits
+async function validatePayoutSecurity(
+  userId: string,
+  amount: number,
+  supabaseAdmin: any
+): Promise<void> {
+  // Check if payouts are enabled (circuit breaker)
+  const { data: payoutsEnabled } = await supabaseAdmin
+    .from('platform_settings')
+    .select('setting_value')
+    .eq('setting_key', 'payouts_enabled')
+    .single();
+
+  if (payoutsEnabled?.setting_value === false) {
+    throw new Error('Payouts are temporarily disabled for maintenance');
+  }
+
+  // Get max limits from settings
+  const { data: maxPerTx } = await supabaseAdmin
+    .from('platform_settings')
+    .select('setting_value')
+    .eq('setting_key', 'max_payout_per_transaction')
+    .single();
+
+  const { data: maxPerHour } = await supabaseAdmin
+    .from('platform_settings')
+    .select('setting_value')
+    .eq('setting_key', 'max_payout_per_hour_per_user')
+    .single();
+
+  const maxPerTransaction = maxPerTx?.setting_value || 5;
+  const maxPerHourPerUser = maxPerHour?.setting_value || 10;
+
+  // Check single transaction limit
+  if (amount > maxPerTransaction) {
+    throw new Error(`Transaction amount exceeds maximum allowed (${maxPerTransaction} SOL)`);
+  }
+
+  // Check hourly limit
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { data: recentPayouts } = await supabaseAdmin
+    .from('escrow_transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('transaction_type', 'payout_share')
+    .eq('status', 'confirmed')
+    .gte('created_at', oneHourAgo);
+
+  const hourlyTotal = recentPayouts?.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0) || 0;
+
+  if (hourlyTotal + amount > maxPerHourPerUser) {
+    throw new Error(`Hourly withdrawal limit exceeded (${maxPerHourPerUser} SOL/hour). You've used ${hourlyTotal.toFixed(4)} SOL in the last hour. Please try again later.`);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -82,11 +137,12 @@ serve(async (req) => {
     const totalAmount = unclaimedShares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
     console.log(`Total to pay: ${totalAmount} SOL`);
 
-    // Connect to Solana mainnet-beta
-    const connection = new Connection(
-      "https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f",
-      "confirmed"
-    );
+    // Validate payout security (rate limiting, circuit breaker)
+    await validatePayoutSecurity(userId, totalAmount, supabaseAdmin);
+
+    // Connect to Solana using secure RPC endpoint
+    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+    const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
     // Load escrow wallet from private key
     const escrowPrivateKey = Deno.env.get('ESCROW_WALLET_PRIVATE_KEY');
@@ -106,6 +162,16 @@ serve(async (req) => {
 
     console.log(`Sending ${lamports} lamports to ${walletAddress}`);
 
+    // Check escrow wallet balance before attempting transfer
+    const escrowBalance = await connection.getBalance(escrowWallet.publicKey);
+    console.log('Escrow wallet balance:', escrowBalance / LAMPORTS_PER_SOL, 'SOL');
+
+    if (escrowBalance < lamports) {
+      throw new Error(
+        `Insufficient funds in escrow wallet. Need ${totalAmount} SOL but only have ${(escrowBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`
+      );
+    }
+
     // Create transaction
     const transaction = new Transaction().add(
       SystemProgram.transfer({
@@ -120,6 +186,25 @@ serve(async (req) => {
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = escrowWallet.publicKey;
 
+    // Log transaction as pending
+    const { data: txLog, error: txLogError } = await supabaseAdmin
+      .from('escrow_transactions')
+      .insert({
+        transaction_type: 'payout_share',
+        amount: totalAmount,
+        from_wallet: escrowWallet.publicKey.toString(),
+        to_wallet: walletAddress,
+        user_id: userId,
+        campaign_id: campaignId,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (txLogError) {
+      console.error('Error logging transaction:', txLogError);
+    }
+
     // Sign and send transaction
     transaction.sign(escrowWallet);
     const signature = await connection.sendRawTransaction(transaction.serialize());
@@ -130,6 +215,18 @@ serve(async (req) => {
     await connection.confirmTransaction(signature, 'confirmed');
     
     console.log('Transaction confirmed:', signature);
+
+    // Update transaction log
+    if (txLog) {
+      await supabaseAdmin
+        .from('escrow_transactions')
+        .update({
+          status: 'confirmed',
+          transaction_signature: signature,
+          confirmed_at: new Date().toISOString()
+        })
+        .eq('id', txLog.id);
+    }
 
     // Mark all shares as claimed
     const shareIds = unclaimedShares.map(share => share.id);
@@ -160,6 +257,32 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Error in process-share-payout:', error);
+
+    // Log failed transaction if we have the details
+    try {
+      const { userId, campaignId, walletAddress } = await req.json();
+      if (userId && campaignId) {
+        const supabaseAdmin = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+
+        await supabaseAdmin
+          .from('escrow_transactions')
+          .insert({
+            transaction_type: 'payout_share',
+            amount: 0,
+            to_wallet: walletAddress,
+            user_id: userId,
+            campaign_id: campaignId,
+            status: 'failed',
+            error_message: error.message
+          });
+      }
+    } catch (logError) {
+      console.error('Error logging failed transaction:', logError);
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { 

@@ -32,11 +32,9 @@ serve(async (req) => {
       );
     }
 
-    // Connect to Solana mainnet-beta
-    const connection = new web3.Connection(
-      'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
-      'confirmed'
-    );
+    // Connect to Solana using secure RPC endpoint
+    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+    const connection = new web3.Connection(SOLANA_RPC_URL, 'confirmed');
 
     // Validate wallet addresses
     let fromPubkey: web3.PublicKey;
