@@ -80,10 +80,35 @@ export const WalletConnect = () => {
       
       await connect();
       
-      const address = publicKey?.toBase58();
+      // Wait for publicKey to be populated with retry logic
+      let address: string | undefined;
+      let retries = 3;
+      
+      console.log('Waiting for wallet publicKey...');
+      while (retries > 0 && !address) {
+        if (publicKey) {
+          address = publicKey.toBase58();
+          console.log('Wallet connected successfully, address:', address);
+          break;
+        }
+        
+        // Wait 500ms before checking again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries--;
+        console.log(`Retrying... ${retries} attempts left`);
+      }
+      
+      // If still no address, try window.solana as fallback (desktop)
+      if (!address && !isMobile) {
+        const solana = (window as any)?.solana;
+        if (solana?.publicKey) {
+          address = solana.publicKey.toString();
+          console.log('Retrieved address from window.solana fallback');
+        }
+      }
       
       if (!address) {
-        throw new Error('Failed to retrieve wallet address');
+        throw new Error('Failed to retrieve wallet address. Please make sure your wallet is unlocked and try again.');
       }
 
       // Create message to sign for wallet ownership verification
@@ -135,10 +160,22 @@ export const WalletConnect = () => {
       });
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
+      
+      // Improved error messages
+      let errorMessage = error.message || "Failed to connect wallet. Please try again.";
+      
+      if (error.message?.includes('User rejected') || error.message?.includes('User cancelled')) {
+        errorMessage = "Connection cancelled. Please approve the connection in your wallet.";
+      } else if (error.message?.includes('not installed') || error.message?.includes('not detected')) {
+        errorMessage = "Phantom wallet not detected. Please install the Phantom browser extension.";
+      } else if (error.message?.includes('unlock')) {
+        errorMessage = "Please unlock your Phantom wallet and try again.";
+      }
+      
       await disconnect();
       toast({
         title: "Connection Failed",
-        description: error.message || "Failed to connect wallet. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
