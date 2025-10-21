@@ -79,11 +79,28 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
       }
 
       toast({
+        title: 'Checking Balance',
+        description: 'Verifying wallet funds...',
+      });
+
+      // Step 2: Check balance before attempting transaction
+      const { Connection, clusterApiUrl, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      const balance = await connection.getBalance(solana.publicKey);
+      const balanceInSOL = balance / LAMPORTS_PER_SOL;
+
+      if (balanceInSOL < totalDeposit) {
+        throw new Error(
+          `Insufficient balance. You need ${totalDeposit.toFixed(4)} SOL but only have ${balanceInSOL.toFixed(4)} SOL. Get devnet SOL from https://faucet.solana.com/`
+        );
+      }
+
+      toast({
         title: 'Preparing Deposit',
         description: `Please approve ${totalDeposit.toFixed(4)} SOL deposit (5% platform fee will be deducted)...`,
       });
 
-      // Step 2: Call charge-bounty-wallet to prepare deposit transaction
+      // Step 3: Call charge-bounty-wallet to prepare deposit transaction
       const ESCROW_WALLET = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
       
       const { data: txData, error: txError } = await supabase.functions.invoke(
@@ -97,11 +114,31 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
         }
       );
 
-      if (txError) throw txError;
+      // Improved error handling
+      if (txError || !txData) {
+        console.error('Transaction preparation error:', txError);
+        
+        let errorMessage = 'Failed to prepare transaction';
+        
+        if (txError?.message) {
+          errorMessage = txError.message;
+        }
+        
+        // Check if there's error data in the response
+        if (txData?.error) {
+          errorMessage = txData.error;
+          
+          // Special handling for insufficient balance
+          if (txData.availableSOL !== undefined) {
+            errorMessage = `Insufficient balance. Required: ${txData.requiredSOL} SOL, Available: ${txData.availableSOL.toFixed(4)} SOL. Get devnet SOL from https://faucet.solana.com/`;
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
 
-      // Step 3: Import Solana web3 and sign transaction
-      const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      // Step 4: Import Solana web3 and sign transaction
+      const { Transaction } = await import('@solana/web3.js');
       
       const transaction = Transaction.from(Buffer.from(txData.transaction, 'base64'));
       const signed = await solana.signTransaction(transaction);
@@ -114,7 +151,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
 
       await connection.confirmTransaction(signature, 'confirmed');
 
-      // Step 4: Create campaign with escrow signature
+      // Step 5: Create campaign with escrow signature
       const { data: campaignData, error } = await supabase
         .from('sharing_campaigns')
         .insert({
@@ -134,7 +171,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
 
       if (error) throw error;
 
-      // Step 5: Add platform fee to revenue pool
+      // Step 6: Add platform fee to revenue pool
       if (campaignData) {
         await supabase.rpc('add_to_revenue_pool', {
           p_amount: platformFee,
@@ -156,9 +193,35 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
       });
     } catch (error: any) {
       console.error('Error creating campaign:', error);
+      
+      let description: any = error.message || 'Could not create campaign';
+      
+      // Add faucet link for balance issues
+      if (error.message?.includes('Insufficient balance') || error.message?.includes('balance')) {
+        const match = error.message.match(/https:\/\/faucet\.solana\.com\//);
+        if (match) {
+          description = (
+            <div className="space-y-2">
+              <p>{error.message.replace(/\s*Get devnet SOL from.*$/, '')}</p>
+              <p className="text-xs">
+                Get devnet SOL from:{' '}
+                <a 
+                  href="https://faucet.solana.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Solana Faucet
+                </a>
+              </p>
+            </div>
+          );
+        }
+      }
+      
       toast({
         title: 'Error',
-        description: error.message || 'Could not create campaign',
+        description,
         variant: 'destructive',
       });
     } finally {

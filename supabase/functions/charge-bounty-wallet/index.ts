@@ -62,14 +62,20 @@ serve(async (req) => {
     console.log(`User balance: ${balance} lamports`);
 
     if (balance < lamports) {
+      const errorResponse = {
+        error: 'Insufficient balance',
+        message: `You need ${amount} SOL but only have ${(balance / web3.LAMPORTS_PER_SOL).toFixed(4)} SOL`,
+        required: lamports,
+        available: balance,
+        requiredSOL: amount,
+        availableSOL: balance / web3.LAMPORTS_PER_SOL,
+        hint: 'Please add devnet SOL to your wallet using a faucet like https://faucet.solana.com/'
+      };
+      
+      console.error('Insufficient balance:', errorResponse);
+      
       return new Response(
-        JSON.stringify({ 
-          error: 'Insufficient balance',
-          required: lamports,
-          available: balance,
-          requiredSOL: amount,
-          availableSOL: balance / web3.LAMPORTS_PER_SOL
-        }),
+        JSON.stringify(errorResponse),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
