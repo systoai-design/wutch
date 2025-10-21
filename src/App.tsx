@@ -193,8 +193,10 @@ function ShortsLayout() {
 }
 
 const App = () => {
-  const network = WalletAdapterNetwork.Mainnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => 
+    'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
+    []
+  );
   
   // Register Mobile Wallet Adapter for mobile web support
   useEffect(() => {

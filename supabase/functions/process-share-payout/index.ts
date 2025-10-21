@@ -82,8 +82,11 @@ serve(async (req) => {
     const totalAmount = unclaimedShares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
     console.log(`Total to pay: ${totalAmount} SOL`);
 
-    // Connect to Solana devnet
-    const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+    // Connect to Solana mainnet-beta
+    const connection = new Connection(
+      "https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f",
+      "confirmed"
+    );
 
     // Load escrow wallet from private key
     const escrowPrivateKey = Deno.env.get('ESCROW_WALLET_PRIVATE_KEY');

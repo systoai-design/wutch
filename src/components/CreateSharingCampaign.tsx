@@ -84,8 +84,11 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
       });
 
       // Step 2: Check balance before attempting transaction
-      const { Connection, clusterApiUrl, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
-      const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
+      const { Connection, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+      const connection = new Connection(
+        'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
+        'confirmed'
+      );
       const balance = await connection.getBalance(solana.publicKey);
       const balanceInSOL = balance / LAMPORTS_PER_SOL;
 

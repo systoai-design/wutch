@@ -34,7 +34,7 @@ serve(async (req) => {
 
     // Connect to Solana mainnet-beta
     const connection = new web3.Connection(
-      web3.clusterApiUrl('mainnet-beta'),
+      'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
       'confirmed'
     );
 

@@ -97,7 +97,10 @@ const DonationModal = ({ isOpen, onClose, streamerName, walletAddress, contentId
       const { Transaction, SystemProgram, Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
 
       // Create connection
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      const connection = new Connection(
+        'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
+        'confirmed'
+      );
 
       // Create transaction with TWO transfers: 95% to creator, 5% to platform
       const transaction = new Transaction()

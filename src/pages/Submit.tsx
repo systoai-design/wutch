@@ -267,7 +267,10 @@ const Submit = () => {
           const signed = await solana.signTransaction(transaction);
           
           // Send the signed transaction
-          const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+          const connection = new Connection(
+            'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
+            'confirmed'
+          );
           
           const signature = await connection.sendRawTransaction(signed.serialize());
           await connection.confirmTransaction(signature, 'confirmed');
