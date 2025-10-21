@@ -112,19 +112,42 @@ Deno.serve(async (req) => {
     }
 
     // Save verified wallet
-    const { error: upsertError } = await supabaseAdmin
+    console.log(`Attempting to save wallet for user: ${user.id}`);
+    console.log(`Wallet address: ${walletAddress}`);
+    
+    // Try to insert first
+    const { error: insertError } = await supabaseAdmin
       .from('profile_wallets')
-      .upsert({
+      .insert({
         user_id: user.id,
         wallet_address: walletAddress,
-      }, {
-        onConflict: 'user_id'
       });
 
-    if (upsertError) {
-      console.error('Error saving wallet:', upsertError);
+    // If conflict (user already has a wallet), update instead
+    if (insertError?.code === '23505') {
+      console.log('Wallet exists for user, updating...');
+      const { error: updateError } = await supabaseAdmin
+        .from('profile_wallets')
+        .update({ 
+          wallet_address: walletAddress,
+          last_connected_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+        
+      if (updateError) {
+        console.error('Error updating wallet:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to update wallet' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    } else if (insertError) {
+      console.error('Error inserting wallet:', insertError);
       return new Response(
-        JSON.stringify({ error: 'Failed to save wallet' }),
+        JSON.stringify({ error: `Failed to save wallet: ${insertError.message}` }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
