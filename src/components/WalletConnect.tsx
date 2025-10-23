@@ -11,7 +11,7 @@ export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const isMobile = useIsMobile();
   const { publicKey, connect, disconnect, signMessage, select, wallets } = useWallet();
 
@@ -30,6 +30,13 @@ export const WalletConnect = () => {
             console.error('Error disconnecting wallet:', error);
           }
         }
+        return;
+      }
+
+      // Wait for session to be fully established
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session available yet, skipping wallet load');
         return;
       }
 
@@ -135,7 +142,13 @@ export const WalletConnect = () => {
       const bs58 = (await import('bs58')).default;
       const base58Signature = bs58.encode(signature);
 
-      // Verify signature on backend
+      // Ensure we have a valid session token before verifying
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Please log in again to connect your wallet');
+      }
+
+      // Verify signature on backend with fresh token
       const { data, error } = await supabase.functions.invoke('verify-wallet', {
         body: {
           walletAddress: address,
@@ -146,6 +159,33 @@ export const WalletConnect = () => {
 
       if (error) {
         console.error('Wallet verification error:', error);
+        
+        // Handle authentication errors specifically
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+          // Try to refresh the session and retry once
+          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+          if (refreshedSession) {
+            // Retry the verification with refreshed token
+            const retryResult = await supabase.functions.invoke('verify-wallet', {
+              body: { walletAddress: address, signature: base58Signature, message: message }
+            });
+            
+            if (retryResult.error) {
+              throw new Error('Session expired. Please log out and log in again to connect your wallet.');
+            }
+            if (retryResult.data?.success) {
+              // Success on retry
+              setWalletAddress(address);
+              toast({
+                title: "Wallet Connected",
+                description: "Your Phantom wallet has been verified and connected successfully.",
+              });
+              return;
+            }
+          }
+          throw new Error('Session expired. Please log out and log in again to connect your wallet.');
+        }
+        
         throw new Error(error.message || 'Failed to verify wallet ownership');
       }
 
@@ -170,6 +210,10 @@ export const WalletConnect = () => {
         errorMessage = "Phantom wallet not detected. Please install the Phantom browser extension.";
       } else if (error.message?.includes('unlock')) {
         errorMessage = "Please unlock your Phantom wallet and try again.";
+      } else if (error.message?.includes('Session expired') || error.message?.includes('log in again')) {
+        errorMessage = "Your session has expired. Please log out and log in again, then try connecting your wallet.";
+      } else if (error.message?.includes('Unauthorized')) {
+        errorMessage = "Authentication failed. Please refresh the page and try again.";
       }
       
       await disconnect();
@@ -230,15 +274,15 @@ export const WalletConnect = () => {
   return (
     <Button
       onClick={connectWallet}
-      disabled={isConnecting}
+      disabled={isConnecting || authLoading || !user}
       size="sm"
       className="gap-2"
     >
       <Wallet className="h-4 w-4" />
       <span className="hidden sm:inline">
-        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        {authLoading ? 'Loading...' : isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </span>
-      {isMobile && !isConnecting && (
+      {isMobile && !isConnecting && !authLoading && (
         <span className="sm:hidden">Connect</span>
       )}
     </Button>
