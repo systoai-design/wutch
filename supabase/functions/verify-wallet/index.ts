@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import bs58 from 'https://esm.sh/bs58@5.0.0';
+import nacl from 'https://esm.sh/tweetnacl@1.0.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,21 +56,29 @@ Deno.serve(async (req) => {
     const signatureBytes = bs58.decode(signature);
     const publicKeyBytes = bs58.decode(walletAddress);
 
-    // Import nacl for signature verification
-    const nacl = await import('https://cdn.skypack.dev/tweetnacl@1.0.3?dts');
-    
-    const verified = nacl.sign.detached.verify(
-      messageBytes,
-      signatureBytes,
-      publicKeyBytes
-    );
+    try {
+      const verified = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes
+      );
 
-    if (!verified) {
-      console.log('Invalid signature verification');
+      if (!verified) {
+        console.log('Invalid signature verification');
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature - wallet ownership could not be verified' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    } catch (verifyError) {
+      console.error('Signature verification failed:', verifyError);
       return new Response(
-        JSON.stringify({ error: 'Invalid signature - wallet ownership could not be verified' }),
+        JSON.stringify({ error: 'Failed to verify signature. Please try again.' }),
         {
-          status: 401,
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
