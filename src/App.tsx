@@ -43,6 +43,8 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Leaderboards = lazy(() => import('./pages/Leaderboards'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const CommunityPosts = lazy(() => import('./pages/CommunityPosts'));
+const CommunityPostDetail = lazy(() => import('./pages/CommunityPostDetail'));
 const AdminVerification = lazy(() => import('./pages/AdminVerification'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
