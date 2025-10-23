@@ -135,6 +135,8 @@ function AppContent() {
         <Route element={<AppLayout />}>
           <Route path="/app" element={<Home />} />
           <Route path="/streams" element={<Streams />} />
+          <Route path="/community" element={<CommunityPosts />} />
+          <Route path="/community/post/:postId" element={<CommunityPostDetail />} />
           
           {/* SEO-friendly routes */}
           <Route path="/stream/:username/:titleSlug/:id" element={<StreamDetail />} />

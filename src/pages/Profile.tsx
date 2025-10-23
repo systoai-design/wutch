@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2, CalendarDays, Settings as SettingsIcon, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2, CalendarDays, Settings as SettingsIcon, Link as LinkIcon, CheckCircle2, MessageSquare } from 'lucide-react';
+import { UpcomingFeatureBanner } from '@/components/UpcomingFeatureBanner';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -644,6 +645,10 @@ const ProfilePage = () => {
               <TabsTrigger value="shorts" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                 Shorts {shorts.length > 0 && `(${shorts.length})`}
               </TabsTrigger>
+              <TabsTrigger value="posts" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                Posts
+                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+              </TabsTrigger>
               {isOwnProfile && (
                 <TabsTrigger value="analytics" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                   Analytics
@@ -740,6 +745,20 @@ const ProfilePage = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="posts" className="mt-6">
+            <UpcomingFeatureBanner
+              title="Community Posts - Coming Soon!"
+              description="Share text updates, images, and connect with your audience in a whole new way. This feature will be available soon!"
+            />
+            <div className="mt-6">
+              <EmptyState
+                icon={MessageSquare}
+                title="No posts yet"
+                description="Community posts feature is coming soon. Stay tuned!"
+              />
+            </div>
           </TabsContent>
 
           {isOwnProfile && (

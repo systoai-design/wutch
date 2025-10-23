@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
+import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,6 +8,7 @@ import { CATEGORIES } from '@/constants/categories';
 import { useEffect, useState } from 'react';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import wutchLogo from '@/assets/wutch-logo.png';
+import { Badge } from '@/components/ui/badge';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -32,6 +33,7 @@ const Sidebar = () => {
     { icon: null, label: 'Pump Streams', path: '/streams', type: 'image', imageSrc: pumpFunLogo },
     { icon: null, label: 'Wutch', path: '/wutch', type: 'image', imageSrc: wutchLogo },
     { icon: Zap, label: 'Shorts', path: '/shorts', type: 'icon' },
+    { icon: MessageSquare, label: 'Community', path: '/community', type: 'icon', badge: 'Soon' },
     { icon: DollarSign, label: 'Bounties', path: '/bounties', type: 'icon' },
     { icon: Trophy, label: 'Leaderboards', path: '/leaderboards', type: 'icon' },
     { icon: Flame, label: 'Trending', path: '/trending', type: 'icon' },
@@ -72,6 +74,11 @@ const Sidebar = () => {
               />
             )}
               <span>{item.label}</span>
+              {item.badge && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {item.badge}
+                </Badge>
+              )}
             </Link>
           );
         })}

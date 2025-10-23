@@ -21,7 +21,7 @@ export type Database = {
           admin_user_id: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           target_user_id: string | null
           user_agent: string | null
         }
@@ -31,7 +31,7 @@ export type Database = {
           admin_user_id: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           target_user_id?: string | null
           user_agent?: string | null
         }
@@ -41,7 +41,7 @@ export type Database = {
           admin_user_id?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           target_user_id?: string | null
           user_agent?: string | null
         }
@@ -229,6 +229,114 @@ export type Database = {
           },
           {
             foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          comment_count: number
+          content: string
+          created_at: string
+          id: string
+          like_count: number
+          media_url: string | null
+          moderation_status: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_count?: number
+          content: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          media_url?: string | null
+          moderation_status?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_count?: number
+          content?: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          media_url?: string | null
+          moderation_status?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_trust_stats"
@@ -1710,7 +1818,7 @@ export type Database = {
           accessed_by: string
           accessed_columns: string[] | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           verification_request_id: string
         }
@@ -1721,7 +1829,7 @@ export type Database = {
           accessed_by: string
           accessed_columns?: string[] | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           verification_request_id: string
         }
@@ -1732,7 +1840,7 @@ export type Database = {
           accessed_by?: string
           accessed_columns?: string[] | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           verification_request_id?: string
         }
@@ -2237,13 +2345,20 @@ export type Database = {
           verification_type: string
         }[]
       }
-      cleanup_mfa_attempts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_notification: {
-        Args:
-          | {
+      cleanup_mfa_attempts: { Args: never; Returns: undefined }
+      create_notification:
+        | {
+            Args: {
+              p_message: string
+              p_metadata?: Json
+              p_title: string
+              p_type: string
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_actor_id?: string
               p_content_id?: string
               p_content_type?: string
@@ -2253,15 +2368,8 @@ export type Database = {
               p_type: string
               p_user_id: string
             }
-          | {
-              p_message: string
-              p_metadata?: Json
-              p_title: string
-              p_type: string
-              p_user_id: string
-            }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
       credit_view_earnings: {
         Args: {
           p_content_id: string
@@ -2271,10 +2379,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      deactivate_stale_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      deactivate_stale_sessions: { Args: never; Returns: undefined }
       decrement_stream_viewers: {
         Args: { stream_id: string }
         Returns: undefined
@@ -2335,7 +2440,7 @@ export type Database = {
         }[]
       }
       get_platform_earnings_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_creators: number
           total_paid_to_creators: number
@@ -2352,10 +2457,7 @@ export type Database = {
           total_rewards_given: number
         }[]
       }
-      get_user_moderation_tier: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_user_moderation_tier: { Args: { user_id: string }; Returns: string }
       get_user_watch_time: {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number
@@ -2383,10 +2485,7 @@ export type Database = {
         Args: { video_id: string }
         Returns: undefined
       }
-      is_moderator: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      is_moderator: { Args: { _user_id: string }; Returns: boolean }
       log_moderation_action: {
         Args: {
           p_action_type: string
@@ -2423,14 +2522,15 @@ export type Database = {
         Args: { p_user_id: string; p_verification_type: string }
         Returns: undefined
       }
-      update_user_moderation_tiers: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_user_moderation_tiers: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      content_type: "livestream" | "shortvideo" | "wutch_video"
+      content_type:
+        | "livestream"
+        | "shortvideo"
+        | "wutch_video"
+        | "community_post"
       donation_status: "pending" | "confirmed" | "failed"
       livestream_status: "pending" | "approved" | "live" | "ended" | "removed"
     }
@@ -2561,7 +2661,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      content_type: ["livestream", "shortvideo", "wutch_video"],
+      content_type: [
+        "livestream",
+        "shortvideo",
+        "wutch_video",
+        "community_post",
+      ],
       donation_status: ["pending", "confirmed", "failed"],
       livestream_status: ["pending", "approved", "live", "ended", "removed"],
     },
