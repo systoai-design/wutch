@@ -100,7 +100,7 @@ const Navigation = () => {
               src={wutchLogoSm}
               srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
               alt="Wutch" 
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110 animate-blink"
               style={{ backgroundColor: 'transparent' }}
               width="36"
               height="36"
