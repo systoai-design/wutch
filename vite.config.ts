@@ -13,12 +13,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    viteCompression({
+    // Disable compression for mobile builds to avoid duplicate resource errors in Android
+    process.env.BUILD_TARGET !== 'mobile' && viteCompression({
       algorithm: 'gzip',
       ext: '.gz',
       threshold: 10240,
     }),
-    viteCompression({
+    process.env.BUILD_TARGET !== 'mobile' && viteCompression({
       algorithm: 'brotliCompress',
       ext: '.br',
       threshold: 10240,
