@@ -24,6 +24,7 @@ import {
   createDefaultChainSelector,
   createDefaultWalletNotFoundHandler
 } from '@solana-mobile/wallet-standard-mobile';
+import { Capacitor } from '@capacitor/core';
 
 // Lazy load pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -104,6 +105,13 @@ function AppContent() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Redirect mobile app users from landing page to main app
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() && location.pathname === '/') {
+      window.location.href = '/app';
+    }
+  }, [location.pathname]);
 
   // Detect OAuth callback errors
   useEffect(() => {
