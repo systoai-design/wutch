@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.3561f8c1735e43eb9412fe29af22feae',
+  appId: 'com.wutch.app',
   appName: 'Wutch',
   webDir: 'dist',
   server: {
