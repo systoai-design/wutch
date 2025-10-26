@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 Deno.serve(async (req) => {
@@ -14,19 +14,7 @@ Deno.serve(async (req) => {
   try {
     console.log('Admin reset function called');
     
-    // SECURITY: Require both admin token AND authenticated admin user
-    const adminToken = req.headers.get('x-admin-token');
-    const expectedToken = Deno.env.get('ADMIN_MAINTENANCE_TOKEN');
-    
-    if (!adminToken || adminToken !== expectedToken) {
-      console.error('Invalid or missing admin token');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid admin token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verify authenticated user is an admin
+    // SECURITY: Require authenticated admin user ONLY
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('Missing Authorization header');
@@ -57,7 +45,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Admin token verified, checking user ${user.id} for admin role`);
+    console.log(`Checking user ${user.id} for admin role`);
 
     // Initialize Supabase admin client
     const supabaseAdmin = createClient(
@@ -87,7 +75,27 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Require confirmation in request body
+    const { confirm } = await req.json();
+    if (confirm !== true) {
+      return new Response(
+        JSON.stringify({ error: 'Confirmation required. Send { "confirm": true } to proceed.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log(`Admin user ${user.id} authorized for database reset`);
+
+    // Log the admin action with IP
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    await supabaseAdmin
+      .from('admin_actions_log')
+      .insert({
+        admin_user_id: user.id,
+        action_type: 'database_reset',
+        ip_address: ipAddress,
+        action_details: { timestamp: new Date().toISOString() }
+      });
 
     const results = {
       usersDeleted: 0,
@@ -101,7 +109,6 @@ Deno.serve(async (req) => {
     const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (usersError) {
-      console.error('Error fetching users:', usersError);
       results.errors.push(`Failed to fetch users: ${usersError.message}`);
     } else if (users?.users) {
       console.log(`Found ${users.users.length} users to delete`);
@@ -109,11 +116,9 @@ Deno.serve(async (req) => {
       for (const user of users.users) {
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
         if (deleteError) {
-          console.error(`Error deleting user ${user.id}:`, deleteError);
-          results.errors.push(`Failed to delete user ${user.id}: ${deleteError.message}`);
+          results.errors.push(`Failed to delete user ${user.id}`);
         } else {
           results.usersDeleted++;
-          console.log(`Deleted user ${user.id}`);
         }
       }
     }
@@ -127,9 +132,14 @@ Deno.serve(async (req) => {
       'donations',
       'comments',
       'short_video_likes',
+      'wutch_video_likes',
+      'livestream_likes',
+      'community_post_likes',
       'short_videos',
+      'wutch_videos',
       'viewing_sessions',
       'livestreams',
+      'community_posts',
       'follows',
       'user_roles',
       'profile_wallets',
@@ -144,61 +154,50 @@ Deno.serve(async (req) => {
         .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
       
       if (deleteError) {
-        console.error(`Error clearing ${table}:`, deleteError);
-        results.errors.push(`Failed to clear ${table}: ${deleteError.message}`);
+        results.errors.push(`Failed to clear ${table}`);
         results.tablesCleared[table] = 0;
       } else {
         results.tablesCleared[table] = count || 0;
-        console.log(`Cleared ${count || 0} rows from ${table}`);
       }
     }
 
     // Step 3: Purge storage buckets
-    const bucketsToPurge = ['short-videos', 'short-thumbnails'];
+    const bucketsToPurge = ['short-videos', 'short-thumbnails', 'wutch-videos', 'wutch-video-thumbnails'];
 
     for (const bucket of bucketsToPurge) {
       console.log(`Purging bucket: ${bucket}`);
       try {
-        // List all files in the bucket
         const { data: files, error: listError } = await supabaseAdmin
           .storage
           .from(bucket)
           .list();
 
         if (listError) {
-          console.error(`Error listing files in ${bucket}:`, listError);
-          results.errors.push(`Failed to list files in ${bucket}: ${listError.message}`);
+          results.errors.push(`Failed to list files in ${bucket}`);
           continue;
         }
 
         if (files && files.length > 0) {
           const filePaths = files.map(file => file.name);
-          console.log(`Found ${filePaths.length} files in ${bucket}`);
-
           const { error: removeError } = await supabaseAdmin
             .storage
             .from(bucket)
             .remove(filePaths);
 
           if (removeError) {
-            console.error(`Error removing files from ${bucket}:`, removeError);
-            results.errors.push(`Failed to remove files from ${bucket}: ${removeError.message}`);
+            results.errors.push(`Failed to remove files from ${bucket}`);
           } else {
             results.storageCleared.push(bucket);
-            console.log(`Purged ${filePaths.length} files from ${bucket}`);
           }
         } else {
           results.storageCleared.push(bucket);
-          console.log(`Bucket ${bucket} was already empty`);
         }
       } catch (error) {
-        console.error(`Exception while purging ${bucket}:`, error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        results.errors.push(`Exception while purging ${bucket}: ${errorMessage}`);
+        results.errors.push(`Exception while purging ${bucket}`);
       }
     }
 
-    console.log('Admin reset completed:', results);
+    console.log('Admin reset completed');
 
     return new Response(
       JSON.stringify({

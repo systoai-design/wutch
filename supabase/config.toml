@@ -11,7 +11,7 @@ max_rows = 1000
 enabled = true
 
 [functions.verify-donation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.livestreams]
 verify_jwt = true
@@ -24,9 +24,6 @@ verify_jwt = true
 
 [functions.charge-bounty-wallet]
 verify_jwt = true
-
-[functions.get-email-by-username]
-verify_jwt = false
 
 [functions.admin-reset]
 verify_jwt = true

@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import * as web3 from "https://esm.sh/@solana/web3.js@1.98.4";
+import { validateInput, bountyValidationSchema } from "../_shared/validation.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,27 +15,56 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, fromWalletAddress, toWalletAddress } = await req.json();
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    // Verify JWT and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    console.log('Charging bounty wallet:', { amount, fromWalletAddress, toWalletAddress });
-
-    if (!amount || !fromWalletAddress || !toWalletAddress) {
+    if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
 
-    // Validate amount is positive
-    if (amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Amount must be greater than 0' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+    // Check rate limit
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const rateLimit = await checkRateLimit('charge-bounty-wallet', user.id, ipAddress);
+    
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetAt);
     }
+
+    const requestBody = await req.json();
+    
+    // Validate input using Zod schema
+    const validatedData = validateInput(bountyValidationSchema, requestBody);
+    
+    const { amount, fromWalletAddress, toWalletAddress } = validatedData;
 
     // Connect to Solana using secure RPC endpoint
-    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL');
+    if (!SOLANA_RPC_URL) {
+      throw new Error('Solana RPC URL not configured');
+    }
+    
     const connection = new web3.Connection(SOLANA_RPC_URL, 'confirmed');
 
     // Validate wallet addresses
@@ -53,11 +84,8 @@ serve(async (req) => {
     // Amount is in SOL, convert directly to lamports
     const lamports = Math.floor(amount * web3.LAMPORTS_PER_SOL);
 
-    console.log(`Processing ${amount} SOL (${lamports} lamports)`);
-
     // Check if user has sufficient balance
     const balance = await connection.getBalance(fromPubkey);
-    console.log(`User balance: ${balance} lamports`);
 
     if (balance < lamports) {
       const errorResponse = {
@@ -69,8 +97,6 @@ serve(async (req) => {
         availableSOL: balance / web3.LAMPORTS_PER_SOL,
         hint: 'Please add SOL to your wallet to continue.'
       };
-      
-      console.error('Insufficient balance:', errorResponse);
       
       return new Response(
         JSON.stringify(errorResponse),

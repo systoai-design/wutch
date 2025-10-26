@@ -1,11 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import bs58 from 'https://esm.sh/bs58@5.0.0';
 import nacl from 'https://esm.sh/tweetnacl@1.0.3';
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper to generate random nonce
+function generateNonce(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -32,11 +38,18 @@ Deno.serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
-      console.error('Auth error:', userError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Check rate limit
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const rateLimit = await checkRateLimit('verify-wallet', user.id, ipAddress);
+    
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetAt);
     }
 
     const { walletAddress, signature, message } = await req.json();
@@ -46,6 +59,57 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'Missing required fields' }),
         {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Parse message to extract timestamp and nonce
+    const messageMatch = message.match(/Sign this message to verify your wallet: (\d+):(\w+)/);
+    if (!messageMatch) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid message format' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const timestamp = parseInt(messageMatch[1]);
+    const nonce = messageMatch[2];
+
+    // Verify timestamp is within 5 minutes
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    if (now - timestamp > fiveMinutes) {
+      return new Response(
+        JSON.stringify({ error: 'Signature expired. Please try again.' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Create admin client for checking nonces
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Check if signature has already been used (replay attack protection)
+    const { data: existingNonce } = await supabaseAdmin
+      .from('signature_nonces')
+      .select('id')
+      .eq('signature', signature)
+      .maybeSingle();
+
+    if (existingNonce) {
+      return new Response(
+        JSON.stringify({ error: 'Signature already used. Please generate a new signature.' }),
+        {
+          status: 409,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
@@ -64,7 +128,6 @@ Deno.serve(async (req) => {
       );
 
       if (!verified) {
-        console.log('Invalid signature verification');
         return new Response(
           JSON.stringify({ error: 'Invalid signature - wallet ownership could not be verified' }),
           {
@@ -84,11 +147,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create admin client for checking existing wallets
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Store signature nonce to prevent replay attacks
+    await supabaseAdmin
+      .from('signature_nonces')
+      .insert({
+        signature,
+        wallet_address: walletAddress,
+        used_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes expiry
+      });
 
     // Check if wallet is already linked to another account
     const { data: existing, error: checkError } = await supabaseAdmin
@@ -121,9 +188,6 @@ Deno.serve(async (req) => {
     }
 
     // Save verified wallet
-    console.log(`Attempting to save wallet for user: ${user.id}`);
-    console.log(`Wallet address: ${walletAddress}`);
-    
     // Try to insert first
     const { error: insertError } = await supabaseAdmin
       .from('profile_wallets')
@@ -134,7 +198,6 @@ Deno.serve(async (req) => {
 
     // If conflict (user already has a wallet), update instead
     if (insertError?.code === '23505') {
-      console.log('Wallet exists for user, updating...');
       const { error: updateError } = await supabaseAdmin
         .from('profile_wallets')
         .update({ 
@@ -164,7 +227,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Wallet ${walletAddress} verified and linked to user ${user.id}`);
+    // Also update public_wallet_address in profiles for donations
+    await supabaseAdmin
+      .from('profiles')
+      .update({ public_wallet_address: walletAddress })
+      .eq('id', user.id);
 
     return new Response(
       JSON.stringify({ success: true }),

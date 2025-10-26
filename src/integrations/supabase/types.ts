@@ -1198,6 +1198,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: unknown
+          request_count: number
+          user_id: string | null
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address?: unknown
+          request_count?: number
+          user_id?: string | null
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          request_count?: number
+          user_id?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
       red_badge_eligibility_notifications: {
         Row: {
           follower_count: number
@@ -1445,6 +1475,30 @@ export type Database = {
           },
         ]
       }
+      signature_nonces: {
+        Row: {
+          expires_at: string
+          id: string
+          signature: string
+          used_at: string
+          wallet_address: string
+        }
+        Insert: {
+          expires_at?: string
+          id?: string
+          signature: string
+          used_at?: string
+          wallet_address: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          signature?: string
+          used_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       stream_bounties: {
         Row: {
           claimed_count: number
@@ -1518,6 +1572,73 @@ export type Database = {
             columns: ["livestream_id"]
             isOneToOne: false
             referencedRelation: "livestreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twitter_connections: {
+        Row: {
+          access_token_encrypted: string
+          connected_at: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_verified_at: string | null
+          refresh_token_encrypted: string | null
+          token_expires_at: string | null
+          twitter_handle: string
+          twitter_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          refresh_token_encrypted?: string | null
+          token_expires_at?: string | null
+          twitter_handle: string
+          twitter_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          refresh_token_encrypted?: string | null
+          token_expires_at?: string | null
+          twitter_handle?: string
+          twitter_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twitter_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twitter_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twitter_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -2345,7 +2466,9 @@ export type Database = {
           verification_type: string
         }[]
       }
+      cleanup_expired_nonces: { Args: never; Returns: undefined }
       cleanup_mfa_attempts: { Args: never; Returns: undefined }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       create_notification:
         | {
             Args: {

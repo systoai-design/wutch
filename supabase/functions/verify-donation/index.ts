@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Connection, PublicKey } from "https://esm.sh/@solana/web3.js@1.87.6";
+import { validateInput, donationValidationSchema } from "../_shared/validation.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,17 +15,61 @@ serve(async (req) => {
   }
 
   try {
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { transactionSignature, donorWallet, recipientUserId, contentId, contentType, amount, message } = await req.json();
+    // Verify JWT and get user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    console.log('Verifying donation:', { transactionSignature, donorWallet, recipientUserId, contentId, contentType, amount });
+    // Check rate limit
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const rateLimit = await checkRateLimit('verify-donation', user.id, ipAddress);
+    
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetAt);
+    }
 
-    // Connect to Solana mainnet (use devnet for testing)
-    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f', 'confirmed');
+    const requestBody = await req.json();
+    
+    // Validate input using Zod schema
+    const validatedData = validateInput(donationValidationSchema, requestBody);
+    
+    const {
+      transactionSignature,
+      donorWallet,
+      recipientUserId,
+      contentId,
+      contentType,
+      amount,
+      message
+    } = validatedData;
+
+    // Connect to Solana mainnet using environment variable
+    const solanaRpcUrl = Deno.env.get('SOLANA_RPC_URL');
+    if (!solanaRpcUrl) {
+      throw new Error('Solana RPC URL not configured');
+    }
+    
+    const connection = new Connection(solanaRpcUrl, 'confirmed');
     
     // Verify transaction exists and is confirmed
     const transaction = await connection.getTransaction(transactionSignature, {
@@ -98,7 +144,7 @@ serve(async (req) => {
     if (donationError) {
       console.error('Error inserting donation:', donationError);
       return new Response(
-        JSON.stringify({ error: donationError.message }),
+        JSON.stringify({ error: 'Failed to record donation' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -121,6 +167,11 @@ serve(async (req) => {
         .from('short_videos')
         .update({ total_donations: amount })
         .eq('id', contentId);
+    } else if (contentType === 'wutch_video') {
+      await supabaseClient
+        .from('wutch_videos')
+        .update({ total_donations: amount })
+        .eq('id', contentId);
     }
 
     // Update profile total donations (creator gets 95%)
@@ -128,8 +179,6 @@ serve(async (req) => {
       user_id: recipientUserId,
       donation_amount: creatorAmount
     });
-
-    console.log('Donation verified and recorded:', donation);
 
     return new Response(
       JSON.stringify({ success: true, donation }),
@@ -139,7 +188,7 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Error in verify-donation:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
