@@ -71,7 +71,6 @@ serve(async (req) => {
       .from('profile_wallets')
       .select('wallet_address')
       .eq('user_id', creatorId)
-      .eq('is_primary', true)
       .maybeSingle();
 
     if (walletError || !creatorWallet) {

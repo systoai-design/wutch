@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,6 +9,7 @@ import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -28,6 +29,7 @@ interface MobileShortPlayerProps {
   onToggleMute: () => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
+  onOpenPayment: () => void;
   onShare: () => void;
 }
 
@@ -38,6 +40,7 @@ export function MobileShortPlayer({
   onToggleMute,
   onOpenComments,
   onOpenDonation,
+  onOpenPayment,
   onShare,
 }: MobileShortPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,6 +55,11 @@ export function MobileShortPlayer({
   
   const { isFollowing, isLoading: isFollowLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
     useFollow(short.user_id);
+
+  const { hasAccess, isPremium, price } = usePremiumAccess({
+    contentType: 'shortvideo',
+    contentId: short.id,
+  });
 
   // Track views when active
   useVideoView(short.id, isActive);
@@ -168,6 +176,42 @@ export function MobileShortPlayer({
 
   return (
     <div className="mobile-short-item relative w-full h-[100dvh] bg-black overflow-hidden">
+      {/* Premium Paywall Overlay */}
+      {isPremium && !hasAccess && (
+        <div className="absolute inset-0 z-50 bg-gradient-to-br from-purple-900/95 to-pink-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
+          <Lock className="h-20 w-20 text-white mb-6 animate-pulse" />
+          <h3 className="text-2xl font-bold text-white text-center mb-2">Premium Short</h3>
+          <p className="text-white/90 text-center mb-2">
+            Unlock for {price} SOL
+          </p>
+          <p className="text-sm text-white/70 text-center mb-8 max-w-xs">
+            One-time payment • Permanent access
+          </p>
+          <Button
+            size="lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenPayment();
+            }}
+            className="bg-white text-purple-900 hover:bg-white/90 font-bold"
+          >
+            <Lock className="h-4 w-4 mr-2" />
+            Unlock Now
+          </Button>
+          
+          {/* Blurred preview in background */}
+          <div className="absolute inset-0 -z-10">
+            <video
+              src={short.video_url}
+              className="w-full h-full object-cover blur-2xl opacity-30"
+              muted
+              loop
+              playsInline
+            />
+          </div>
+        </div>
+      )}
+
       {/* Video */}
       <video
         ref={videoRef}

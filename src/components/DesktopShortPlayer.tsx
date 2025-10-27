@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX, ExternalLink, Play, Pause } from 'lucide-react';
+import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX, ExternalLink, Play, Pause, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Slider } from '@/components/ui/slider';
@@ -7,6 +7,7 @@ import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -26,6 +27,7 @@ interface DesktopShortPlayerProps {
   onToggleMute: () => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
+  onOpenPayment: () => void;
   onShare: () => void;
 }
 
@@ -36,6 +38,7 @@ export function DesktopShortPlayer({
   onToggleMute,
   onOpenComments,
   onOpenDonation,
+  onOpenPayment,
   onShare,
 }: DesktopShortPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -51,6 +54,11 @@ export function DesktopShortPlayer({
   
   const { isFollowing, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
     useFollow(short.user_id);
+
+  const { hasAccess, isPremium, price } = usePremiumAccess({
+    contentType: 'shortvideo',
+    contentId: short.id,
+  });
 
   // Track views when active
   useVideoView(short.id, isActive);
@@ -159,6 +167,42 @@ export function DesktopShortPlayer({
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center bg-black overflow-hidden">
+      {/* Premium Paywall Overlay */}
+      {isPremium && !hasAccess && (
+        <div className="absolute inset-0 z-50 bg-gradient-to-br from-purple-900/95 to-pink-900/95 backdrop-blur-md flex flex-col items-center justify-center p-8">
+          <Lock className="h-24 w-24 text-white mb-6 animate-pulse" />
+          <h2 className="text-4xl font-bold text-white text-center mb-3">Premium Short</h2>
+          <p className="text-xl text-white/90 text-center mb-3">
+            Unlock for {price} SOL
+          </p>
+          <p className="text-white/70 text-center mb-10 max-w-md">
+            One-time payment • Permanent access • Creator gets 95%
+          </p>
+          <Button
+            size="lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenPayment();
+            }}
+            className="bg-white text-purple-900 hover:bg-white/90 font-bold text-lg px-8 py-6 h-auto"
+          >
+            <Lock className="h-5 w-5 mr-2" />
+            Unlock This Short
+          </Button>
+          
+          {/* Blurred preview in background */}
+          <div className="absolute inset-0 -z-10">
+            <video
+              src={short.video_url}
+              className="w-full h-full object-contain blur-3xl opacity-20"
+              muted
+              loop
+              playsInline
+            />
+          </div>
+        </div>
+      )}
+
       {/* Video */}
       <video
         ref={videoRef}

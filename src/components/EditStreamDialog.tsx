@@ -28,13 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Upload, X, ExternalLink } from "lucide-react";
+import { Pencil, Upload, X, ExternalLink, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { validatePromotionalLink, sanitizeUrl } from "@/utils/urlValidation";
 import { CATEGORY_NAMES } from "@/constants/categories";
+import { Switch } from "@/components/ui/switch";
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -45,6 +46,8 @@ const streamSchema = z.object({
   tags: z.string().max(200).optional(),
   promotional_link: z.string().max(500).optional(),
   promotional_link_text: z.string().max(50).optional(),
+  is_premium: z.boolean().optional(),
+  x402_price: z.number().min(0.01).max(100).optional(),
 });
 
 type StreamFormData = z.infer<typeof streamSchema>;
@@ -70,6 +73,8 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
       tags: Array.isArray(stream.tags) ? stream.tags.join(", ") : "",
       promotional_link: stream.promotional_link || "",
       promotional_link_text: stream.promotional_link_text || "",
+      is_premium: stream.is_premium || false,
+      x402_price: stream.x402_price || 0.1,
     },
   });
 
@@ -166,6 +171,10 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
           tags,
           promotional_link: data.promotional_link ? sanitizeUrl(data.promotional_link) : null,
           promotional_link_text: data.promotional_link_text || null,
+          is_premium: data.is_premium || false,
+          x402_price: data.is_premium ? data.x402_price : null,
+          x402_asset: 'SOL',
+          x402_network: 'solana',
           updated_at: new Date().toISOString(),
         })
         .eq("id", stream.id);
@@ -373,6 +382,60 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
                 </FormItem>
               )}
             />
+
+            {/* Premium Content Section */}
+            <div className="space-y-4 border-t pt-4">
+              <FormField
+                control={form.control}
+                name="is_premium"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="flex items-center gap-2 text-base">
+                        <Lock className="h-4 w-4 text-purple-600" />
+                        Premium Content (x402)
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Charge viewers to access. You keep 95%.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("is_premium") && (
+                <FormField
+                  control={form.control}
+                  name="x402_price"
+                  render={({ field }) => (
+                    <FormItem className="pl-6 border-l-2 border-purple-600/20">
+                      <FormLabel>Price (SOL)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          max="100"
+                          placeholder="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Min: 0.01 SOL • You receive: {((field.value || 0.1) * 0.95).toFixed(4)} SOL (95%)
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

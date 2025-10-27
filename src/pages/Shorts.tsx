@@ -3,6 +3,7 @@ import { ShortCard } from '@/components/ShortCard';
 import { ShortVideoModal } from '@/components/ShortVideoModal';
 import { MobileShortPlayer } from '@/components/MobileShortPlayer';
 import { DesktopShortPlayer } from '@/components/DesktopShortPlayer';
+import { X402PaymentModal } from '@/components/X402PaymentModal';
 import ShortsHeader from '@/components/ShortsHeader';
 import CommentsSection from '@/components/CommentsSection';
 import DonationModal from '@/components/DonationModal';
@@ -33,6 +34,7 @@ const Shorts = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [selectedShort, setSelectedShort] = useState<ShortVideo | null>(null);
   const [activeShortIndex, setActiveShortIndex] = useState(0);
@@ -305,6 +307,10 @@ const Shorts = () => {
                   setSelectedShort(short);
                   setIsDonationModalOpen(true);
                 }}
+                onOpenPayment={() => {
+                  setSelectedShort(short);
+                  setIsPaymentModalOpen(true);
+                }}
                 onShare={() => handleShare(short)}
               />
             </div>
@@ -375,6 +381,10 @@ const Shorts = () => {
                 setSelectedShort(short);
                 setIsDonationModalOpen(true);
               }}
+              onOpenPayment={() => {
+                setSelectedShort(short);
+                setIsPaymentModalOpen(true);
+              }}
               onShare={() => handleShare(short)}
             />
           </div>
@@ -438,6 +448,25 @@ const Shorts = () => {
           contentId={selectedShort.id}
           contentType="shortvideo"
           recipientUserId={selectedShort.user_id}
+        />
+      )}
+
+      {/* Payment Modal for Premium Shorts */}
+      {selectedShort && isPaymentModalOpen && (
+        <X402PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          contentType="shortvideo"
+          contentId={selectedShort.id}
+          contentTitle={selectedShort.title}
+          creatorName={selectedShort.profiles?.display_name || selectedShort.profiles?.username || 'Creator'}
+          price={selectedShort.x402_price || 0}
+          creatorWallet={selectedShort.profiles?.public_wallet_address || ''}
+          onSuccess={() => {
+            setIsPaymentModalOpen(false);
+            // Refresh the short to update access
+            window.location.reload();
+          }}
         />
       )}
     </div>

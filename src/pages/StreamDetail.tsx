@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink } from 'lucide-react';
+import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink, Lock, Loader2 } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
@@ -16,8 +16,10 @@ import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import { PumpFunPlayer } from '@/components/PumpFunPlayer';
+import { X402PaymentModal } from '@/components/X402PaymentModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useViewingSession } from '@/hooks/useViewingSession';
 import { useStreamLike } from '@/hooks/useStreamLike';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -54,7 +56,23 @@ const StreamDetail = () => {
   const [hasStartedWatching, setHasStartedWatching] = useState(false);
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [guestPromptAction, setGuestPromptAction] = useState<'like' | 'donate'>('like');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [creatorWallet, setCreatorWallet] = useState<string>('');
   const { isAdmin: isStreamerAdmin, isModerator: isStreamerModerator } = useUserRoles(stream?.user_id);
+
+  const { 
+    hasAccess, 
+    isPremium, 
+    isOwner: isPremiumOwner, 
+    price, 
+    asset, 
+    network, 
+    isLoading: isCheckingAccess,
+    checkAccess 
+  } = usePremiumAccess({
+    contentType: 'livestream',
+    contentId: id || '',
+  });
 
   // Track viewing session
   const { 
@@ -100,6 +118,19 @@ const StreamDetail = () => {
         // Update like count from stream data
         if (streamData.like_count !== undefined) {
           setLikeCount(streamData.like_count);
+        }
+
+        // Fetch creator wallet if premium content
+        if (streamData.is_premium) {
+          const { data: walletData } = await supabase
+            .from('profile_wallets')
+            .select('wallet_address')
+            .eq('user_id', streamData.user_id)
+            .maybeSingle();
+          
+          if (walletData?.wallet_address) {
+            setCreatorWallet(walletData.wallet_address);
+          }
         }
 
         // Fetch streamer profile (public fields only via view)
@@ -184,6 +215,7 @@ const StreamDetail = () => {
   const avatarUrl = streamer?.avatar_url || '/placeholder.svg';
   const followerCount = streamer?.follower_count ?? 0;
   const username = streamer?.username || '';
+  const showPaywall = isPremium && !hasAccess && !isPremiumOwner;
 
   const handleDeleteStream = async () => {
     if (!id) return;
@@ -213,14 +245,47 @@ const StreamDetail = () => {
       <div className="min-h-screen">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 p-2 sm:p-4 lg:p-6">
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-          {/* Video Player */}
+          {/* Video Player with Paywall Overlay */}
           <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
-            <PumpFunPlayer 
-              pumpFunUrl={stream.pump_fun_url}
-              isLive={stream.is_live || false}
-              showExternalLink={true}
-              onStreamOpened={() => setHasStartedWatching(true)}
-            />
+            {showPaywall ? (
+              <div className="w-full h-full bg-gradient-to-br from-purple-900/20 to-pink-900/20 flex flex-col items-center justify-center p-6 border border-purple-500/20">
+                <Lock className="h-16 w-16 text-purple-500 mb-4" />
+                <h3 className="text-2xl font-bold mb-2">Premium Stream</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Unlock this livestream for {price} {asset}
+                </p>
+                <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+                  One-time payment • Permanent access • {creatorWallet ? '95% goes to creator' : 'Creator receives 95%'}
+                </p>
+                {creatorWallet ? (
+                  <Button 
+                    size="lg" 
+                    onClick={() => setShowPaymentModal(true)}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    Unlock for {price} SOL
+                  </Button>
+                ) : (
+                  <Alert variant="destructive" className="max-w-md">
+                    <AlertDescription>
+                      Creator wallet not configured. Cannot purchase at this time.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ) : isCheckingAccess ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <PumpFunPlayer 
+                pumpFunUrl={stream.pump_fun_url}
+                isLive={stream.is_live || false}
+                showExternalLink={true}
+                onStreamOpened={() => setHasStartedWatching(true)}
+              />
+            )}
           </div>
 
           {/* Owner Controls */}
@@ -472,6 +537,24 @@ const StreamDetail = () => {
       onOpenChange={setShowGuestDialog}
       action="like"
     />
+
+    {/* Payment Modal */}
+    {showPaymentModal && stream && streamer && creatorWallet && (
+      <X402PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        contentType="livestream"
+        contentId={stream.id}
+        contentTitle={stream.title}
+        creatorName={streamer.display_name || streamer.username}
+        price={price || 0}
+        creatorWallet={creatorWallet}
+        onSuccess={() => {
+          checkAccess();
+          setShowPaymentModal(false);
+        }}
+      />
+    )}
     </>
   );
 };
