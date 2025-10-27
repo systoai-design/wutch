@@ -14,6 +14,7 @@ import { generateContentUrl } from '@/utils/urlHelpers';
 import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
 import { useAuth } from '@/hooks/useAuth';
+import { makeAbsoluteUrl } from '@/utils/appUrl';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -142,11 +143,11 @@ export function ShortVideoModal({
   if (!short) return null;
 
   const isOwner = user && short.user_id === user.id;
-  const shortUrl = `${window.location.origin}${generateContentUrl('shorts', { 
+  const shortUrl = makeAbsoluteUrl(generateContentUrl('shorts', { 
     id: short.id, 
     title: short.title, 
     profiles: short.profiles ? { username: short.profiles.username } : undefined 
-  })}`;
+  }));
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;

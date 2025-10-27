@@ -1,4 +1,5 @@
 import { generateContentUrl } from './urlHelpers';
+import { makeAbsoluteUrl } from './appUrl';
 
 interface ShareShortParams {
   id: string;
@@ -16,8 +17,8 @@ interface ShareStreamParams {
 
 export const shareShortToTwitter = ({ id, title, creatorName, username }: ShareShortParams) => {
   const url = username 
-    ? `${window.location.origin}${generateContentUrl('shorts', { id, title, profiles: { username } })}`
-    : `${window.location.origin}/shorts?id=${id}`;
+    ? makeAbsoluteUrl(generateContentUrl('shorts', { id, title, profiles: { username } }))
+    : makeAbsoluteUrl(`/shorts?id=${id}`);
   const text = `Check out "${title}" by ${creatorName} on Wutch! 🎬`;
   const hashtags = "Wutch,Web3,Crypto,Shorts";
   
@@ -28,8 +29,8 @@ export const shareShortToTwitter = ({ id, title, creatorName, username }: ShareS
 
 export const shareStreamToTwitter = ({ id, title, creatorName, username }: ShareStreamParams) => {
   const url = username
-    ? `${window.location.origin}${generateContentUrl('stream', { id, title, profiles: { username } })}`
-    : `${window.location.origin}/stream/${id}`;
+    ? makeAbsoluteUrl(generateContentUrl('stream', { id, title, profiles: { username } }))
+    : makeAbsoluteUrl(`/stream/${id}`);
   const text = `Watch "${title}" by ${creatorName} live on Wutch! 🔴`;
   const hashtags = "Wutch,Web3,Crypto,Livestream";
   
@@ -47,8 +48,8 @@ interface ShareWutchVideoParams {
 
 export const shareWutchVideoToTwitter = ({ id, title, creatorName, username }: ShareWutchVideoParams) => {
   const url = username 
-    ? `${window.location.origin}${generateContentUrl('wutch', { id, title, profiles: { username } })}`
-    : `${window.location.origin}/video/${id}`;
+    ? makeAbsoluteUrl(generateContentUrl('wutch', { id, title, profiles: { username } }))
+    : makeAbsoluteUrl(`/video/${id}`);
   const text = `Watch "${title}" by ${creatorName} on Wutch! 📺`;
   const hashtags = "Wutch,Web3,Crypto,Video";
   

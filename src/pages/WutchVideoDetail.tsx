@@ -20,6 +20,7 @@ import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
 import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
 import { shareWutchVideoToTwitter } from '@/utils/shareUtils';
+import { makeAbsoluteUrl } from '@/utils/appUrl';
 
 const WutchVideoDetail = () => {
   const params = useParams<{ id: string }>();
@@ -284,11 +285,11 @@ const WutchVideoDetail = () => {
   }
 
   const isOwner = user && video.user_id === user.id;
-  const videoUrl = `${window.location.origin}${generateContentUrl('wutch', { 
+  const videoUrl = makeAbsoluteUrl(generateContentUrl('wutch', { 
     id: video.id, 
     title: video.title, 
     profiles: creator ? { username: creator.username } : undefined 
-  })}`;
+  }));
 
   return (
     <div className="min-h-screen pb-20 lg:pb-6 bg-background">

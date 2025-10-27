@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import { shareShortToTwitter } from '@/utils/shareUtils';
 import { generateContentUrl, parseContentUrl } from '@/utils/urlHelpers';
+import { makeAbsoluteUrl } from '@/utils/appUrl';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -201,12 +202,12 @@ const Shorts = () => {
     if (navigator.share) {
       try {
         const url = short.profiles?.username 
-          ? `${window.location.origin}${generateContentUrl('shorts', { 
+          ? makeAbsoluteUrl(generateContentUrl('shorts', { 
               id: short.id, 
               title: short.title, 
               profiles: { username: short.profiles.username } 
-            })}`
-          : `${window.location.origin}/shorts?id=${short.id}`;
+            }))
+          : makeAbsoluteUrl(`/shorts?id=${short.id}`);
         
         await navigator.share({
           title: short.title,

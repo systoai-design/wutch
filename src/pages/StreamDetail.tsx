@@ -26,6 +26,7 @@ import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { shareStreamToTwitter } from '@/utils/shareUtils';
 import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
+import { makeAbsoluteUrl } from '@/utils/appUrl';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { VerificationBadge } from '@/components/VerificationBadge';
@@ -342,7 +343,7 @@ const StreamDetail = () => {
                     contentId={stream.id}
                     contentType="livestream"
                     contentTitle={stream.title}
-                    contentUrl={`${window.location.origin}${generateContentUrl('stream', { id: stream.id, title: stream.title, profiles: streamer ? { username: streamer.username } : undefined })}`}
+                    contentUrl={makeAbsoluteUrl(generateContentUrl('stream', { id: stream.id, title: stream.title, profiles: streamer ? { username: streamer.username } : undefined }))}
                   />
                 )}
 
