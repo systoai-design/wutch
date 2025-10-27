@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, Circle, Coins, Share2 } from 'lucide-react';
+import { Eye, Circle, Coins, Share2, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Database } from '@/integrations/supabase/types';
 import { generateContentUrl } from '@/utils/urlHelpers';
@@ -57,17 +57,25 @@ const StreamCard = ({ stream, compact = false, hasBounty = false, hasShareCampai
             </div>
           )}
           {/* Badges */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-            {hasShareCampaign && (
-              <Badge className={`bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold flex items-center gap-1 shadow-lg border-0 ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
-                <Share2 className={compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} />
-                {!compact && 'Share'}
-              </Badge>
-            )}
-            {hasBounty && (
-              <Badge className={`bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold flex items-center gap-1 shadow-md shadow-yellow-500/20 border-0 ml-auto ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
-                <Coins className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-                {!compact && 'Bounty'}
+          <div className="absolute top-2 left-2 right-2 flex justify-between items-start gap-1.5">
+            <div className="flex gap-1.5">
+              {hasShareCampaign && (
+                <Badge className={`bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold flex items-center gap-1 shadow-lg border-0 ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
+                  <Share2 className={compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} />
+                  {!compact && 'Share'}
+                </Badge>
+              )}
+              {hasBounty && (
+                <Badge className={`bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold flex items-center gap-1 shadow-md shadow-yellow-500/20 border-0 ${compact ? 'text-xs px-2.5 py-1' : 'px-3 py-1.5'}`}>
+                  <Coins className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+                  {!compact && 'Bounty'}
+                </Badge>
+              )}
+            </div>
+            {stream.is_premium && stream.x402_price && (
+              <Badge className={`bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold flex items-center gap-1 shadow-lg border-0 ml-auto ${compact ? 'text-xs px-2 py-0.5' : 'px-2.5 py-1'}`}>
+                <Lock className={compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} />
+                {!compact && `${stream.x402_price} SOL`}
               </Badge>
             )}
           </div>

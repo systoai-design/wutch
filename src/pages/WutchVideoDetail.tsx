@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
+import { X402PaymentModal } from '@/components/X402PaymentModal';
 import { WutchVideoPlayer } from '@/components/WutchVideoPlayer';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
 import { WutchVideoCardCompact } from '@/components/WutchVideoCardCompact';
@@ -12,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ThumbsUp, Share2, ExternalLink, Eye } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ThumbsUp, Share2, ExternalLink, Eye, Lock, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from '@/components/CommentsSection';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +49,22 @@ const WutchVideoDetail = () => {
   const [relatedShorts, setRelatedShorts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [watchTime, setWatchTime] = useState(0);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [creatorWallet, setCreatorWallet] = useState<string>('');
+
+  const { 
+    hasAccess, 
+    isPremium, 
+    isOwner, 
+    price, 
+    asset, 
+    network, 
+    isLoading: isCheckingAccess,
+    checkAccess 
+  } = usePremiumAccess({
+    contentType: 'wutch_video',
+    contentId: id || '',
+  });
 
   useEffect(() => {
     if (id) {
@@ -90,6 +109,19 @@ const WutchVideoDetail = () => {
         .single();
 
       setCreator(profileData);
+
+      // Fetch creator wallet if premium content
+      if (videoData.is_premium) {
+        const { data: walletData } = await supabase
+          .from('profile_wallets')
+          .select('wallet_address')
+          .eq('user_id', videoData.user_id)
+          .maybeSingle();
+        
+        if (walletData?.wallet_address) {
+          setCreatorWallet(walletData.wallet_address);
+        }
+      }
 
       // Fetch videos from the same channel
       const { data: channelData } = await supabase
@@ -284,12 +316,15 @@ const WutchVideoDetail = () => {
     );
   }
 
-  const isOwner = user && video.user_id === user.id;
+  const isVideoOwner = user && video.user_id === user.id;
   const videoUrl = makeAbsoluteUrl(generateContentUrl('wutch', { 
     id: video.id, 
     title: video.title, 
     profiles: creator ? { username: creator.username } : undefined 
   }));
+
+  // Show paywall if premium and no access
+  const showPaywall = isPremium && !hasAccess && !isOwner;
 
   return (
     <div className="min-h-screen pb-20 lg:pb-6 bg-background">
@@ -297,13 +332,49 @@ const WutchVideoDetail = () => {
         <div className="grid lg:grid-cols-[1fr_380px] gap-6">
           {/* Left: Video Player & Info */}
           <div className="space-y-4">
-            <WutchVideoPlayer 
-              videoUrl={video.video_url} 
-              videoId={video.id}
-              thumbnailUrl={video.thumbnail_url}
-              onTimeUpdate={(time) => setWatchTime(time)}
-              className="aspect-video"
-            />
+            {/* Video Player with Paywall Overlay */}
+            <div className="relative">
+              {showPaywall ? (
+                <div className="aspect-video bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg flex flex-col items-center justify-center p-6 border border-purple-500/20">
+                  <Lock className="h-16 w-16 text-purple-500 mb-4" />
+                  <h3 className="text-2xl font-bold mb-2">Premium Content</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    Unlock this video for {price} {asset}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+                    One-time payment • Permanent access • {creatorWallet ? '95% goes to creator' : 'Creator receives 95%'}
+                  </p>
+                  {creatorWallet ? (
+                    <Button 
+                      size="lg" 
+                      onClick={() => setShowPaymentModal(true)}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Unlock for {price} SOL
+                    </Button>
+                  ) : (
+                    <Alert variant="destructive" className="max-w-md">
+                      <AlertDescription>
+                        Creator wallet not configured. Cannot purchase at this time.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              ) : isCheckingAccess ? (
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <WutchVideoPlayer 
+                  videoUrl={video.video_url} 
+                  videoId={video.id}
+                  thumbnailUrl={video.thumbnail_url}
+                  onTimeUpdate={(time) => setWatchTime(time)}
+                  className="aspect-video"
+                />
+              )}
+            </div>
 
             <div className="space-y-4">
               <h1 className="text-2xl font-bold">{video.title}</h1>
@@ -365,7 +436,7 @@ const WutchVideoDetail = () => {
                   </Button>
 
                   {/* Share campaign - Owner can create, viewers can earn */}
-                  {isOwner && (
+                  {isVideoOwner && (
                     <CreateSharingCampaign 
                       contentId={video.id}
                       contentType="wutch_video"
@@ -373,7 +444,7 @@ const WutchVideoDetail = () => {
                     />
                   )}
                   
-                  {!isOwner && (
+                  {!isVideoOwner && (
                     <ShareAndEarn 
                       contentId={video.id}
                       contentType="wutch_video"
@@ -383,6 +454,14 @@ const WutchVideoDetail = () => {
                   )}
                 </div>
               </div>
+
+              {/* Premium Badge */}
+              {isPremium && (
+                <Badge variant="secondary" className="bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-purple-600/20">
+                  <Lock className="h-3 w-3 mr-1 text-purple-600" />
+                  Premium Content
+                </Badge>
+              )}
 
               {/* Description & Category */}
               {video.description && (
@@ -478,6 +557,24 @@ const WutchVideoDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && video && creator && creatorWallet && (
+        <X402PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          contentType="wutch_video"
+          contentId={video.id}
+          contentTitle={video.title}
+          creatorName={creator.display_name || creator.username}
+          price={price || 0}
+          creatorWallet={creatorWallet}
+          onSuccess={() => {
+            checkAccess();
+            setShowPaymentModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };

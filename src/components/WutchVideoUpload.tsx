@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Video, Sparkles, Loader2 } from 'lucide-react';
+import { Upload, X, Video, Sparkles, Loader2, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { CATEGORY_NAMES } from '@/constants/categories';
 
 export const WutchVideoUpload = () => {
@@ -25,6 +26,8 @@ export const WutchVideoUpload = () => {
     tags: '',
     promotional_link: '',
     promotional_link_text: 'Check this out!',
+    is_premium: false,
+    x402_price: 0.1,
   });
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -313,6 +316,10 @@ export const WutchVideoUpload = () => {
           promotional_link_text: formData.promotional_link_text,
           status: 'published',
           moderation_status: 'approved',
+          is_premium: formData.is_premium,
+          x402_price: formData.is_premium ? formData.x402_price : null,
+          x402_asset: 'SOL',
+          x402_network: 'solana',
         })
         .select()
         .single();
@@ -524,6 +531,60 @@ export const WutchVideoUpload = () => {
           value={formData.promotional_link_text}
           onChange={(e) => setFormData({ ...formData, promotional_link_text: e.target.value })}
         />
+      </div>
+
+      {/* Premium Content Section */}
+      <div className="space-y-4 border-t pt-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label htmlFor="is_premium" className="flex items-center gap-2 text-base">
+              <Lock className="h-4 w-4 text-purple-600" />
+              Premium Content (x402)
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Charge viewers to access this video. You keep 95%, platform takes 5%.
+            </p>
+          </div>
+          <Switch
+            id="is_premium"
+            checked={formData.is_premium}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_premium: checked })}
+          />
+        </div>
+
+        {formData.is_premium && (
+          <div className="space-y-2 pl-6 border-l-2 border-purple-600/20">
+            <Label htmlFor="x402_price">
+              Price (SOL) <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="x402_price"
+              type="number"
+              step="0.01"
+              min="0.01"
+              max="100"
+              value={formData.x402_price}
+              onChange={(e) => setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.1 })}
+              placeholder="0.1"
+            />
+            <p className="text-xs text-muted-foreground">
+              Set your price in SOL. Minimum: 0.01 SOL
+            </p>
+            <div className="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg space-y-1">
+              <p className="text-sm font-medium">Earnings Breakdown:</p>
+              <div className="text-xs space-y-0.5">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">You receive:</span>
+                  <span className="font-semibold text-green-600">{(formData.x402_price * 0.95).toFixed(4)} SOL (95%)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Platform fee:</span>
+                  <span>{(formData.x402_price * 0.05).toFixed(4)} SOL (5%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Terms */}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Eye } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/utils/formatters';
 import { Database } from '@/integrations/supabase/types';
@@ -141,6 +141,14 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         
         {/* Stats Overlay - Top Right */}
         <div className="absolute top-3 right-3 flex flex-col gap-2">
+          {short.is_premium && short.x402_price && (
+            <div className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-lg">
+              <Lock className="h-3 w-3 text-white" />
+              <span className="text-xs text-white font-bold">
+                {short.x402_price} SOL
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1">
             <Eye className="h-3 w-3 text-white" />
             <span className="text-xs text-white font-medium">

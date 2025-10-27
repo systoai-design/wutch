@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, ThumbsUp } from 'lucide-react';
+import { Eye, ThumbsUp, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,8 @@ interface WutchVideoCardProps {
     created_at: string;
     category?: string;
     user_id: string;
+    is_premium?: boolean;
+    x402_price?: number;
     profiles?: {
       username: string;
       display_name?: string;
@@ -148,6 +150,14 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
           {!video.thumbnail_url && !video.video_url && (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
               <span className="text-4xl font-bold text-primary/40">W</span>
+            </div>
+          )}
+          
+          {/* Premium badge */}
+          {video.is_premium && video.x402_price && (
+            <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+              <Lock className="h-3 w-3" />
+              {video.x402_price} SOL
             </div>
           )}
           
