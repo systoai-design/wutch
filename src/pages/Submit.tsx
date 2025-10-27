@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, DollarSign, Users, Clock, Key, X, ExternalLink } from 'lucide-react';
+import { Upload, DollarSign, Users, Clock, Key, X, ExternalLink, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortVideoUpload } from '@/components/ShortVideoUpload';
@@ -48,6 +48,9 @@ const Submit = () => {
     promotional_link_text: '',
     walletAddress: '',
     tosAccepted: false,
+    // Premium content fields
+    is_premium: false,
+    x402_price: 0.001,
     // Bounty fields
     createBounty: false,
     bountyWalletAddress: 'FFkRbqaArL1BVrUvAptPEg8kwTMu3WPLW37U2i8KieQn',
@@ -323,6 +326,10 @@ const Submit = () => {
           status: streamStatus,
           is_live: isLive,
           started_at: startedAt,
+          is_premium: formData.is_premium,
+          x402_price: formData.is_premium ? formData.x402_price : null,
+          x402_asset: formData.is_premium ? 'SOL' : null,
+          x402_network: formData.is_premium ? 'solana' : null,
         })
         .select()
         .single();
@@ -580,6 +587,65 @@ const Submit = () => {
               <p className="text-xs text-muted-foreground">
                 Customize the button text viewers see (max 50 characters)
               </p>
+            </div>
+
+            {/* Premium Content Section */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2 font-semibold">
+                    <Lock className="h-4 w-4" />
+                    Premium Content (x402)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Charge viewers to access this livestream (one-time payment)
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.is_premium}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_premium: checked })
+                  }
+                />
+              </div>
+
+              {formData.is_premium && (
+                <Card className="p-4 space-y-4 bg-muted/50">
+                  <div className="space-y-2">
+                    <Label>Price (SOL)</Label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      min="0.001"
+                      max="100"
+                      value={formData.x402_price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.001 })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Minimum: 0.001 SOL
+                    </p>
+                  </div>
+
+                  <div className="bg-background rounded-lg p-4 space-y-2">
+                    <h4 className="font-semibold">Earnings Breakdown</h4>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">You receive (95%):</span>
+                        <span className="text-green-500">{(formData.x402_price * 0.95).toFixed(4)} SOL</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Platform fee (5%):</span>
+                        <span>{(formData.x402_price * 0.05).toFixed(4)} SOL</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      One-time payment per viewer for permanent access
+                    </p>
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Schedule Section */}

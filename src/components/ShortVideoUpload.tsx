@@ -25,7 +25,7 @@ export const ShortVideoUpload = () => {
     promotional_link: '',
     promotional_link_text: '',
     is_premium: false,
-    x402_price: 0.1,
+    x402_price: 0.001,
   });
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -441,15 +441,15 @@ export const ShortVideoUpload = () => {
               <Input
                 id="x402_price"
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="0.001"
+                min="0.001"
                 max="100"
                 value={formData.x402_price}
-                onChange={(e) => setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.1 })}
-                placeholder="0.1"
+                onChange={(e) => setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.001 })}
+                placeholder="0.001"
               />
               <p className="text-xs text-muted-foreground">
-                Set your price in SOL. Minimum: 0.01 SOL
+                Set your price in SOL. Minimum: 0.001 SOL
               </p>
               <div className="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg space-y-1">
                 <p className="text-sm font-medium">Earnings Breakdown:</p>

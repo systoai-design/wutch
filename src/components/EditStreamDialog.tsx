@@ -47,7 +47,7 @@ const streamSchema = z.object({
   promotional_link: z.string().max(500).optional(),
   promotional_link_text: z.string().max(50).optional(),
   is_premium: z.boolean().optional(),
-  x402_price: z.number().min(0.01).max(100).optional(),
+  x402_price: z.number().min(0.001).max(100).optional(),
 });
 
 type StreamFormData = z.infer<typeof streamSchema>;
@@ -74,7 +74,7 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
       promotional_link: stream.promotional_link || "",
       promotional_link_text: stream.promotional_link_text || "",
       is_premium: stream.is_premium || false,
-      x402_price: stream.x402_price || 0.1,
+      x402_price: stream.x402_price || 0.001,
     },
   });
 
@@ -419,16 +419,16 @@ export function EditStreamDialog({ stream, onUpdate }: EditStreamDialogProps) {
                       <FormControl>
                         <Input
                           type="number"
-                          step="0.01"
-                          min="0.01"
+                          step="0.001"
+                          min="0.001"
                           max="100"
-                          placeholder="0.1"
+                          placeholder="0.001"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.001)}
                         />
                       </FormControl>
                       <p className="text-xs text-muted-foreground">
-                        Min: 0.01 SOL • You receive: {((field.value || 0.1) * 0.95).toFixed(4)} SOL (95%)
+                        Min: 0.001 SOL • You receive: {((field.value || 0.001) * 0.95).toFixed(4)} SOL (95%)
                       </p>
                       <FormMessage />
                     </FormItem>
