@@ -12,7 +12,7 @@ import { useCommunityPostLike } from "@/hooks/useCommunityPostLike";
 export default function CommunityPosts() {
   const { user } = useAuth();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("recent");
+  const [activeTab, setActiveTab] = useState("feed");
   
   const { posts, isLoading, refetch } = useCommunityPosts();
   const { toggleLike } = useCommunityPostLike();
@@ -52,34 +52,41 @@ export default function CommunityPosts() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recent">Recent</TabsTrigger>
-          <TabsTrigger value="following">Following</TabsTrigger>
-          <TabsTrigger value="trending">Trending</TabsTrigger>
+          <TabsTrigger value="feed">Feed</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recent" className="mt-6">
+        <TabsContent value="feed" className="mt-6">
           <CommunityPostFeed
             posts={posts}
             isLoading={isLoading}
             onLike={handleLike}
             onDelete={handleDelete}
             currentUserId={user?.id}
+            filterByType="regular"
           />
         </TabsContent>
 
-        <TabsContent value="following" className="mt-6">
+        <TabsContent value="services" className="mt-6">
           <CommunityPostFeed
-            posts={[]}
-            isLoading={false}
+            posts={posts}
+            isLoading={isLoading}
+            onLike={handleLike}
+            onDelete={handleDelete}
             currentUserId={user?.id}
+            filterByType="service"
           />
         </TabsContent>
 
-        <TabsContent value="trending" className="mt-6">
+        <TabsContent value="all" className="mt-6">
           <CommunityPostFeed
-            posts={[]}
-            isLoading={false}
+            posts={posts}
+            isLoading={isLoading}
+            onLike={handleLike}
+            onDelete={handleDelete}
             currentUserId={user?.id}
+            filterByType="all"
           />
         </TabsContent>
       </Tabs>

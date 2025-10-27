@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock, Loader2, CheckCircle, XCircle, Briefcase, Clock } from 'lucide-react';
+import { Lock, Loader2, CheckCircle, XCircle, Briefcase, Clock, Wallet } from 'lucide-react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,10 +41,37 @@ export const ServiceOrderModal = ({
   const { user } = useAuth();
   const { open: openAuthDialog } = useAuthDialog();
   const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, connect, connecting } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [hasDbWallet, setHasDbWallet] = useState(false);
+
+  // Check if user has a wallet saved in database
+  useEffect(() => {
+    const checkDbWallet = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profile_wallets')
+        .select('wallet_address')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setHasDbWallet(!!data?.wallet_address);
+    };
+    
+    checkDbWallet();
+  }, [user]);
+
+  const handleReconnect = async () => {
+    try {
+      await connect();
+      toast.success('Wallet reconnected!');
+    } catch (error) {
+      toast.error('Failed to reconnect wallet');
+    }
+  };
 
   const creatorAmount = price * 0.95;
   const platformFee = price * 0.05;
@@ -223,9 +250,23 @@ export const ServiceOrderModal = ({
 
           {!publicKey && user && (
             <Alert>
-              <Lock className="h-4 w-4" />
-              <AlertDescription>
-                Please connect your Phantom wallet to order this service.
+              <Wallet className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  {hasDbWallet 
+                    ? 'Your wallet needs to be reconnected to complete this order.'
+                    : 'Please connect your Phantom wallet to order this service.'}
+                </span>
+                {hasDbWallet && (
+                  <Button 
+                    size="sm" 
+                    onClick={handleReconnect}
+                    disabled={connecting}
+                    className="ml-2"
+                  >
+                    {connecting ? 'Connecting...' : 'Reconnect'}
+                  </Button>
+                )}
               </AlertDescription>
             </Alert>
           )}
