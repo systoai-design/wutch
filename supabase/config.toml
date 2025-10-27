@@ -63,3 +63,9 @@ verify_jwt = true
 
 [functions.mfa-verify]
 verify_jwt = true
+
+[functions.x402-verify-payment]
+verify_jwt = true
+
+[functions.check-premium-access]
+verify_jwt = true
