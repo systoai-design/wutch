@@ -1,5 +1,6 @@
 import { CommunityPostCard } from "./CommunityPostCard";
 import { SkeletonStreamCard } from "./SkeletonCard";
+import { useNavigate } from "react-router-dom";
 
 interface CommunityPostFeedProps {
   posts?: any[];
@@ -16,6 +17,7 @@ export const CommunityPostFeed = ({
   onDelete,
   currentUserId,
 }: CommunityPostFeedProps) => {
+  const navigate = useNavigate();
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -43,6 +45,7 @@ export const CommunityPostFeed = ({
           isLiked={post.isLiked}
           onLike={() => onLike?.(post.id)}
           onDelete={() => onDelete?.(post.id)}
+          onOrderService={() => navigate(`/community/post/${post.id}`)}
           isOwner={currentUserId === post.user.id}
         />
       ))}

@@ -53,7 +53,7 @@ export const CommunityPostCard = ({
   onDelete,
   onOrderService,
   isOwner = false,
-  hasAccess = true,
+  hasAccess = false,
 }: CommunityPostCardProps) => {
   return (
     <Card className="p-6 hover:shadow-lg transition-shadow">
@@ -183,13 +183,25 @@ export const CommunityPostCard = ({
 
       {/* Order Button for Service Posts */}
       {post.is_premium && post.post_type === 'service' && !isOwner && (
-        <Button 
-          className="w-full gap-2 mb-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
-          onClick={onOrderService}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          Order Service - {post.x402_price} SOL
-        </Button>
+        onOrderService ? (
+          <Button 
+            className="w-full gap-2 mb-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
+            onClick={onOrderService}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Order Service - {post.x402_price} SOL
+          </Button>
+        ) : (
+          <Button 
+            asChild
+            className="w-full gap-2 mb-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            <Link to={`/community/post/${post.id}`}>
+              <ShoppingCart className="h-4 w-4" />
+              Order Service - {post.x402_price} SOL
+            </Link>
+          </Button>
+        )
       )}
 
       {/* Actions */}
