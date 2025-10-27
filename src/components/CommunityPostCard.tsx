@@ -143,8 +143,8 @@ export const CommunityPostCard = ({
         <p className="text-foreground whitespace-pre-wrap break-words">{post.content}</p>
       </div>
 
-      {/* Media - Only show if not premium or user has access */}
-      {post.media_url && (!post.is_premium || hasAccess) && (
+      {/* Media - Only show if not premium or user has access or service post */}
+      {post.media_url && (!post.is_premium || hasAccess || post.post_type === 'service') && (
         <div className="mb-4 rounded-lg overflow-hidden">
           {post.media_url.match(/\.(mp4|webm|mov)$/i) ? (
             <video
@@ -162,8 +162,8 @@ export const CommunityPostCard = ({
         </div>
       )}
       
-      {/* Premium media placeholder when locked */}
-      {post.media_url && post.is_premium && !hasAccess && (
+      {/* Premium media placeholder when locked (but not for services) */}
+      {post.media_url && post.is_premium && !hasAccess && post.post_type !== 'service' && (
         <div className="mb-4 aspect-video bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg flex items-center justify-center border border-purple-500/20">
           <div className="text-center p-6">
             <Lock className="h-12 w-12 text-purple-500 mx-auto mb-3" />
