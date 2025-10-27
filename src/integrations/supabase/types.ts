@@ -684,6 +684,7 @@ export type Database = {
           ended_at: string | null
           id: string
           is_live: boolean | null
+          is_premium: boolean | null
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
@@ -699,6 +700,9 @@ export type Database = {
           updated_at: string | null
           user_id: string
           viewer_count: number | null
+          x402_asset: string | null
+          x402_network: string | null
+          x402_price: number | null
         }
         Insert: {
           category?: string | null
@@ -707,6 +711,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -722,6 +727,9 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           viewer_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Update: {
           category?: string | null
@@ -730,6 +738,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -745,6 +754,9 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           viewer_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Relationships: [
           {
@@ -1388,6 +1400,7 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_premium: boolean | null
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
@@ -1400,12 +1413,16 @@ export type Database = {
           user_id: string
           video_url: string
           view_count: number | null
+          x402_asset: string | null
+          x402_network: string | null
+          x402_price: number | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -1418,12 +1435,16 @@ export type Database = {
           user_id: string
           video_url: string
           view_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -1436,6 +1457,9 @@ export type Database = {
           user_id?: string
           video_url?: string
           view_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Relationships: [
           {
@@ -2117,6 +2141,7 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_premium: boolean | null
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
@@ -2131,6 +2156,9 @@ export type Database = {
           user_id: string
           video_url: string
           view_count: number | null
+          x402_asset: string | null
+          x402_network: string | null
+          x402_price: number | null
         }
         Insert: {
           category?: string | null
@@ -2138,6 +2166,7 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -2152,6 +2181,9 @@ export type Database = {
           user_id: string
           video_url: string
           view_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Update: {
           category?: string | null
@@ -2159,6 +2191,7 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -2173,6 +2206,9 @@ export type Database = {
           user_id?: string
           video_url?: string
           view_count?: number | null
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Relationships: [
           {
@@ -2187,6 +2223,79 @@ export type Database = {
             columns: ["moderation_id"]
             isOneToOne: false
             referencedRelation: "moderation_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      x402_purchases: {
+        Row: {
+          amount: number
+          asset: string
+          content_id: string
+          content_type: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          network: string
+          payment_proof: string
+          purchased_at: string
+          transaction_signature: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset?: string
+          content_id: string
+          content_type: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          network?: string
+          payment_proof: string
+          purchased_at?: string
+          transaction_signature: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          network?: string
+          payment_proof?: string
+          purchased_at?: string
+          transaction_signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "x402_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "x402_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "x402_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -2633,6 +2742,10 @@ export type Database = {
         Args: { p_payout_id: string; p_transaction_signature: string }
         Returns: undefined
       }
+      record_x402_fee: {
+        Args: { p_amount: number; p_content_id: string; p_content_type: string }
+        Returns: undefined
+      }
       resolve_content_report: {
         Args: {
           p_report_id: string
@@ -2646,6 +2759,14 @@ export type Database = {
         Returns: undefined
       }
       update_user_moderation_tiers: { Args: never; Returns: undefined }
+      user_has_premium_access: {
+        Args: {
+          p_content_id: string
+          p_content_type: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
