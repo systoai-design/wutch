@@ -16,20 +16,29 @@ export const useCommunityPostQuery = (postId: string) => {
             id,
             username,
             display_name,
-            avatar_url
-          ),
-          wallet:profile_wallets!community_posts_user_id_fkey (
-            wallet_address
+            avatar_url,
+            service_rating_avg,
+            service_rating_count,
+            service_orders_completed,
+            service_completion_rate
           )
         `)
         .eq("id", postId)
         .single();
       
-      if (data) {
-        data.user.wallet_address = data.wallet?.[0]?.wallet_address;
+      if (error) throw error;
+
+      // Fetch wallet address separately
+      const { data: walletData } = await supabase
+        .from("profile_wallets")
+        .select("wallet_address")
+        .eq("user_id", data?.user?.id)
+        .single();
+      
+      if (data && walletData) {
+        (data.user as any).wallet_address = walletData.wallet_address;
       }
 
-      if (error) throw error;
 
       // Check if user has liked this post
       if (user) {

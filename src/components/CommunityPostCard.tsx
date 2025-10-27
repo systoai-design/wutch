@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
+import { SellerStatsCard } from "@/components/SellerStatsCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,11 @@ interface CommunityPostCardProps {
       username: string;
       display_name: string;
       avatar_url?: string;
+      service_rating_avg?: number;
+      service_rating_count?: number;
+      service_orders_completed?: number;
+      service_completion_rate?: number;
+      service_response_time_hours?: number;
     };
   };
   isLiked?: boolean;
@@ -96,21 +102,35 @@ export const CommunityPostCard = ({
         </div>
       </div>
 
-      {/* Service Description */}
+      {/* Service Description with Seller Stats */}
       {post.post_type === 'service' && post.service_description && (
-        <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-border/50">
-          <div className="flex items-start gap-2">
-            <Briefcase className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-foreground">
-                I will <span className="text-primary">{post.service_description}</span>
-              </p>
-              {post.delivery_time && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  Delivery: {post.delivery_time}
-                </div>
-              )}
+        <div className="space-y-3 mb-4">
+          {/* Seller Stats */}
+          {(post.user.service_rating_avg || post.user.service_orders_completed) && (
+            <SellerStatsCard
+              rating={post.user.service_rating_avg}
+              reviewCount={post.user.service_rating_count}
+              ordersCompleted={post.user.service_orders_completed}
+              completionRate={post.user.service_completion_rate}
+              responseTime={post.user.service_response_time_hours}
+              compact
+            />
+          )}
+          
+          <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+            <div className="flex items-start gap-2">
+              <Briefcase className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-foreground">
+                  I will <span className="text-primary">{post.service_description}</span>
+                </p>
+                {post.delivery_time && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    Delivery: {post.delivery_time}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

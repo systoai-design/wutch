@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MessageSquare, Plus } from "lucide-react";
-import { UpcomingFeatureBanner } from "@/components/UpcomingFeatureBanner";
 import { CommunityPostUpload } from "@/components/CommunityPostUpload";
 import { CommunityPostFeed } from "@/components/CommunityPostFeed";
 import { Button } from "@/components/ui/button";
@@ -45,13 +44,10 @@ export default function CommunityPosts() {
         )}
       </div>
 
-      {/* Coming Soon Banner */}
-      <div className="mb-8">
-        <UpcomingFeatureBanner
-          title="Community Posts - Coming Soon! 🎉"
-          description="Share your thoughts, images, and updates with the community. Connect with other creators and viewers in a whole new way. This feature is currently in development and will be available soon!"
-        />
-      </div>
+      {/* Description */}
+      <p className="text-muted-foreground mb-8 text-center max-w-2xl mx-auto">
+        Share updates, offer services, or post memes. Connect with the community and earn through our x402 premium service marketplace powered by Solana.
+      </p>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">

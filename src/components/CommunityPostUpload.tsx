@@ -30,6 +30,8 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
   const [x402Price, setX402Price] = useState(0.001);
   const [serviceDescription, setServiceDescription] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('3d');
+  const [serviceCategory, setServiceCategory] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const MAX_CHARS = 500;
 
@@ -69,9 +71,19 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
       return;
     }
 
-    if (postType === 'service' && !serviceDescription.trim()) {
-      toast.error("Please describe your service");
-      return;
+    if (postType === 'service') {
+      if (!serviceDescription.trim() || serviceDescription.trim().length < 20) {
+        toast.error("Service description must be at least 20 characters");
+        return;
+      }
+      if (!serviceCategory) {
+        toast.error("Please select a service category");
+        return;
+      }
+      if (isPremium && !termsAccepted) {
+        toast.error("Please accept the service terms");
+        return;
+      }
     }
 
     if (isPremium && postType === 'service' && x402Price < 0.001) {
@@ -114,6 +126,8 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
       if (postType === 'service') {
         postData.service_description = serviceDescription.trim();
         postData.delivery_time = deliveryTime;
+        postData.service_category = serviceCategory;
+        postData.terms_accepted = termsAccepted;
         
         if (isPremium) {
           postData.is_premium = true;
@@ -140,6 +154,8 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
       setX402Price(0.001);
       setServiceDescription('');
       setDeliveryTime('3d');
+      setServiceCategory('');
+      setTermsAccepted(false);
       
       onSuccess?.();
     } catch (error) {
@@ -191,20 +207,42 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
             />
           </div>
           
-          <div>
-            <Label>Delivery Time</Label>
-            <Select value={deliveryTime} onValueChange={setDeliveryTime}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="24h">24 hours</SelectItem>
-                <SelectItem value="3d">3 days</SelectItem>
-                <SelectItem value="1w">1 week</SelectItem>
-                <SelectItem value="2w">2 weeks</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Service Category</Label>
+              <Select value={serviceCategory} onValueChange={setServiceCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="graphic-design">Graphic Design</SelectItem>
+                  <SelectItem value="video-editing">Video Editing</SelectItem>
+                  <SelectItem value="social-media">Social Media Management</SelectItem>
+                  <SelectItem value="content-writing">Content Writing</SelectItem>
+                  <SelectItem value="web-development">Web Development</SelectItem>
+                  <SelectItem value="music-production">Music Production</SelectItem>
+                  <SelectItem value="voice-over">Voice Over</SelectItem>
+                  <SelectItem value="consulting">Consulting</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Delivery Time</Label>
+              <Select value={deliveryTime} onValueChange={setDeliveryTime}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="24h">24 hours</SelectItem>
+                  <SelectItem value="3d">3 days</SelectItem>
+                  <SelectItem value="1w">1 week</SelectItem>
+                  <SelectItem value="2w">2 weeks</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       )}
@@ -250,6 +288,17 @@ export const CommunityPostUpload = ({ onSuccess }: CommunityPostUploadProps) => 
                   Users will need to pay this amount to order your service. Once paid, they'll be able to see your full post details and you'll receive an order notification.
                 </AlertDescription>
               </Alert>
+
+              <div className="flex items-start gap-2 mt-4">
+                <Switch 
+                  checked={termsAccepted} 
+                  onCheckedChange={setTermsAccepted}
+                  id="terms"
+                />
+                <Label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer">
+                  I agree to deliver the service as described and understand that payment is held in escrow until completion. I will respond to buyer messages within 24 hours.
+                </Label>
+              </div>
             </Card>
           )}
         </div>

@@ -90,7 +90,7 @@ export default function CommunityPostDetail() {
           serviceDescription={post.service_description || ''}
           deliveryTime={post.delivery_time}
           price={price || post.x402_price || 0}
-          creatorWallet={post.user.wallet_address || ''}
+          creatorWallet={(post.user as any).wallet_address || ''}
           creatorName={post.user.display_name}
           onSuccess={() => {
             setShowOrderModal(false);

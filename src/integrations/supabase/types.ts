@@ -347,9 +347,12 @@ export type Database = {
           like_count: number
           media_url: string | null
           moderation_status: string
+          portfolio_images: string[] | null
           post_type: string | null
+          service_category: string | null
           service_description: string | null
           status: string
+          terms_accepted: boolean | null
           updated_at: string
           user_id: string
           x402_asset: string | null
@@ -366,9 +369,12 @@ export type Database = {
           like_count?: number
           media_url?: string | null
           moderation_status?: string
+          portfolio_images?: string[] | null
           post_type?: string | null
+          service_category?: string | null
           service_description?: string | null
           status?: string
+          terms_accepted?: boolean | null
           updated_at?: string
           user_id: string
           x402_asset?: string | null
@@ -385,9 +391,12 @@ export type Database = {
           like_count?: number
           media_url?: string | null
           moderation_status?: string
+          portfolio_images?: string[] | null
           post_type?: string | null
+          service_category?: string | null
           service_description?: string | null
           status?: string
+          terms_accepted?: boolean | null
           updated_at?: string
           user_id?: string
           x402_asset?: string | null
@@ -507,6 +516,82 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      direct_message_threads: {
+        Row: {
+          buyer_id: string
+          buyer_unread_count: number | null
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          order_id: string
+          seller_id: string
+          seller_unread_count: number | null
+        }
+        Insert: {
+          buyer_id: string
+          buyer_unread_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          order_id: string
+          seller_id: string
+          seller_unread_count?: number | null
+        }
+        Update: {
+          buyer_id?: string
+          buyer_unread_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          order_id?: string
+          seller_id?: string
+          seller_unread_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_message_threads_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direct_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_text: string
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_text: string
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_text?: string
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "direct_message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       donations: {
         Row: {
@@ -1221,6 +1306,11 @@ export type Database = {
           promotional_link: string | null
           promotional_link_text: string | null
           public_wallet_address: string | null
+          service_completion_rate: number | null
+          service_orders_completed: number | null
+          service_rating_avg: number | null
+          service_rating_count: number | null
+          service_response_time_hours: number | null
           social_links: Json | null
           total_donations_received: number | null
           total_earnings: number
@@ -1247,6 +1337,11 @@ export type Database = {
           promotional_link?: string | null
           promotional_link_text?: string | null
           public_wallet_address?: string | null
+          service_completion_rate?: number | null
+          service_orders_completed?: number | null
+          service_rating_avg?: number | null
+          service_rating_count?: number | null
+          service_response_time_hours?: number | null
           social_links?: Json | null
           total_donations_received?: number | null
           total_earnings?: number
@@ -1273,6 +1368,11 @@ export type Database = {
           promotional_link?: string | null
           promotional_link_text?: string | null
           public_wallet_address?: string | null
+          service_completion_rate?: number | null
+          service_orders_completed?: number | null
+          service_rating_avg?: number | null
+          service_rating_count?: number | null
+          service_response_time_hours?: number | null
           social_links?: Json | null
           total_donations_received?: number | null
           total_earnings?: number
@@ -1341,6 +1441,50 @@ export type Database = {
         }
         Relationships: []
       }
+      service_disputes: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          raised_by: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          raised_by: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          raised_by?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_orders: {
         Row: {
           buyer_id: string
@@ -1391,6 +1535,69 @@ export type Database = {
             columns: ["purchase_id"]
             isOneToOne: false
             referencedRelation: "community_post_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_reviews: {
+        Row: {
+          buyer_id: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_verified_purchase: boolean | null
+          order_id: string
+          post_id: string
+          rating: number
+          response_at: string | null
+          response_text: string | null
+          review_text: string | null
+          seller_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          order_id: string
+          post_id: string
+          rating: number
+          response_at?: string | null
+          response_text?: string | null
+          review_text?: string | null
+          seller_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          order_id?: string
+          post_id?: string
+          rating?: number
+          response_at?: string | null
+          response_text?: string | null
+          review_text?: string | null
+          seller_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reviews_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -1961,9 +2168,11 @@ export type Database = {
       }
       verification_requests: {
         Row: {
+          business_registration: string | null
           created_at: string | null
           follower_count_at_request: number | null
           id: string
+          is_service_seller: boolean | null
           legal_address: string | null
           legal_email: string
           legal_id_document_url: string | null
@@ -1976,9 +2185,11 @@ export type Database = {
           payment_transaction_signature: string | null
           payment_verified_at: string | null
           payment_wallet_address: string | null
+          portfolio_links: string[] | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          service_categories: string[] | null
           status: string
           submitted_at: string | null
           total_watch_hours: number | null
@@ -1987,9 +2198,11 @@ export type Database = {
           verification_type: string
         }
         Insert: {
+          business_registration?: string | null
           created_at?: string | null
           follower_count_at_request?: number | null
           id?: string
+          is_service_seller?: boolean | null
           legal_address?: string | null
           legal_email: string
           legal_id_document_url?: string | null
@@ -2002,9 +2215,11 @@ export type Database = {
           payment_transaction_signature?: string | null
           payment_verified_at?: string | null
           payment_wallet_address?: string | null
+          portfolio_links?: string[] | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          service_categories?: string[] | null
           status?: string
           submitted_at?: string | null
           total_watch_hours?: number | null
@@ -2013,9 +2228,11 @@ export type Database = {
           verification_type: string
         }
         Update: {
+          business_registration?: string | null
           created_at?: string | null
           follower_count_at_request?: number | null
           id?: string
+          is_service_seller?: boolean | null
           legal_address?: string | null
           legal_email?: string
           legal_id_document_url?: string | null
@@ -2028,9 +2245,11 @@ export type Database = {
           payment_transaction_signature?: string | null
           payment_verified_at?: string | null
           payment_wallet_address?: string | null
+          portfolio_links?: string[] | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          service_categories?: string[] | null
           status?: string
           submitted_at?: string | null
           total_watch_hours?: number | null

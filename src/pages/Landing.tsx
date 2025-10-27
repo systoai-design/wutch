@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, memo, lazy, Suspense } from '
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CardStack } from '@/components/CardStack';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight, Lock, Briefcase, ShoppingCart, MessageSquare } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -600,6 +600,133 @@ const Landing = () => {
               <Link to="/app">
                 <Share2 className="h-5 w-5" />
                 💰 Claim Your First Share Reward
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* x402 Premium Content Protocol */}
+      <section id="x402-protocol" className="py-20 md:py-28 bg-gradient-to-br from-purple-500/5 via-background to-pink-500/5 scroll-mt-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-500 text-sm font-medium mb-6 border border-purple-500/20">
+              <Lock className="h-4 w-4" />
+              Revolutionary Payment Protocol
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+              Introducing <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">x402 Protocol</span>
+            </h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              Pay once with SOL, own forever. No subscriptions. No recurring fees. Pure ownership.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+            {/* Feature 1 */}
+            <Card className="p-6 glass-card bg-gradient-to-br from-card/80 to-purple-500/5 hover:scale-105 transition-all hover:border-purple-500/40">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-500/10 flex items-center justify-center mb-4">
+                <Wallet className="h-7 w-7 text-purple-500" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">One-Time Payment</h3>
+              <p className="text-muted-foreground">
+                Pay once with Solana and get permanent access. No hidden fees, no surprise charges.
+              </p>
+              <div className="mt-4 text-2xl font-bold text-purple-500">0.001+ SOL</div>
+            </Card>
+
+            {/* Feature 2 */}
+            <Card className="p-6 glass-card bg-gradient-to-br from-card/80 to-pink-500/5 hover:scale-105 transition-all hover:border-pink-500/40">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-pink-500/10 flex items-center justify-center mb-4">
+                <DollarSign className="h-7 w-7 text-pink-500" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Creators Keep 95%</h3>
+              <p className="text-muted-foreground">
+                Industry-leading revenue share. Creators receive 95% of every sale, platform takes just 5%.
+              </p>
+              <div className="mt-4 text-2xl font-bold text-pink-500">95% / 5%</div>
+            </Card>
+
+            {/* Feature 3 */}
+            <Card className="p-6 glass-card bg-gradient-to-br from-card/80 to-purple-500/5 hover:scale-105 transition-all hover:border-purple-500/40">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center mb-4">
+                <Shield className="h-7 w-7 text-green-500" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Blockchain Verified</h3>
+              <p className="text-muted-foreground">
+                Every purchase is recorded on Solana blockchain. Transparent, secure, and permanent.
+              </p>
+              <div className="mt-4 text-2xl font-bold text-green-500">100% Secure</div>
+            </Card>
+          </div>
+
+          {/* What You Can Buy */}
+          <div className="max-w-5xl mx-auto">
+            <h3 className="text-3xl font-bold text-center mb-12 text-foreground">What You Can Access with x402</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Video className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2">Premium Content</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Unlock exclusive livestreams, videos, and shorts. Pay once, watch forever.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2">Service Marketplace</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Order graphic design, video editing, consulting, and more. Direct messaging with sellers included.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Gift className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2">Exclusive Perks</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Get access to private communities, early releases, and creator-exclusive content.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2">Direct Communication</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Chat directly with service sellers, get updates, and collaborate seamlessly.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button asChild size="lg" className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+              <Link to="/community">
+                <ShoppingCart className="h-5 w-5" />
+                Explore Service Marketplace
               </Link>
             </Button>
           </div>
