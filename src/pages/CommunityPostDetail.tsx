@@ -71,6 +71,7 @@ export default function CommunityPostDetail() {
             onLike={() => toggleLike(postId!)}
             onOrderService={post.is_premium && post.post_type === 'service' && !isOwner ? () => setShowOrderModal(true) : undefined}
             isOwner={user?.id === post.user.id}
+            hasAccess={hasAccess}
           />
         )}
 

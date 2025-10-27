@@ -203,17 +203,19 @@ export function DesktopShortPlayer({
         </div>
       )}
 
-      {/* Video */}
-      <video
-        ref={videoRef}
-        src={short.video_url}
-        className="w-full h-full object-contain cursor-pointer"
-        loop
-        playsInline
-        preload={isActive ? "auto" : "metadata"}
-        onClick={handleVideoClick}
-        aria-label="Short video player"
-      />
+      {/* Video - Only render if has access (security: prevents URL exposure) */}
+      {hasAccess && (
+        <video
+          ref={videoRef}
+          src={short.video_url}
+          className="w-full h-full object-contain cursor-pointer"
+          loop
+          playsInline
+          preload={isActive ? "auto" : "metadata"}
+          onClick={handleVideoClick}
+          aria-label="Short video player"
+        />
+      )}
 
       {/* Play/Pause Overlay - shows when controls are visible or video is paused */}
       {(showControls || !isPlaying) && (

@@ -12,9 +12,10 @@ interface WutchVideoPlayerProps {
   thumbnailUrl?: string;
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
+  hasAccess?: boolean;
 }
 
-export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate, className }: WutchVideoPlayerProps) => {
+export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate, className, hasAccess = true }: WutchVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -159,6 +160,15 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  // Don't render video if no access (security: prevents URL exposure)
+  if (!hasAccess) {
+    return (
+      <div className={cn("relative bg-black rounded-lg overflow-hidden flex items-center justify-center", className)}>
+        <div className="text-white/50">Premium content locked</div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -212,16 +212,18 @@ export function MobileShortPlayer({
         </div>
       )}
 
-      {/* Video */}
-      <video
-        ref={videoRef}
-        src={short.video_url}
-        className="mobile-short-video absolute inset-0 w-full h-full object-contain"
-        playsInline
-        loop
-        preload={isActive ? "auto" : "none"}
-        onTouchEnd={handleTouchEnd}
-      />
+      {/* Video - Only render if has access (security: prevents URL exposure) */}
+      {hasAccess && (
+        <video
+          ref={videoRef}
+          src={short.video_url}
+          className="mobile-short-video absolute inset-0 w-full h-full object-contain"
+          playsInline
+          loop
+          preload={isActive ? "auto" : "none"}
+          onTouchEnd={handleTouchEnd}
+        />
+      )}
 
       {/* Controls Overlay - Shows on Tap */}
       <div

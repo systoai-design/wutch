@@ -74,8 +74,9 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     } catch (err: any) {
       console.error('Error checking premium access:', err);
       setError(err.message || 'Failed to check access');
-      // Default to allowing access on error to avoid blocking users
-      setHasAccess(true);
+      // Fail secure - deny access on error for security
+      setHasAccess(false);
+      setIsPremium(false);
     } finally {
       setIsLoading(false);
     }

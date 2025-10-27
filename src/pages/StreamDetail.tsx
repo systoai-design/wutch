@@ -284,6 +284,7 @@ const StreamDetail = () => {
                 isLive={stream.is_live || false}
                 showExternalLink={true}
                 onStreamOpened={() => setHasStartedWatching(true)}
+                hasAccess={hasAccess}
               />
             )}
           </div>

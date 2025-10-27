@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, MoreVertical, Briefcase, Lock, Clock, ShoppingCart } from "lucide-react";
+import { Heart, MessageCircle, MoreVertical, Briefcase, Lock, Clock, ShoppingCart, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ interface CommunityPostCardProps {
   onDelete?: () => void;
   onOrderService?: () => void;
   isOwner?: boolean;
+  hasAccess?: boolean;
 }
 
 export const CommunityPostCard = ({
@@ -52,6 +53,7 @@ export const CommunityPostCard = ({
   onDelete,
   onOrderService,
   isOwner = false,
+  hasAccess = true,
 }: CommunityPostCardProps) => {
   return (
     <Card className="p-6 hover:shadow-lg transition-shadow">
@@ -141,14 +143,32 @@ export const CommunityPostCard = ({
         <p className="text-foreground whitespace-pre-wrap break-words">{post.content}</p>
       </div>
 
-      {/* Media */}
-      {post.media_url && (
+      {/* Media - Only show if not premium or user has access */}
+      {post.media_url && (!post.is_premium || hasAccess) && (
         <div className="mb-4 rounded-lg overflow-hidden">
-          <img 
-            src={post.media_url} 
-            alt="Post media" 
-            className="w-full h-auto object-cover max-h-96"
-          />
+          {post.media_url.match(/\.(mp4|webm|mov)$/i) ? (
+            <video
+              src={post.media_url}
+              controls
+              className="w-full rounded-lg max-h-96 object-contain"
+            />
+          ) : (
+            <img 
+              src={post.media_url} 
+              alt="Post media" 
+              className="w-full h-auto object-cover max-h-96"
+            />
+          )}
+        </div>
+      )}
+      
+      {/* Premium media placeholder when locked */}
+      {post.media_url && post.is_premium && !hasAccess && (
+        <div className="mb-4 aspect-video bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg flex items-center justify-center border border-purple-500/20">
+          <div className="text-center p-6">
+            <Lock className="h-12 w-12 text-purple-500 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Premium media locked</p>
+          </div>
         </div>
       )}
 

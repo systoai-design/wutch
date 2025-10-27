@@ -7,19 +7,30 @@ interface PumpFunPlayerProps {
   isLive?: boolean;
   showExternalLink?: boolean;
   onStreamOpened?: () => void;
+  hasAccess?: boolean;
 }
 
 export function PumpFunPlayer({ 
   pumpFunUrl, 
   isLive = false,
   showExternalLink = false,
-  onStreamOpened
+  onStreamOpened,
+  hasAccess = true
 }: PumpFunPlayerProps) {
   
   const handleOpenStream = () => {
     window.open(pumpFunUrl, '_blank', 'noopener,noreferrer');
     onStreamOpened?.();
   };
+
+  // Don't render stream URL if no access (security: prevents URL exposure)
+  if (!hasAccess) {
+    return (
+      <div className="relative w-full h-full bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center">
+        <div className="text-muted-foreground">Premium stream locked</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-background via-muted/30 to-background flex flex-col items-center justify-center gap-3 sm:gap-6 p-3 sm:p-6 md:p-8">
