@@ -69,7 +69,7 @@ export default function CommunityPostDetail() {
             post={post}
             isLiked={post.isLiked}
             onLike={() => toggleLike(postId!)}
-            onOrderService={isPremium && !isOwner ? () => setShowOrderModal(true) : undefined}
+            onOrderService={post.is_premium && post.post_type === 'service' && !isOwner ? () => setShowOrderModal(true) : undefined}
             isOwner={user?.id === post.user.id}
           />
         )}
@@ -92,6 +92,7 @@ export default function CommunityPostDetail() {
           price={price || post.x402_price || 0}
           creatorWallet={(post.user as any).wallet_address || ''}
           creatorName={post.user.display_name}
+          hasAccess={hasAccess}
           onSuccess={() => {
             setShowOrderModal(false);
             window.location.reload();

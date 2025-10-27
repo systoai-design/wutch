@@ -162,7 +162,7 @@ export const CommunityPostCard = ({
       )}
 
       {/* Order Button for Service Posts */}
-      {post.is_premium && post.post_type === 'service' && !isOwner && onOrderService && (
+      {post.is_premium && post.post_type === 'service' && !isOwner && (
         <Button 
           className="w-full gap-2 mb-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
           onClick={onOrderService}

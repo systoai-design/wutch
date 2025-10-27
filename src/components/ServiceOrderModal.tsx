@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from './ui/card';
+import { useAuthDialog } from '@/store/authDialogStore';
 
 interface ServiceOrderModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface ServiceOrderModalProps {
   creatorWallet: string;
   creatorName: string;
   onSuccess: () => void;
+  hasAccess?: boolean;
 }
 
 const PLATFORM_WALLET = '899PTTcBgFauWKL2jyjtuJTyWTuQAEBqyY8bPsPvCH1G';
@@ -34,8 +36,10 @@ export const ServiceOrderModal = ({
   creatorWallet,
   creatorName,
   onSuccess,
+  hasAccess = false,
 }: ServiceOrderModalProps) => {
   const { user } = useAuth();
+  const { open: openAuthDialog } = useAuthDialog();
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,8 +50,18 @@ export const ServiceOrderModal = ({
   const platformFee = price * 0.05;
 
   const handlePayment = async () => {
-    if (!publicKey || !user) {
+    if (!user) {
+      openAuthDialog();
+      return;
+    }
+
+    if (!publicKey) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (hasAccess) {
+      toast.info('You have already purchased this service');
       return;
     }
 
@@ -189,7 +203,25 @@ export const ServiceOrderModal = ({
             </Alert>
           )}
 
-          {!publicKey && (
+          {hasAccess && (
+            <Alert className="bg-green-500/10 border-green-500/20">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-500">
+                <strong>Already Purchased!</strong> You have already ordered this service.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!user && (
+            <Alert>
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                Please sign in to order this service.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!publicKey && user && (
             <Alert>
               <Lock className="h-4 w-4" />
               <AlertDescription>
@@ -210,10 +242,12 @@ export const ServiceOrderModal = ({
           </Button>
           <Button
             onClick={handlePayment}
-            disabled={!publicKey || isProcessing || paymentStatus === 'success'}
+            disabled={!user || !publicKey || isProcessing || paymentStatus === 'success' || hasAccess}
             className="flex-1"
           >
-            {isProcessing ? (
+            {hasAccess ? (
+              'Already Purchased'
+            ) : isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
