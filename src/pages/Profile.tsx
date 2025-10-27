@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2, CalendarDays, Settings as SettingsIcon, Link as LinkIcon, CheckCircle2, MessageSquare } from 'lucide-react';
 import { UpcomingFeatureBanner } from '@/components/UpcomingFeatureBanner';
+import { TwitterConnect } from '@/components/TwitterConnect';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -971,6 +972,11 @@ const ProfilePage = () => {
                     Donation Settings
                   </h3>
                   <DonationSettings />
+                </div>
+
+                {/* Twitter Connection */}
+                <div>
+                  <TwitterConnect />
                 </div>
 
                 {/* Verification Section */}
