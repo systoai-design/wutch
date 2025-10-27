@@ -17,10 +17,17 @@ export const useCommunityPostQuery = (postId: string) => {
             username,
             display_name,
             avatar_url
+          ),
+          wallet:profile_wallets!community_posts_user_id_fkey (
+            wallet_address
           )
         `)
         .eq("id", postId)
         .single();
+      
+      if (data) {
+        data.user.wallet_address = data.wallet?.[0]?.wallet_address;
+      }
 
       if (error) throw error;
 

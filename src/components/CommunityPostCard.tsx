@@ -1,7 +1,8 @@
-import { Heart, MessageCircle, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, MoreVertical, Briefcase, Lock, Clock, ShoppingCart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import {
@@ -19,6 +20,11 @@ interface CommunityPostCardProps {
     like_count: number;
     comment_count: number;
     created_at: string;
+    post_type?: string;
+    is_premium?: boolean;
+    x402_price?: number;
+    service_description?: string;
+    delivery_time?: string;
     user: {
       id: string;
       username: string;
@@ -29,6 +35,7 @@ interface CommunityPostCardProps {
   isLiked?: boolean;
   onLike?: () => void;
   onDelete?: () => void;
+  onOrderService?: () => void;
   isOwner?: boolean;
 }
 
@@ -37,6 +44,7 @@ export const CommunityPostCard = ({
   isLiked = false,
   onLike,
   onDelete,
+  onOrderService,
   isOwner = false,
 }: CommunityPostCardProps) => {
   return (
@@ -59,21 +67,54 @@ export const CommunityPostCard = ({
           </div>
         </Link>
 
-        {isOwner && onDelete && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                Delete Post
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Post Type Badge */}
+          {post.post_type === 'service' && (
+            <Badge variant="outline" className="gap-1">
+              <Briefcase className="h-3 w-3" />
+              Service
+            </Badge>
+          )}
+          {post.post_type === 'meme' && (
+            <Badge variant="outline">😄 Meme</Badge>
+          )}
+
+          {isOwner && onDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  Delete Post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
+
+      {/* Service Description */}
+      {post.post_type === 'service' && post.service_description && (
+        <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-border/50">
+          <div className="flex items-start gap-2">
+            <Briefcase className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-foreground">
+                I will <span className="text-primary">{post.service_description}</span>
+              </p>
+              {post.delivery_time && (
+                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  Delivery: {post.delivery_time}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="mb-4">
@@ -89,6 +130,26 @@ export const CommunityPostCard = ({
             className="w-full h-auto object-cover max-h-96"
           />
         </div>
+      )}
+
+      {/* Premium Price Badge */}
+      {post.is_premium && post.x402_price && (
+        <div className="flex items-center gap-2 mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
+          <Lock className="h-4 w-4 text-purple-500" />
+          <span className="font-semibold text-purple-500">{post.x402_price} SOL</span>
+          <span className="text-sm text-muted-foreground">One-time payment</span>
+        </div>
+      )}
+
+      {/* Order Button for Service Posts */}
+      {post.is_premium && post.post_type === 'service' && !isOwner && onOrderService && (
+        <Button 
+          className="w-full gap-2 mb-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
+          onClick={onOrderService}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Order Service - {post.x402_price} SOL
+        </Button>
       )}
 
       {/* Actions */}

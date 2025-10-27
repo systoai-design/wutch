@@ -38,6 +38,7 @@ serve(async (req) => {
     // Get content details
     const tableName = contentType === 'livestream' ? 'livestreams' 
                     : contentType === 'shortvideo' ? 'short_videos'
+                    : contentType === 'community_post' ? 'community_posts'
                     : 'wutch_videos';
 
     const { data: content, error: contentError } = await supabaseClient
@@ -77,13 +78,28 @@ serve(async (req) => {
       );
     }
 
-    // Check if user has purchased access using the database function
-    const { data: hasAccess, error: accessError } = await supabaseClient
-      .rpc('user_has_premium_access', {
-        p_user_id: user.id,
-        p_content_type: contentType,
-        p_content_id: contentId,
-      });
+    // Check if user has purchased access
+    let hasAccess = false;
+    let accessError = null;
+
+    if (contentType === 'community_post') {
+      const result = await supabaseClient
+        .rpc('user_has_community_post_access', {
+          p_user_id: user.id,
+          p_post_id: contentId,
+        });
+      hasAccess = result.data;
+      accessError = result.error;
+    } else {
+      const result = await supabaseClient
+        .rpc('user_has_premium_access', {
+          p_user_id: user.id,
+          p_content_type: contentType,
+          p_content_id: contentId,
+        });
+      hasAccess = result.data;
+      accessError = result.error;
+    }
 
     if (accessError) {
       console.error('Error checking premium access:', accessError);

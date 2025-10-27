@@ -283,42 +283,116 @@ export type Database = {
           },
         ]
       }
+      community_post_purchases: {
+        Row: {
+          amount: number
+          asset: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          network: string
+          payment_proof: Json | null
+          post_id: string
+          purchased_at: string | null
+          transaction_signature: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          network?: string
+          payment_proof?: Json | null
+          post_id: string
+          purchased_at?: string | null
+          transaction_signature: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          network?: string
+          payment_proof?: Json | null
+          post_id?: string
+          purchased_at?: string | null
+          transaction_signature?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_purchases_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_posts: {
         Row: {
           comment_count: number
           content: string
           created_at: string
+          delivery_time: string | null
           id: string
+          is_premium: boolean | null
           like_count: number
           media_url: string | null
           moderation_status: string
+          post_type: string | null
+          service_description: string | null
           status: string
           updated_at: string
           user_id: string
+          x402_asset: string | null
+          x402_network: string | null
+          x402_price: number | null
         }
         Insert: {
           comment_count?: number
           content: string
           created_at?: string
+          delivery_time?: string | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number
           media_url?: string | null
           moderation_status?: string
+          post_type?: string | null
+          service_description?: string | null
           status?: string
           updated_at?: string
           user_id: string
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Update: {
           comment_count?: number
           content?: string
           created_at?: string
+          delivery_time?: string | null
           id?: string
+          is_premium?: boolean | null
           like_count?: number
           media_url?: string | null
           moderation_status?: string
+          post_type?: string | null
+          service_description?: string | null
           status?: string
           updated_at?: string
           user_id?: string
+          x402_asset?: string | null
+          x402_network?: string | null
+          x402_price?: number | null
         }
         Relationships: [
           {
@@ -1266,6 +1340,60 @@ export type Database = {
           watch_hours?: number
         }
         Relationships: []
+      }
+      service_orders: {
+        Row: {
+          buyer_id: string
+          completed_at: string | null
+          created_at: string | null
+          delivery_note: string | null
+          id: string
+          post_id: string
+          purchase_id: string
+          seller_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          delivery_note?: string | null
+          id?: string
+          post_id: string
+          purchase_id: string
+          seller_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          delivery_note?: string | null
+          id?: string
+          post_id?: string
+          purchase_id?: string
+          seller_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "community_post_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sharing_campaigns: {
         Row: {
@@ -2759,6 +2887,10 @@ export type Database = {
         Returns: undefined
       }
       update_user_moderation_tiers: { Args: never; Returns: undefined }
+      user_has_community_post_access: {
+        Args: { p_post_id: string; p_user_id: string }
+        Returns: boolean
+      }
       user_has_premium_access: {
         Args: {
           p_content_id: string

@@ -42,14 +42,16 @@ serve(async (req) => {
     let contentData: any;
     let creatorId: string;
     let price: number;
+    let postType: string | null = null;
     
     const tableName = contentType === 'livestream' ? 'livestreams' 
                     : contentType === 'shortvideo' ? 'short_videos'
+                    : contentType === 'community_post' ? 'community_posts'
                     : 'wutch_videos';
 
     const { data: content, error: contentError } = await supabaseClient
       .from(tableName)
-      .select('user_id, x402_price, is_premium')
+      .select('*')
       .eq('id', contentId)
       .single();
 
@@ -63,8 +65,11 @@ serve(async (req) => {
 
     creatorId = content.user_id;
     price = content.x402_price;
+    if (contentType === 'community_post') {
+      postType = content.post_type;
+    }
 
-    console.log('Content details:', { creatorId, price, isPremium: content.is_premium });
+    console.log('Content details:', { creatorId, price, isPremium: content.is_premium, postType });
 
     // Get creator's wallet address
     const { data: creatorWallet, error: walletError } = await supabaseClient
@@ -140,38 +145,99 @@ serve(async (req) => {
     }
 
     // Check if transaction already used
-    const { data: existingPurchase } = await supabaseClient
-      .from('x402_purchases')
-      .select('id')
-      .eq('transaction_signature', transactionSignature)
-      .maybeSingle();
+    if (contentType === 'community_post') {
+      const { data: existingPurchase } = await supabaseClient
+        .from('community_post_purchases')
+        .select('id')
+        .eq('transaction_signature', transactionSignature)
+        .maybeSingle();
 
-    if (existingPurchase) {
-      throw new Error('Transaction already used for x402 purchase');
+      if (existingPurchase) {
+        throw new Error('Transaction already used for community post purchase');
+      }
+    } else {
+      const { data: existingPurchase } = await supabaseClient
+        .from('x402_purchases')
+        .select('id')
+        .eq('transaction_signature', transactionSignature)
+        .maybeSingle();
+
+      if (existingPurchase) {
+        throw new Error('Transaction already used for x402 purchase');
+      }
     }
 
     // Record the purchase
-    const { data: purchase, error: purchaseError } = await supabaseClient
-      .from('x402_purchases')
-      .insert({
-        user_id: user.id,
-        content_type: contentType,
-        content_id: contentId,
-        amount: price,
-        asset: 'SOL',
-        network: 'solana',
-        payment_proof: JSON.stringify({
-          creatorAmount,
-          platformAmount,
-          creatorRecipient,
-          platformRecipient,
-        }),
-        transaction_signature: transactionSignature,
-        is_active: true,
-        expires_at: null, // Permanent access by default
-      })
-      .select()
-      .single();
+    let purchase: any;
+    let purchaseError: any;
+
+    if (contentType === 'community_post') {
+      const result = await supabaseClient
+        .from('community_post_purchases')
+        .insert({
+          user_id: user.id,
+          post_id: contentId,
+          amount: price,
+          asset: 'SOL',
+          network: 'solana',
+          payment_proof: JSON.stringify({
+            creatorAmount,
+            platformAmount,
+            creatorRecipient,
+            platformRecipient,
+          }),
+          transaction_signature: transactionSignature,
+          is_active: true,
+          expires_at: null,
+        })
+        .select()
+        .single();
+      
+      purchase = result.data;
+      purchaseError = result.error;
+
+      // If this is a service post, create a service order
+      if (!purchaseError && postType === 'service') {
+        const { error: orderError } = await supabaseClient
+          .from('service_orders')
+          .insert({
+            purchase_id: purchase.id,
+            post_id: contentId,
+            buyer_id: user.id,
+            seller_id: creatorId,
+            status: 'pending',
+          });
+
+        if (orderError) {
+          console.error('Error creating service order:', orderError);
+        }
+      }
+    } else {
+      const result = await supabaseClient
+        .from('x402_purchases')
+        .insert({
+          user_id: user.id,
+          content_type: contentType,
+          content_id: contentId,
+          amount: price,
+          asset: 'SOL',
+          network: 'solana',
+          payment_proof: JSON.stringify({
+            creatorAmount,
+            platformAmount,
+            creatorRecipient,
+            platformRecipient,
+          }),
+          transaction_signature: transactionSignature,
+          is_active: true,
+          expires_at: null,
+        })
+        .select()
+        .single();
+      
+      purchase = result.data;
+      purchaseError = result.error;
+    }
 
     if (purchaseError) {
       console.error('Error recording purchase:', purchaseError);
