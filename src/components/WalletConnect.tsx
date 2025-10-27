@@ -119,7 +119,9 @@ export const WalletConnect = () => {
       }
 
       // Create message to sign for wallet ownership verification
-      const message = `Verify wallet ownership for Wutch\nWallet: ${address}\nTimestamp: ${Date.now()}`;
+      const nonce = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now();
+      const message = `Sign this message to verify your wallet: ${timestamp}:${nonce}`;
       const encodedMessage = new TextEncoder().encode(message);
 
       let signature: Uint8Array;
@@ -214,6 +216,8 @@ export const WalletConnect = () => {
         errorMessage = "Your session has expired. Please log out and log in again, then try connecting your wallet.";
       } else if (error.message?.includes('Unauthorized')) {
         errorMessage = "Authentication failed. Please refresh the page and try again.";
+      } else if (error.message?.includes('non-2xx') || error.message?.includes('Invalid message format')) {
+        errorMessage = "Connection failed. Please make sure your Phantom wallet is unlocked and try again. If the issue persists, refresh the page.";
       }
       
       await disconnect();

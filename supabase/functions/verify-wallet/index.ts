@@ -67,8 +67,9 @@ Deno.serve(async (req) => {
     // Parse message to extract timestamp and nonce
     const messageMatch = message.match(/Sign this message to verify your wallet: (\d+):(\w+)/);
     if (!messageMatch) {
+      console.error('Invalid message format:', message);
       return new Response(
-        JSON.stringify({ error: 'Invalid message format' }),
+        JSON.stringify({ error: 'Invalid message format. Please ensure your wallet is unlocked and try again.' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -138,8 +139,9 @@ Deno.serve(async (req) => {
       }
     } catch (verifyError) {
       console.error('Signature verification failed:', verifyError);
+      console.error('Signature details:', { signature, walletAddress, messageLength: message.length });
       return new Response(
-        JSON.stringify({ error: 'Failed to verify signature. Please try again.' }),
+        JSON.stringify({ error: 'Failed to verify signature. Please ensure your wallet is unlocked and try again.' }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

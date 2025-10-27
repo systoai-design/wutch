@@ -334,7 +334,11 @@ const WutchVideoDetail = () => {
           <div className="space-y-4">
             {/* Video Player with Paywall Overlay */}
             <div className="relative">
-              {showPaywall ? (
+              {isCheckingAccess ? (
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : showPaywall ? (
                 <div className="aspect-video bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg flex flex-col items-center justify-center p-6 border border-purple-500/20">
                   <Lock className="h-16 w-16 text-purple-500 mb-4" />
                   <h3 className="text-2xl font-bold mb-2">Premium Content</h3>
@@ -360,10 +364,6 @@ const WutchVideoDetail = () => {
                       </AlertDescription>
                     </Alert>
                   )}
-                </div>
-              ) : isCheckingAccess ? (
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <WutchVideoPlayer 
