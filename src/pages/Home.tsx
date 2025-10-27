@@ -11,6 +11,7 @@ import { ChevronRight, X, Video, Zap, PlaySquare, Clock } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SkeletonStreamCard } from '@/components/SkeletonCard';
+import { SkeletonFeed, SkeletonCarousel } from '@/components/SkeletonFeed';
 import {
   Carousel,
   CarouselContent,
@@ -99,21 +100,66 @@ const Home = () => {
         return baseQuery;
       };
 
-      // Fetch live streams with bounty and share campaign info
-      // Use public_stream_bounties view for security (excludes secret_word)
-      // Use status field for consistency
-      let liveQuery = supabase
-        .from('livestreams')
-        .select(`
-          *,
-          profiles!livestreams_user_id_fkey(username, display_name, avatar_url),
-          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
-          sharing_campaigns!livestream_id(id, is_active)
-        `)
-        .eq('status', 'live')
-        .order('viewer_count', { ascending: false });
-      liveQuery = buildQuery(liveQuery);
-      const { data: liveData } = await liveQuery;
+      // Fetch all data in parallel for better performance
+      const [liveResult, shortsResult, wutchResult, profilesResult, upcomingResult, endedResult] = await Promise.all([
+        // Live streams
+        buildQuery(supabase
+          .from('livestreams')
+          .select(`
+            *,
+            profiles!livestreams_user_id_fkey(username, display_name, avatar_url),
+            public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit),
+            sharing_campaigns!livestream_id(id, is_active)
+          `)
+          .eq('status', 'live')
+          .order('viewer_count', { ascending: false })),
+        
+        // Shorts
+        buildQuery(supabase
+          .from('short_videos')
+          .select(`
+            *,
+            profiles!short_videos_user_id_fkey(username, display_name, avatar_url)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(15)),
+        
+        // Wutch videos
+        buildQuery(supabase
+          .from('wutch_videos')
+          .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(12)),
+        
+        // Profiles for wutch videos
+        supabase
+          .from('public_profiles')
+          .select('id, username, display_name, avatar_url'),
+        
+        // Upcoming streams
+        buildQuery(supabase
+          .from('livestreams')
+          .select(`
+            *,
+            public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+          `)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })),
+        
+        // Ended streams
+        buildQuery(supabase
+          .from('livestreams')
+          .select(`
+            *,
+            public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
+          `)
+          .eq('status', 'ended')
+          .order('ended_at', { ascending: false })
+          .limit(12))
+      ]);
+
+      const liveData = liveResult.data;
       
       // Process bounty and share campaign data
       const processedLiveData: LivestreamWithBounty[] = (liveData || []).map(stream => {
@@ -130,36 +176,7 @@ const Home = () => {
         };
       });
 
-      // Fetch shorts
-      let shortsQuery = supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles!short_videos_user_id_fkey(username, display_name, avatar_url)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(15);
-      
-      shortsQuery = buildQuery(shortsQuery);
-      const { data: shortsData } = await shortsQuery;
-
-      // Fetch wutch videos and profiles in parallel
-      let wutchQuery = supabase
-        .from('wutch_videos')
-        .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(12);
-      
-      wutchQuery = buildQuery(wutchQuery);
-      
-      const [wutchResult, profilesResult] = await Promise.all([
-        wutchQuery,
-        supabase
-          .from('public_profiles')
-          .select('id, username, display_name, avatar_url')
-      ]);
-
+      const shortsData = shortsResult.data;
       const wutchData = wutchResult.data || [];
       
       // Create profiles map
@@ -188,17 +205,7 @@ const Home = () => {
         };
       }).sort((a, b) => (b.trending_score || 0) - (a.trending_score || 0));
 
-      // Fetch upcoming streams with bounty info
-      let upcomingQuery = supabase
-        .from('livestreams')
-        .select(`
-          *,
-          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
-        `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      upcomingQuery = buildQuery(upcomingQuery);
-      const { data: upcomingData } = await upcomingQuery;
+      const upcomingData = upcomingResult.data;
       
       const processedUpcomingData: LivestreamWithBounty[] = (upcomingData || []).map(stream => {
         const activeBounties = (stream.public_stream_bounties as any[] || []).filter((b: any) => b.is_active);
@@ -212,18 +219,7 @@ const Home = () => {
         };
       });
 
-      // Fetch ended streams with bounty info
-      let endedQuery = supabase
-        .from('livestreams')
-        .select(`
-          *,
-          public_stream_bounties!livestream_id(id, is_active, reward_per_participant, claimed_count, participant_limit)
-        `)
-        .eq('status', 'ended')
-        .order('ended_at', { ascending: false })
-        .limit(12);
-      endedQuery = buildQuery(endedQuery);
-      const { data: endedData } = await endedQuery;
+      const endedData = endedResult.data;
       
       const processedEndedData: LivestreamWithBounty[] = (endedData || []).map(stream => {
         const activeBounties = (stream.public_stream_bounties as any[] || []).filter((b: any) => b.is_active);
@@ -277,11 +273,7 @@ const Home = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="h-10 w-48 bg-muted rounded-xl animate-pulse" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {[...Array(8)].map((_, i) => (
-              <SkeletonStreamCard key={i} />
-            ))}
-          </div>
+          <SkeletonFeed count={8} />
         </div>
         <ScrollToTop />
       </main>

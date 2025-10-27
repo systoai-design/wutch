@@ -55,6 +55,20 @@ export const preloadImage = (src: string): Promise<void> => {
 };
 
 /**
+ * Preload multiple images in parallel
+ */
+export const preloadImages = (sources: string[]): Promise<void[]> => {
+  return Promise.all(sources.map(src => preloadImage(src)));
+};
+
+/**
+ * Preload a React component (for lazy loaded components)
+ */
+export const preloadComponent = (componentImport: () => Promise<any>): void => {
+  componentImport();
+};
+
+/**
  * Get optimal image quality based on connection
  */
 export const getOptimalImageQuality = (): number => {

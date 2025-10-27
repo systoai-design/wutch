@@ -1,19 +1,23 @@
-import { useEffect, useState, useRef, useCallback, memo } from 'react';
+import { useEffect, useState, useRef, useCallback, memo, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CardStack } from '@/components/CardStack';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
-import { OptimizedBountySection } from '@/components/OptimizedBountySection';
-import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { TypewriterText } from '@/components/TypewriterText';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { scrollToSection } from '@/utils/performanceOptimization';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
+
+// Lazy load heavy components
+const OptimizedBountySection = lazy(() => import('@/components/OptimizedBountySection').then(m => ({ default: m.OptimizedBountySection })));
+const LeaderboardTable = lazy(() => import('@/components/LeaderboardTable').then(m => ({ default: m.LeaderboardTable })));
 
 // Memoized stat card component with animated counter
 const StatCard = memo(({ value, label, delay, isNumber = false }: { value: string | number; label: string; delay: string; isNumber?: boolean }) => (
@@ -624,10 +628,24 @@ const Landing = () => {
             </Button>
           </div>
 
-          <OptimizedBountySection 
-            bounties={featuredBounties}
-            isLoading={isLoadingBounties}
-          />
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-3">
+                    <Skeleton className="aspect-video rounded-xl" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            }>
+              <OptimizedBountySection 
+                bounties={featuredBounties}
+                isLoading={isLoadingBounties}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </section>
 
@@ -642,11 +660,28 @@ const Landing = () => {
               </p>
             </div>
 
-            {isLoadingLeaderboard ? (
-              <div className="h-96 bg-accent/20 rounded-lg animate-pulse" />
-            ) : (
-              <LeaderboardTable entries={leaderboard} />
-            )}
+            <ErrorBoundary>
+              <Suspense fallback={
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-card">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  ))}
+                </div>
+              }>
+                {isLoadingLeaderboard ? (
+                  <div className="h-96 bg-accent/20 rounded-lg animate-pulse" />
+                ) : (
+                  <LeaderboardTable entries={leaderboard} />
+                )}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </section>
