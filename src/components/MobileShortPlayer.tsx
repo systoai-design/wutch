@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -311,6 +311,25 @@ export function MobileShortPlayer({
           </div>
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {likeCount > 0 ? formatNumber(likeCount) : ''}
+          </span>
+        </button>
+
+        {/* Donate */}
+        <button
+          onClick={() => {
+            if (!short.profiles?.public_wallet_address) {
+              setShowGuestDialog(true);
+            } else {
+              onOpenDonation();
+            }
+          }}
+          className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+        >
+          <div className="p-2.5 rounded-full bg-black/50 shadow-lg backdrop-blur-sm">
+            <DollarSign className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            Tip
           </span>
         </button>
 

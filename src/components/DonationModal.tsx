@@ -22,7 +22,7 @@ interface DonationModalProps {
   streamerName: string;
   walletAddress: string;
   contentId: string;
-  contentType: 'livestream' | 'shortvideo';
+  contentType: 'livestream' | 'shortvideo' | 'wutch_video';
   recipientUserId: string;
 }
 

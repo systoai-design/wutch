@@ -28,13 +28,19 @@ const Sidebar = () => {
     }
   }, [location.pathname, isHomePage, isHovering, setCollapsed]);
 
-  const navItems = [
+  const navItems: Array<{
+    icon: any;
+    label: string;
+    path: string;
+    type: 'icon' | 'image';
+    imageSrc?: string;
+    badge?: string;
+  }> = [
     { icon: Home, label: 'Home', path: '/app', type: 'icon' },
     { icon: null, label: 'Pump Streams', path: '/streams', type: 'image', imageSrc: pumpFunLogo },
     { icon: null, label: 'Wutch', path: '/wutch', type: 'image', imageSrc: wutchLogo },
     { icon: Zap, label: 'Shorts', path: '/shorts', type: 'icon' },
-    { icon: MessageSquare, label: 'Community', path: '/community', type: 'icon', badge: 'Soon' },
-    { icon: DollarSign, label: 'Bounties', path: '/bounties', type: 'icon' },
+    { icon: MessageSquare, label: 'Community', path: '/community', type: 'icon' },
     { icon: Trophy, label: 'Leaderboards', path: '/leaderboards', type: 'icon' },
     { icon: Flame, label: 'Trending', path: '/trending', type: 'icon' },
     { icon: CalendarClock, label: 'Upcoming', path: '/upcoming', type: 'icon' },

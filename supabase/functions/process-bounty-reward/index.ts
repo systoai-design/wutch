@@ -26,8 +26,6 @@ serve(async (req) => {
 
     const { bounty_id, user_id, wallet_address, submitted_word, watch_time_seconds } = await req.json()
 
-    console.log('Processing bounty reward:', { bounty_id, user_id, wallet_address, watch_time_seconds })
-
     // Verify user authentication
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user || user.id !== user_id) {
@@ -151,16 +149,8 @@ serve(async (req) => {
     // Calculate amount in lamports
     const amountLamports = Math.floor(bounty.reward_per_participant * LAMPORTS_PER_SOL)
 
-    console.log('Sending transaction:', {
-      from: escrowKeypair.publicKey.toString(),
-      to: recipientPubkey.toString(),
-      amount: bounty.reward_per_participant,
-      lamports: amountLamports,
-    })
-
     // Check escrow wallet balance before attempting transfer
     const escrowBalance = await connection.getBalance(escrowKeypair.publicKey)
-    console.log('Escrow wallet balance:', escrowBalance / LAMPORTS_PER_SOL, 'SOL')
     
     if (escrowBalance < amountLamports) {
       const shortfall = (amountLamports - escrowBalance) / LAMPORTS_PER_SOL
@@ -178,8 +168,6 @@ serve(async (req) => {
 
     const signature = await connection.sendTransaction(transaction, [escrowKeypair])
     await connection.confirmTransaction(signature, 'confirmed')
-
-    console.log('Transaction confirmed:', signature)
 
     // Log successful transaction
     const supabaseAdmin = createClient(

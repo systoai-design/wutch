@@ -7,6 +7,7 @@ import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { VerificationBadge } from '@/components/VerificationBadge';
 import { UserBadges } from '@/components/UserBadges';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useNavigate } from 'react-router-dom';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -26,6 +27,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const navigate = useNavigate();
   const { isAdmin, isModerator } = useUserRoles(short.user_id);
 
   useEffect(() => {
@@ -90,8 +92,15 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
     if (onClick) {
       onClick();
     } else {
-      // Default behavior: navigate to shorts page
-      window.location.href = '/shorts';
+      // Generate URL-friendly slug from title
+      const titleSlug = short.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      // Navigate to shorts detail page with username, slug, and ID
+      const username = short.profiles?.username || 'user';
+      navigate(`/shorts/${username}/${titleSlug}/${short.id}`);
     }
   };
 

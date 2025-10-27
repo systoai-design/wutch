@@ -273,18 +273,25 @@ export function DesktopShortPlayer({
         </Button>
 
         {/* Donate */}
-        {short.profiles?.public_wallet_address && (
+        <div className="flex flex-col items-center gap-2">
           <Button
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              onOpenDonation();
+              if (!short.profiles?.public_wallet_address) {
+                setShowGuestDialog(true);
+              } else {
+                onOpenDonation();
+              }
             }}
             className="h-14 w-14 rounded-full bg-primary/90 hover:bg-primary text-white border-2 border-white/20 shadow-lg"
           >
             <DollarSign className="h-7 w-7" />
           </Button>
-        )}
+          <span className="text-xs text-white font-medium drop-shadow-lg">
+            Tip
+          </span>
+        </div>
 
         {/* Promotional Link */}
         {short.promotional_link && (

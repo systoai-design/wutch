@@ -131,7 +131,7 @@ const Home = () => {
       });
 
       // Fetch shorts
-      const { data: shortsData } = await supabase
+      let shortsQuery = supabase
         .from('short_videos')
         .select(`
           *,
@@ -139,15 +139,22 @@ const Home = () => {
         `)
         .order('created_at', { ascending: false })
         .limit(15);
+      
+      shortsQuery = buildQuery(shortsQuery);
+      const { data: shortsData } = await shortsQuery;
 
       // Fetch wutch videos and profiles in parallel
+      let wutchQuery = supabase
+        .from('wutch_videos')
+        .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(12);
+      
+      wutchQuery = buildQuery(wutchQuery);
+      
       const [wutchResult, profilesResult] = await Promise.all([
-        supabase
-          .from('wutch_videos')
-          .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-          .limit(12),
+        wutchQuery,
         supabase
           .from('public_profiles')
           .select('id, username, display_name, avatar_url')

@@ -270,82 +270,87 @@ const ProfilePage = () => {
         setProfile(profileData as DisplayProfile);
         setFollowerCount(profileData.follower_count || 0);
 
-        // Fetch user's streams with profile info
-        setIsLoadingStreams(true);
-        const { data: streamsData } = await supabase
+      // Fetch user's streams, shorts, and videos in parallel
+      const [streamsResult, shortsResult, videosResult, followResult] = await Promise.all([
+        supabase
           .from('livestreams')
           .select('*')
           .eq('user_id', profileData.id)
-          .order('created_at', { ascending: false });
-
-        // Enrich with profile data
-        const streamsWithProfile = (streamsData || []).map(stream => ({
-          ...stream,
-          profiles: {
-            username: profileData.username,
-            display_name: profileData.display_name,
-            avatar_url: profileData.avatar_url,
-          }
-        }));
-        setStreams(streamsWithProfile);
-        setIsLoadingStreams(false);
-
-        // Fetch user's shorts with profile info
-        setIsLoadingShorts(true);
-        const { data: shortsData } = await supabase
+          .order('created_at', { ascending: false }),
+        
+        supabase
           .from('short_videos')
           .select('*')
           .eq('user_id', profileData.id)
-          .order('created_at', { ascending: false });
-
-        // Enrich with profile data
-        const shortsWithProfile = (shortsData || []).map(short => ({
-          ...short,
-          profiles: {
-            username: profileData.username,
-            display_name: profileData.display_name,
-            avatar_url: profileData.avatar_url,
-          }
-        }));
-        setShorts(shortsWithProfile as any);
-        setIsLoadingShorts(false);
-
-        // Fetch user's wutch videos with profile info
-        setIsLoadingVideos(true);
-        const { data: videosData } = await supabase
+          .order('created_at', { ascending: false }),
+        
+        supabase
           .from('wutch_videos')
           .select('*')
           .eq('user_id', profileData.id)
           .eq('status', 'published')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }),
+        
+        // Check following status if authenticated
+        user && user.id !== profileData.id
+          ? supabase
+              .from('follows')
+              .select('*')
+              .eq('follower_id', user.id)
+              .eq('following_id', profileData.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null })
+      ]);
 
-        // Enrich with profile data
-        const videosWithProfile = (videosData || []).map(video => ({
-          ...video,
-          profiles: {
-            username: profileData.username,
-            display_name: profileData.display_name,
-            avatar_url: profileData.avatar_url,
-          }
-        }));
-        setVideos(videosWithProfile);
-        setIsLoadingVideos(false);
-
-        // Check if current user is following this profile
-        if (user && user.id !== profileData.id) {
-          const { data: followData } = await supabase
-            .from('follows')
-            .select('*')
-            .eq('follower_id', user.id)
-            .eq('following_id', profileData.id)
-            .maybeSingle();
-          
-          setIsFollowing(!!followData);
+      // Enrich streams with profile data
+      const streamsWithProfile = (streamsResult.data || []).map(stream => ({
+        ...stream,
+        profiles: {
+          username: profileData.username,
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
         }
+      }));
+      setStreams(streamsWithProfile);
+
+      // Enrich shorts with profile data
+      const shortsWithProfile = (shortsResult.data || []).map(short => ({
+        ...short,
+        profiles: {
+          username: profileData.username,
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
+        }
+      }));
+      setShorts(shortsWithProfile as any);
+
+      // Enrich videos with profile data
+      const videosWithProfile = (videosResult.data || []).map(video => ({
+        ...video,
+        profiles: {
+          username: profileData.username,
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
+        }
+      }));
+      setVideos(videosWithProfile);
+
+      // Set following status
+      setIsFollowing(!!followResult.data);
       } catch (error) {
         console.error('Error fetching profile data:', error);
+        if (error instanceof Error && error.name === 'AbortError') {
+          toast({
+            title: 'Request Timeout',
+            description: 'Profile is taking too long to load. Please try again.',
+            variant: 'destructive',
+          });
+        }
       } finally {
         setIsLoading(false);
+        setIsLoadingStreams(false);
+        setIsLoadingShorts(false);
+        setIsLoadingVideos(false);
       }
     };
 

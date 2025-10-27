@@ -84,7 +84,6 @@ serve(async (req) => {
 
     // Generate 6-digit verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('Generated verification code for user:', user.id, 'type:', type);
 
     // Store verification code (expires in 10 minutes)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -108,8 +107,6 @@ serve(async (req) => {
       console.error('Error inserting verification code:', insertError);
       throw insertError;
     }
-    
-    console.log('Verification code stored in database successfully');
 
     // Send verification email
     const emailHtml = `
@@ -127,9 +124,7 @@ serve(async (req) => {
       </div>
     `;
 
-    console.log('Attempting to send verification email to:', user.email);
-    
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { error: emailError } = await resend.emails.send({
       from: "Wutch <noreply@wutch.fun>",
       to: [user.email!],
       subject: `Verification Code: ${code}`,
@@ -137,15 +132,9 @@ serve(async (req) => {
     });
 
     if (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      console.error('Failed to send verification email');
       throw new Error('Failed to send verification email. Please try again.');
     }
-
-    console.log('Verification email sent successfully:', {
-      to: user.email,
-      messageId: emailData?.id,
-      type: type
-    });
 
     return new Response(
       JSON.stringify({ 

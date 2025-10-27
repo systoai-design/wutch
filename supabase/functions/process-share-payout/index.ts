@@ -107,8 +107,6 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    console.log('Processing share payout for authenticated user:', { userId, campaignId });
-
     // Create service role client for database operations
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -135,7 +133,6 @@ serve(async (req) => {
 
     // Calculate total amount to pay
     const totalAmount = unclaimedShares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
-    console.log(`Total to pay: ${totalAmount} SOL`);
 
     // Validate payout security (rate limiting, circuit breaker)
     await validatePayoutSecurity(userId, totalAmount, supabaseAdmin);
@@ -160,11 +157,8 @@ serve(async (req) => {
     // Convert SOL to lamports
     const lamports = Math.floor(totalAmount * LAMPORTS_PER_SOL);
 
-    console.log(`Sending ${lamports} lamports to ${walletAddress}`);
-
     // Check escrow wallet balance before attempting transfer
     const escrowBalance = await connection.getBalance(escrowWallet.publicKey);
-    console.log('Escrow wallet balance:', escrowBalance / LAMPORTS_PER_SOL, 'SOL');
 
     if (escrowBalance < lamports) {
       throw new Error(
@@ -208,13 +202,9 @@ serve(async (req) => {
     // Sign and send transaction
     transaction.sign(escrowWallet);
     const signature = await connection.sendRawTransaction(transaction.serialize());
-    
-    console.log('Transaction sent:', signature);
 
     // Wait for confirmation
     await connection.confirmTransaction(signature, 'confirmed');
-    
-    console.log('Transaction confirmed:', signature);
 
     // Update transaction log
     if (txLog) {
