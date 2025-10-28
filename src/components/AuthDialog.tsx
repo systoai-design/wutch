@@ -17,6 +17,8 @@ import wutchLogo from '@/assets/wutch-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { toast as sonnerToast } from 'sonner';
+import { usePhantomConnect } from '@/hooks/usePhantomConnect';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string()
@@ -59,8 +61,11 @@ export const AuthDialog = () => {
     message: string;
   } | null>(null);
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [isWalletLoggingIn, setIsWalletLoggingIn] = useState(false);
   
   const { publicKey, signMessage, connected, disconnect } = useWallet();
+  const { connectPhantomWallet, isConnecting: isPhantomConnecting } = usePhantomConnect();
+  const isMobile = useIsMobile();
 
   const [loginData, setLoginData] = useState({ emailOrUsername: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -237,6 +242,80 @@ export const AuthDialog = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleWalletLogin = async () => {
+    setIsWalletLoggingIn(true);
+    try {
+      // Connect and get wallet signature data without requiring auth verification
+      const result = await connectPhantomWallet(false);
+      
+      if (!result || typeof result === 'string') {
+        throw new Error('Failed to get wallet signature');
+      }
+
+      sonnerToast.info('Existing wallet detected, logging you in...');
+
+      // Call login edge function
+      const { data, error } = await supabase.functions.invoke('login-with-wallet', {
+        body: {
+          walletAddress: result.address,
+          signature: result.signature,
+          message: result.message,
+        },
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        
+        // If wallet not registered, show helpful error
+        if (error.message?.includes('not registered') || error.message?.includes('not found')) {
+          sonnerToast.error('Wallet not registered. Please sign up first.', {
+            action: {
+              label: 'Sign Up',
+              onClick: () => setActiveTab('wallet')
+            }
+          });
+          await disconnect();
+          return;
+        }
+        
+        throw new Error(error.message || 'Login failed');
+      }
+
+      if (!data?.session) {
+        throw new Error('No session returned from login');
+      }
+
+      // Verify the OTP token to complete login
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.session.hashed_token,
+        type: 'magiclink',
+      });
+
+      if (verifyError) {
+        throw verifyError;
+      }
+
+      sonnerToast.success('Logged in successfully!');
+      close();
+    } catch (error: any) {
+      console.error('Wallet login error:', error);
+      
+      let errorMessage = error.message || 'Failed to login with wallet';
+      
+      if (error.message?.includes('User rejected') || error.message?.includes('cancelled')) {
+        errorMessage = 'Login cancelled';
+      }
+
+      toast({
+        title: 'Login Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsWalletLoggingIn(false);
     }
   };
 
@@ -453,6 +532,28 @@ export const AuthDialog = () => {
                 </svg>
                 Sign in with Google
               </Button>
+
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full mt-2" 
+                onClick={handleWalletLogin}
+                disabled={isWalletLoggingIn || isPhantomConnecting}
+              >
+                {isWalletLoggingIn || isPhantomConnecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isPhantomConnecting ? 'Connecting...' : 'Logging in...'}
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8 10c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2-12h4v2h-4V5z"/>
+                    </svg>
+                    Sign in with Phantom Wallet
+                  </>
+                )}
+              </Button>
             </form>
           </TabsContent>
 
@@ -619,7 +720,16 @@ export const AuthDialog = () => {
             </div>
             <h3 className="text-lg font-semibold">Sign Up with Your Wallet</h3>
             <p className="text-sm text-muted-foreground">
-              Connect your Phantom wallet to get started - no email required
+              Connect your Phantom wallet to create a new account - no email required
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Already have a wallet account?{" "}
+              <button
+                onClick={() => setActiveTab("login")}
+                className="text-primary hover:underline font-medium"
+              >
+                Use the Login tab
+              </button>
             </p>
           </div>
 
@@ -698,13 +808,7 @@ export const AuthDialog = () => {
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            Already have an account?{" "}
-            <button
-              onClick={() => setActiveTab("login")}
-              className="text-primary hover:underline"
-            >
-              Log in
-            </button>
+            New to Wutch? This tab is for signing up only.
           </p>
         </TabsContent>
       </Tabs>
