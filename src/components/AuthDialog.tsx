@@ -300,9 +300,9 @@ export const AuthDialog = () => {
 
       // Verify we're logged into the correct account
       const { data: authData } = await supabase.auth.getUser();
-      if (authData.user && authData.user.id !== walletData.user_id) {
+      if (authData.user && data.userId && authData.user.id !== data.userId) {
         console.error('User ID mismatch after wallet login', {
-          expected: walletData.user_id,
+          expected: data.userId,
           actual: authData.user.id,
         });
         

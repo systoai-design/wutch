@@ -682,15 +682,18 @@ const Submit = () => {
 
             {/* Bounty Section */}
             <div className="border-t pt-6">
-              <div className="flex items-start space-x-2 mb-4">
-                <Checkbox
-                  id="createBounty"
-                  checked={formData.createBounty}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, createBounty: checked as boolean })
-                  }
-                />
-                <div>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="pt-0.5">
+                  <Checkbox
+                    id="createBounty"
+                    checked={formData.createBounty}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, createBounty: checked as boolean })
+                    }
+                    className="h-5 w-5 sm:h-4 sm:w-4"
+                  />
+                </div>
+                <div className="flex-1">
                   <Label htmlFor="createBounty" className="font-semibold cursor-pointer">
                     Create Viewer Bounty (Optional)
                   </Label>
@@ -801,15 +804,18 @@ const Submit = () => {
               )}
             </div>
 
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="tos"
-                checked={formData.tosAccepted}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, tosAccepted: checked as boolean })
-                }
-              />
-              <Label htmlFor="tos" className="text-sm font-normal cursor-pointer">
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <Checkbox
+                  id="tos"
+                  checked={formData.tosAccepted}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, tosAccepted: checked as boolean })
+                  }
+                  className="h-5 w-5 sm:h-4 sm:w-4"
+                />
+              </div>
+              <Label htmlFor="tos" className="text-sm font-normal cursor-pointer flex-1">
                 I accept the terms of service and confirm that I have the rights to stream
                 this content
               </Label>
