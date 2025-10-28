@@ -23,8 +23,13 @@ Deno.serve(async (req) => {
 
     console.log(`Checking balance for wallet: ${walletAddress}`);
 
-    // Use server-side RPC with API key for reliable balance checking
-    const rpcUrl = Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+    // Use Helius RPC with API key for reliable balance checking
+    const heliusApiKey = Deno.env.get('HELIUS_API_KEY');
+    const rpcUrl = heliusApiKey 
+      ? `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`
+      : Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+    
+    console.log(`Using RPC: ${heliusApiKey ? 'Helius (authenticated)' : 'Public fallback'}`);
     const connection = new Connection(rpcUrl, 'confirmed');
 
     const publicKey = new PublicKey(walletAddress);
