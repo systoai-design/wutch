@@ -45,6 +45,7 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [x402Stats, setX402Stats] = useState<any>(null);
   const { toast } = useToast();
 
   const fetchFinancialStats = useCallback(async (showRefreshing = false) => {

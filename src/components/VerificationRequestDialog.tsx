@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Upload, ArrowLeft } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface VerificationRequestDialogProps {
@@ -69,7 +69,6 @@ export function VerificationRequestDialog({
 
     setLoading(true);
     try {
-      // Using edge function call instead of direct RPC
       const { data, error } = await supabase.functions.invoke('check-eligibility', {
         body: { userId: user.id },
         headers: {
@@ -105,11 +104,22 @@ export function VerificationRequestDialog({
     try {
       const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f', 'confirmed');
 
+      // Calculate 95/5 split (X402 protocol)
+      const creatorAmount = REQUIRED_AMOUNT * 0.95;
+      const platformAmount = REQUIRED_AMOUNT * 0.05;
+
       const transaction = new Transaction().add(
+        // 95% to platform operations (main wallet)
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(PLATFORM_WALLET),
-          lamports: REQUIRED_AMOUNT * LAMPORTS_PER_SOL,
+          lamports: creatorAmount * LAMPORTS_PER_SOL,
+        }),
+        // 5% to platform fee wallet
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new PublicKey(PLATFORM_WALLET),
+          lamports: platformAmount * LAMPORTS_PER_SOL,
         })
       );
 
@@ -125,7 +135,7 @@ export function VerificationRequestDialog({
       await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
 
       // Verify payment with edge function
-      const { data, error } = await supabase.functions.invoke('verify-badge-payment', {
+      const { data, error } = await supabase.functions.invoke('x402-verify-badge-payment', {
         body: {
           transactionSignature: signature,
           walletAddress: publicKey.toBase58(),
@@ -137,7 +147,7 @@ export function VerificationRequestDialog({
       if (data.verified) {
         setPaymentSignature(signature);
         toast.success('Payment verified!');
-        setStep(2);
+        setStep(3);
       } else {
         throw new Error('Payment verification failed');
       }
@@ -256,7 +266,6 @@ export function VerificationRequestDialog({
       onOpenChange(false);
       resetForm();
       
-      // Refresh the page to show the new badge
       setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error('Admin grant error:', error);
@@ -301,19 +310,58 @@ export function VerificationRequestDialog({
 
   const renderBlueFlow = () => {
     if (step === 1) {
+      // Step 1: Legal Info Form
       return (
         <div className="space-y-4">
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <h4 className="font-semibold">Payment Required</h4>
-            <p className="text-sm text-muted-foreground">
-              Send exactly <span className="font-bold text-foreground">{REQUIRED_AMOUNT} SOL</span> to receive your blue verification badge.
+          <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+            <h4 className="font-semibold mb-2">Verification Process</h4>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                Fill out your legal information
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground text-xs font-bold">2</span>
+                Pay {REQUIRED_AMOUNT} SOL verification fee (X402 protocol)
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-muted-foreground text-xs font-bold">3</span>
+                Submit for admin review
+              </p>
+            </div>
+          </div>
+          {renderLegalInfoForm()}
+        </div>
+      );
+    }
+
+    if (step === 2) {
+      // Step 2: Payment
+      return (
+        <div className="space-y-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setStep(1)}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Form
+          </Button>
+
+          <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+            <h4 className="font-semibold mb-2">X402 Payment Required</h4>
+            <p className="text-sm text-muted-foreground mb-3">
+              Send exactly <span className="font-bold text-foreground">{REQUIRED_AMOUNT} SOL</span> to complete your verification request.
             </p>
-            <p className="text-xs text-muted-foreground break-all">
-              Platform Wallet: <code className="bg-background px-1 py-0.5 rounded">{PLATFORM_WALLET}</code>
-            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <p>✓ 95% goes to platform operations</p>
+              <p>✓ 5% platform fee</p>
+              <p>✓ One-time payment</p>
+            </div>
           </div>
 
-          {!publicKey && !paymentSignature && (
+          {!publicKey && (
             <>
               <Button 
                 onClick={handleConnectWallet} 
@@ -336,7 +384,7 @@ export function VerificationRequestDialog({
             </>
           )}
 
-          {publicKey && !paymentSignature && (
+          {publicKey && (
             <>
               <p className="text-xs text-muted-foreground text-center">
                 Paying from {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
@@ -353,22 +401,37 @@ export function VerificationRequestDialog({
               </Button>
             </>
           )}
-
-          {paymentSignature && (
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              <span>Payment verified!</span>
-            </div>
-          )}
         </div>
       );
     }
 
-    return renderLegalInfoForm();
+    if (step === 3) {
+      // Step 3: Confirmation
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-2 text-green-600">
+            <CheckCircle className="h-8 w-8" />
+            <span className="text-lg font-semibold">Payment Verified!</span>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Your payment has been confirmed. Click Submit to finalize your verification request.
+          </p>
+          <Button onClick={handleSubmit} disabled={loading} className="w-full">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit Verification Request'
+            )}
+          </Button>
+        </div>
+      );
+    }
   };
 
   const renderRedFlow = () => {
-    // Admins can grant themselves badge directly without eligibility checks
     if (isAdmin) {
       return (
         <div className="space-y-4">
@@ -442,7 +505,20 @@ export function VerificationRequestDialog({
       );
     }
 
-    return renderLegalInfoForm();
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-semibold">You're Eligible!</span>
+          </div>
+          <p className="text-sm text-green-600 dark:text-green-500">
+            Congratulations! You meet all requirements for the red badge.
+          </p>
+        </div>
+        {renderLegalInfoForm()}
+      </div>
+    );
   };
 
   const renderLegalInfoForm = () => (
@@ -532,12 +608,28 @@ export function VerificationRequestDialog({
         </p>
       </div>
 
-      <Button onClick={handleSubmit} disabled={loading} className="w-full">
+      <Button 
+        onClick={() => {
+          if (!legalName || !legalEmail || !legalIdType || !legalIdNumber || !idDocument) {
+            toast.error('Please fill in all required fields');
+            return;
+          }
+          if (verificationType === 'blue') {
+            setStep(2);
+          } else {
+            handleSubmit();
+          }
+        }} 
+        disabled={loading} 
+        className="w-full"
+      >
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Submitting...
+            Processing...
           </>
+        ) : verificationType === 'blue' ? (
+          'Continue to Payment'
         ) : (
           'Submit Verification Request'
         )}
@@ -554,7 +646,7 @@ export function VerificationRequestDialog({
           </DialogTitle>
           <DialogDescription>
             {verificationType === 'blue' 
-              ? 'Get verified by confirming your identity with a one-time payment of 0.05 SOL.'
+              ? 'Get verified by confirming your identity. Complete the form, then pay a one-time fee of ' + REQUIRED_AMOUNT + ' SOL using X402 protocol.'
               : 'Claim your earned verification badge by submitting your information.'
             }
           </DialogDescription>

@@ -51,31 +51,29 @@ serve(async (req) => {
       throw new Error('Invalid verification type');
     }
 
-    // For blue badge, verify payment was made
+    // For blue badges, verify X402 payment
     if (verificationType === 'blue') {
       if (!paymentTransactionSignature || !paymentWalletAddress) {
-        throw new Error('Payment information required for blue badge');
+        throw new Error('Payment verification required for blue badges');
       }
 
-      // Call verify-badge-payment to double-check
-      const verifyResponse = await fetch(
-        `${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-badge-payment`,
+      // Verify X402 payment with new edge function
+      const { data: paymentVerification, error: paymentError } = await supabaseClient.functions.invoke(
+        'x402-verify-badge-payment',
         {
-          method: 'POST',
-          headers: {
-            'Authorization': req.headers.get('Authorization')!,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             transactionSignature: paymentTransactionSignature,
             walletAddress: paymentWalletAddress,
-          }),
+          },
         }
       );
 
-      if (!verifyResponse.ok) {
-        throw new Error('Payment verification failed');
+      if (paymentError || !paymentVerification?.verified) {
+        console.error('Payment verification error:', paymentError);
+        throw new Error('Payment verification failed: ' + (paymentError?.message || 'Payment could not be verified'));
       }
+
+      console.log('X402 badge payment verified:', paymentVerification);
     }
 
     // For red badge, check eligibility

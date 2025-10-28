@@ -3187,6 +3187,27 @@ export type Database = {
         Args: { p_livestream_id: string; p_user_id: string }
         Returns: number
       }
+      get_user_x402_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          livestream_purchases: number
+          livestream_purchases_count: number
+          livestream_sales: number
+          livestream_sales_count: number
+          premium_purchases_count: number
+          premium_sales_count: number
+          shortvideo_purchases: number
+          shortvideo_purchases_count: number
+          shortvideo_sales: number
+          shortvideo_sales_count: number
+          total_premium_earned: number
+          total_premium_spent: number
+          wutch_video_purchases: number
+          wutch_video_purchases_count: number
+          wutch_video_sales: number
+          wutch_video_sales_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
