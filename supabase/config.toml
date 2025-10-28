@@ -78,3 +78,9 @@ verify_jwt = true
 
 [functions.get-creator-wallet]
 verify_jwt = false
+
+[functions.x402-verify-payment-v2]
+verify_jwt = true
+
+[functions.process-unified-payout]
+verify_jwt = true

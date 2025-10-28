@@ -277,7 +277,7 @@ export const X402PaymentModal = ({
       while (verifyAttempts < 3 && !verifySuccess) {
         verifyAttempts++;
         
-        const { data, error } = await supabase.functions.invoke('x402-verify-payment', {
+        const { data, error } = await supabase.functions.invoke('x402-verify-payment-v2', {
           body: {
             transactionSignature: signature,
             contentType,

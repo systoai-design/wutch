@@ -1258,6 +1258,94 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_transactions: {
+        Row: {
+          bounty_id: string | null
+          buyer_id: string | null
+          buyer_wallet: string | null
+          campaign_id: string | null
+          confirmed_at: string | null
+          content_id: string | null
+          content_type: string | null
+          created_at: string
+          creator_amount: number
+          error_message: string | null
+          gross_amount: number
+          id: string
+          metadata: Json | null
+          platform_amount: number
+          seller_id: string
+          seller_wallet: string | null
+          status: string
+          transaction_signature: string | null
+          transaction_type: string
+        }
+        Insert: {
+          bounty_id?: string | null
+          buyer_id?: string | null
+          buyer_wallet?: string | null
+          campaign_id?: string | null
+          confirmed_at?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          creator_amount: number
+          error_message?: string | null
+          gross_amount: number
+          id?: string
+          metadata?: Json | null
+          platform_amount: number
+          seller_id: string
+          seller_wallet?: string | null
+          status?: string
+          transaction_signature?: string | null
+          transaction_type: string
+        }
+        Update: {
+          bounty_id?: string | null
+          buyer_id?: string | null
+          buyer_wallet?: string | null
+          campaign_id?: string | null
+          confirmed_at?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          creator_amount?: number
+          error_message?: string | null
+          gross_amount?: number
+          id?: string
+          metadata?: Json | null
+          platform_amount?: number
+          seller_id?: string
+          seller_wallet?: string | null
+          status?: string
+          transaction_signature?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_transactions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "public_stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_transactions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "stream_bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_transactions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sharing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_wallets: {
         Row: {
           connection_count: number | null
@@ -2649,6 +2737,18 @@ export type Database = {
       }
     }
     Views: {
+      creator_earnings_summary: {
+        Row: {
+          confirmed_earned: number | null
+          last_earning_at: string | null
+          pending_earned: number | null
+          total_earned: number | null
+          transaction_count: number | null
+          transaction_type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       moderation_queue: {
         Row: {
           avatar_url: string | null
@@ -2664,6 +2764,17 @@ export type Database = {
           status: string | null
           user_id: string | null
           username: string | null
+        }
+        Relationships: []
+      }
+      platform_revenue_summary: {
+        Row: {
+          creator_payouts: number | null
+          date: string | null
+          platform_revenue: number | null
+          total_volume: number | null
+          transaction_count: number | null
+          transaction_type: string | null
         }
         Relationships: []
       }
@@ -2794,6 +2905,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_transaction_history: {
+        Row: {
+          buyer_display_name: string | null
+          buyer_id: string | null
+          buyer_username: string | null
+          confirmed_at: string | null
+          content_id: string | null
+          content_type: string | null
+          created_at: string | null
+          creator_amount: number | null
+          gross_amount: number | null
+          id: string | null
+          platform_amount: number | null
+          seller_avatar_url: string | null
+          seller_display_name: string | null
+          seller_id: string | null
+          seller_username: string | null
+          status: string | null
+          transaction_signature: string | null
+          transaction_type: string | null
+        }
+        Relationships: []
       }
       user_trust_stats: {
         Row: {
@@ -3023,6 +3157,15 @@ export type Database = {
         Returns: {
           active_creators: number
           total_paid_to_creators: number
+        }[]
+      }
+      get_user_earnings_from_transactions: {
+        Args: { p_user_id: string }
+        Returns: {
+          by_type: Json
+          total_confirmed: number
+          total_earned: number
+          total_pending: number
         }[]
       }
       get_user_financial_stats: {

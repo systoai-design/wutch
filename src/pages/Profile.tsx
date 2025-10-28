@@ -20,6 +20,8 @@ import { MFAEnrollment } from '@/components/MFAEnrollment';
 import { ProfileAnalytics } from '@/components/ProfileAnalytics';
 import { DonationSettings } from '@/components/DonationSettings';
 import { ProfileFinancialStats } from '@/components/ProfileFinancialStats';
+import { TransactionHistory } from '@/components/TransactionHistory';
+import { CreatorEarningsDashboard } from '@/components/CreatorEarningsDashboard';
 import { ImageViewer } from '@/components/ImageViewer';
 import { WalletStatusBadge } from '@/components/WalletStatusBadge';
 import { WalletEducationPanel } from '@/components/WalletEducationPanel';
@@ -652,6 +654,16 @@ const ProfilePage = () => {
                 Shorts {shorts.length > 0 && `(${shorts.length})`}
               </TabsTrigger>
               {isOwnProfile && (
+                <TabsTrigger value="earnings" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                  Earnings
+                </TabsTrigger>
+              )}
+              {isOwnProfile && (
+                <TabsTrigger value="transactions" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                  Transactions
+                </TabsTrigger>
+              )}
+              {isOwnProfile && (
                 <TabsTrigger value="analytics" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                   Analytics
                 </TabsTrigger>
@@ -748,6 +760,18 @@ const ProfilePage = () => {
               </div>
             )}
           </TabsContent>
+
+          {isOwnProfile && (
+            <TabsContent value="earnings" className="mt-6">
+              <CreatorEarningsDashboard />
+            </TabsContent>
+          )}
+
+          {isOwnProfile && (
+            <TabsContent value="transactions" className="mt-6">
+              <TransactionHistory />
+            </TabsContent>
+          )}
 
           {isOwnProfile && (
             <TabsContent value="analytics" className="mt-6">

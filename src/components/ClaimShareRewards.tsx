@@ -34,9 +34,10 @@ export function ClaimShareRewards({ campaignId, unclaimedAmount, onClaimSuccess 
         throw new Error("Please connect your wallet first");
       }
 
-      // Call edge function to process payout
-      const { data, error } = await supabase.functions.invoke("process-share-payout", {
+      // Call unified payout edge function
+      const { data, error } = await supabase.functions.invoke("process-unified-payout", {
         body: {
+          payoutType: "share_reward",
           userId: user.id,
           campaignId: campaignId,
           walletAddress: walletData.wallet_address,
