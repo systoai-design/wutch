@@ -16,7 +16,7 @@ export const WalletManagement = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     loadWalletData();
@@ -149,6 +149,9 @@ export const WalletManagement = () => {
           .from('profiles')
           .update({ public_wallet_address: null })
           .eq('id', user.id);
+
+        // Log out the user
+        await signOut();
       }
 
       setWalletAddress(null);
@@ -156,7 +159,7 @@ export const WalletManagement = () => {
       setShowDisconnectWarning(false);
       toast({
         title: 'Wallet Disconnected',
-        description: 'Your wallet has been disconnected from your account.',
+        description: 'Your wallet has been disconnected and you have been logged out.',
       });
     } catch (error) {
       console.error('Disconnect error:', error);
@@ -338,6 +341,7 @@ export const WalletManagement = () => {
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 space-y-2">
                 <p className="font-semibold text-destructive">What happens when you disconnect:</p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li>You will be automatically logged out of your account</li>
                   <li>You will NO LONGER be able to receive donations from viewers</li>
                   <li>You will NO LONGER be able to send donations to creators</li>
                   <li>You will NO LONGER be able to claim bounty rewards</li>

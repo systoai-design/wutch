@@ -13,8 +13,9 @@ export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [showWalletSignUp, setShowWalletSignUp] = useState(false);
   const [walletSignUpData, setWalletSignUpData] = useState<WalletConnectionData | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { connectPhantomWallet, isConnecting } = usePhantomConnect();
 
@@ -93,6 +94,7 @@ export const WalletConnect = () => {
     if (walletData) {
       // Wallet is registered, log them in
       try {
+        setIsLoggingIn(true);
         const { data, error } = await supabase.functions.invoke('login-with-wallet', {
           body: {
             walletAddress: result.address,
@@ -128,6 +130,8 @@ export const WalletConnect = () => {
       } catch (error: any) {
         console.error('Login error:', error);
         sonnerToast.error(error.message || 'Failed to log in');
+      } finally {
+        setIsLoggingIn(false);
       }
     } else {
       // Wallet is NOT registered, show signup dialog
@@ -150,12 +154,15 @@ export const WalletConnect = () => {
           .from('profiles')
           .update({ public_wallet_address: null })
           .eq('id', user.id);
+
+        // Log out the user
+        await signOut();
       }
 
       setWalletAddress(null);
       toast({
         title: 'Wallet Disconnected',
-        description: 'Your wallet has been disconnected.',
+        description: 'Your wallet has been disconnected. You have been logged out.',
       });
     } catch (error) {
       console.error('Disconnect error:', error);
@@ -182,15 +189,15 @@ export const WalletConnect = () => {
     <>
       <Button
         onClick={connectWallet}
-        disabled={isConnecting || authLoading}
+        disabled={isConnecting || authLoading || isLoggingIn}
         size="sm"
         className="gap-2"
       >
         <Wallet className="h-4 w-4" />
         <span className="hidden sm:inline">
-          {authLoading ? 'Loading...' : isConnecting ? 'Connecting...' : 'Connect Wallet'}
+          {authLoading ? 'Loading...' : isLoggingIn ? 'Logging in...' : isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </span>
-        {isMobile && !isConnecting && !authLoading && (
+        {isMobile && !isConnecting && !authLoading && !isLoggingIn && (
           <span className="sm:hidden">Connect</span>
         )}
       </Button>
