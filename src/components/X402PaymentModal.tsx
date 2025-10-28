@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock, Loader2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Lock, Loader2, CheckCircle, XCircle, RefreshCw, Wallet } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +35,7 @@ export const X402PaymentModal = ({
   onSuccess,
 }: X402PaymentModalProps) => {
   const { user } = useAuth();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, connect, connected, connecting } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -538,27 +538,47 @@ export const X402PaymentModal = ({
             >
               Cancel
             </Button>
-            <Button
-              onClick={handlePayment}
-              disabled={isProcessing || !publicKey || paymentStatus === 'success'}
-              className="flex-1"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : paymentStatus === 'success' ? (
-                'Success!'
-              ) : (
-                `Pay ${price} SOL`
-              )}
-            </Button>
+            {!publicKey ? (
+              <Button
+                onClick={connect}
+                disabled={connecting}
+                className="flex-1"
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Connect Phantom
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handlePayment}
+                disabled={isProcessing || paymentStatus === 'success'}
+                className="flex-1"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : paymentStatus === 'success' ? (
+                  'Success!'
+                ) : (
+                  `Pay ${price} SOL`
+                )}
+              </Button>
+            )}
           </div>
 
           {!publicKey && (
             <p className="text-xs text-center text-muted-foreground">
-              Please connect your Phantom wallet to continue
+              Connect your wallet to unlock this premium content
             </p>
           )}
         </div>

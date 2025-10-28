@@ -66,7 +66,7 @@ serve(async (req) => {
           price: content.x402_price,
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
-          previewDuration: content.preview_duration || 0,
+          previewDuration: content.preview_duration ?? 3,
           message: 'Please sign in to access this premium content',
         }), {
           status: 402,
@@ -150,7 +150,7 @@ serve(async (req) => {
           price: content.x402_price,
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
-          previewDuration: content.preview_duration || 0,
+          previewDuration: content.preview_duration ?? 3,
           message: 'Payment required to access this premium content',
         }),
         { 

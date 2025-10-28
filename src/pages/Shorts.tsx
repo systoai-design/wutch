@@ -65,12 +65,18 @@ const Shorts = () => {
         console.log('[Shorts] Deep-linking to short at index:', targetIndex);
         setActiveShortIndex(targetIndex);
         
-        // Scroll to target if on desktop
+        // Scroll to target if on desktop - defer to avoid IntersectionObserver override
         if (desktopScrollRef.current && !isMobile) {
-          const targetElement = desktopScrollRef.current.children[targetIndex] as HTMLElement;
-          if (targetElement) {
-            targetElement.scrollIntoView({ behavior: 'instant', block: 'start' });
-          }
+          setTimeout(() => {
+            const targetElement = desktopScrollRef.current?.children[targetIndex] as HTMLElement;
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+              // Fallback if scrollIntoView doesn't work reliably
+              if (desktopScrollRef.current) {
+                desktopScrollRef.current.scrollTo({ top: targetElement.offsetTop, behavior: 'auto' });
+              }
+            }
+          }, 50);
         }
       }
     }

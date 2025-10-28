@@ -66,7 +66,9 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
               setPrice(errorData.price);
               setAsset(errorData.asset || 'SOL');
               setNetwork(errorData.network || 'solana');
-              setPreviewDuration(errorData.previewDuration || 0);
+              // Guarantee at least 3 seconds preview
+              const pd = errorData.previewDuration ?? 3;
+              setPreviewDuration(pd > 0 ? pd : 3);
               // Don't throw - this is expected behavior for premium content
               setIsLoading(false);
               return;
@@ -87,7 +89,9 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
           setPrice(data.price);
           setAsset(data.asset || 'SOL');
           setNetwork(data.network || 'solana');
-          setPreviewDuration(data.previewDuration || 0);
+          // Guarantee at least 3 seconds preview
+          const pd = data.previewDuration ?? 3;
+          setPreviewDuration(pd > 0 ? pd : 3);
         }
       }
     } catch (err: any) {
