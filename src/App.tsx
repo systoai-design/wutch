@@ -229,7 +229,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={wallets} autoConnect={true}>
+        <WalletProvider wallets={wallets} autoConnect={false}>
           <BrowserRouter>
             <AuthProvider>
               <Toaster />

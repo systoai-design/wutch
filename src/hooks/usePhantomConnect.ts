@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletReadyState } from '@solana/wallet-adapter-base';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -7,11 +8,30 @@ import { toast } from 'sonner';
 export const usePhantomConnect = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const isMobile = useIsMobile();
-  const { publicKey, connect, disconnect, signMessage, select, wallets } = useWallet();
+  const { publicKey, connect, disconnect, signMessage, select, wallets, connected } = useWallet();
 
   const connectPhantomWallet = async (): Promise<string | null> => {
+    // Debounce: prevent double clicks
+    if (isConnecting) {
+      console.log('Connection already in progress, ignoring click');
+      return null;
+    }
+
     setIsConnecting(true);
     try {
+      // Clear any stale window.solana connection if adapter isn't connected
+      if (!isMobile && !connected) {
+        const solana = (window as any)?.solana;
+        if (solana?.isConnected && !publicKey) {
+          console.log('Clearing stale window.solana connection');
+          try {
+            await solana.disconnect();
+          } catch (e) {
+            console.log('Failed to clear stale connection:', e);
+          }
+        }
+      }
+
       // On mobile, check if we're in Phantom's in-app browser
       const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
       
@@ -22,17 +42,54 @@ export const usePhantomConnect = () => {
         return null;
       }
       
-      // Select Phantom wallet only if not already selected
+      // Find and verify Phantom wallet
       const phantomWallet = wallets.find(w => 
         w.adapter.name.toLowerCase().includes('phantom')
       );
-      if (phantomWallet && phantomWallet.adapter.name !== wallets.find(w => w.adapter.connected)?.adapter.name) {
+      
+      if (!phantomWallet) {
+        throw new Error('Phantom wallet not detected. Please install the Phantom browser extension.');
+      }
+
+      // Check if Phantom is installed/loadable
+      if (phantomWallet.adapter.readyState === WalletReadyState.NotDetected) {
+        throw new Error('Phantom wallet not detected. Please install the Phantom browser extension.');
+      }
+
+      // Only select if not already selected and connected
+      if (!connected) {
+        console.log('Selecting Phantom wallet...');
         select(phantomWallet.adapter.name);
-        // Wait a bit for wallet selection to settle
-        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Poll for wallet to be ready (up to 2 seconds)
+        let ready = false;
+        for (let i = 0; i < 8; i++) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+          const currentWallet = wallets.find(w => w.adapter.name === phantomWallet.adapter.name);
+          if (currentWallet && currentWallet.adapter.readyState !== WalletReadyState.NotDetected) {
+            ready = true;
+            break;
+          }
+        }
+        
+        if (!ready) {
+          console.warn('Wallet not ready after selection, proceeding anyway');
+        }
       }
       
-      await connect();
+      // Connect with retry on race conditions
+      try {
+        await connect();
+      } catch (connectError: any) {
+        // Retry once if we hit a race condition
+        if (connectError.message?.includes('already connecting') || connectError.message?.includes('ready state')) {
+          console.log('Retry connect after race condition');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await connect();
+        } else {
+          throw connectError;
+        }
+      }
       
       // Wait for publicKey to be populated with retry logic
       let address: string | undefined;
