@@ -341,20 +341,26 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="container mx-auto px-3 sm:px-4 py-12 sm:py-16 md:py-24 lg:py-36">
         <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium animate-fade-in">
-            <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
-            Turn Attention Into SOL
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium animate-fade-in">
+              <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
+              Turn Attention Into SOL
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-purple-500/10 text-purple-500 text-xs sm:text-sm font-medium animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
+              Powered by X402 Protocol
+            </div>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.1s' }}>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-tight text-foreground animate-slide-up min-h-[1.2em]" style={{ animationDelay: '0.2s' }}>
             Earn Through <TypewriterText className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-primary/70" />
           </h1>
           
-          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed px-2" style={{ animationDelay: '0.2s' }}>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed px-2" style={{ animationDelay: '0.3s' }}>
             Wutch rewards you with SOLANA for watching streams, creating content, claiming bounties, and sharing campaigns. Join the platform where everyone earns.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in-up px-2" style={{ animationDelay: '0.3s' }}>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in-up px-2" style={{ animationDelay: '0.4s' }}>
             <Button asChild size="default" className="px-6 py-6 sm:py-2 hover:scale-105 transition-all text-base touch-manipulation pulse-glow">
               <Link to="/app">🚀 Get Your First SOL</Link>
             </Button>
@@ -426,6 +432,12 @@ const Landing = () => {
                 title: "Share & Get Paid",
                 description: "Reach 1 SOL minimum and request instant payout to your wallet. Share campaigns and donations for even more earnings.",
                 color: "from-green-500/20 to-green-500/10"
+              },
+              {
+                icon: Lock,
+                title: "Premium Content (X402)",
+                description: "Monetize premium videos with instant crypto payments via X402 protocol. Viewers unlock content with one-time payments - 95% goes directly to creators.",
+                color: "from-purple-500/20 to-pink-500/10"
               }
             ]}
             className="max-w-7xl mx-auto"
@@ -1085,6 +1097,16 @@ const Landing = () => {
               <h3 className="text-2xl font-bold text-foreground">Secure Solana Blockchain Platform</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Built on Solana blockchain with transparent reward distribution, secure Web3 wallet integration, and instant on-chain SOLANA payouts.
+              </p>
+            </Card>
+
+            <Card className="p-8 space-y-4 bg-card transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 group">
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <Lock className="h-8 w-8 text-purple-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground">X402 Payment Protocol</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Decentralized premium content monetization with instant crypto payments. Secure on-chain verification with 95% revenue going directly to creators.
               </p>
             </Card>
           </div>
