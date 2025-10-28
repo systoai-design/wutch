@@ -43,12 +43,25 @@ export const X402PaymentModal = ({
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
 
   // Multiple RPC endpoints with priority fallback
-  const rpcEndpoints = useMemo(() => [
-    "https://mainnet.helius-rpc.com/",
-    "https://rpc.ankr.com/solana",
-    "https://solana.public-rpc.com",
-    "https://api.mainnet-beta.solana.com"
-  ], []);
+  const rpcEndpoints = useMemo(() => {
+    const endpoints = [];
+    
+    // Prioritize authenticated Helius RPC if API key is available
+    const heliusApiKey = import.meta.env.VITE_HELIUS_API_KEY;
+    if (heliusApiKey) {
+      endpoints.push(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`);
+    }
+    
+    // Fallback endpoints
+    endpoints.push(
+      "https://mainnet.helius-rpc.com/",
+      "https://rpc.ankr.com/solana",
+      "https://solana.public-rpc.com",
+      "https://api.mainnet-beta.solana.com"
+    );
+    
+    return endpoints;
+  }, []);
 
   // Try RPC endpoints in order until one works
   const getConnectionWithFallback = async (): Promise<Connection> => {
