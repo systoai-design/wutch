@@ -454,9 +454,9 @@ const Landing = () => {
                 Traditional platforms take 45-55% of creator earnings and process payments in 30-90 days. With X402 protocol on Wutch, creators get 95% of earnings deposited instantly to their wallet. This is the monetization revolution content creators have been waiting for.
               </p>
               <Button asChild size="lg" className="hover:scale-105 transition-all pulse-glow">
-                <Link to="/x402">
+                <a href="https://x402.gitbook.io/x402" target="_blank" rel="noopener noreferrer">
                   Learn More About X402 <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
