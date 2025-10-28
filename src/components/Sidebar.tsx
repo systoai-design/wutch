@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy, MessageSquare } from 'lucide-react';
+import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -40,7 +40,6 @@ const Sidebar = () => {
     { icon: null, label: 'Pump Streams', path: '/streams', type: 'image', imageSrc: pumpFunLogo },
     { icon: null, label: 'Wutch', path: '/wutch', type: 'image', imageSrc: wutchLogo },
     { icon: Zap, label: 'Shorts', path: '/shorts', type: 'icon' },
-    { icon: MessageSquare, label: 'Community', path: '/community', type: 'icon' },
     { icon: Trophy, label: 'Leaderboards', path: '/leaderboards', type: 'icon' },
     { icon: Flame, label: 'Trending', path: '/trending', type: 'icon' },
     { icon: CalendarClock, label: 'Upcoming', path: '/upcoming', type: 'icon' },

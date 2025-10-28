@@ -25,7 +25,7 @@ interface Comment {
 
 interface CommentsSectionProps {
   contentId: string;
-  contentType: "livestream" | "shortvideo" | "wutch_video" | "community_post";
+  contentType: "livestream" | "shortvideo" | "wutch_video";
 }
 
 export default function CommentsSection({ contentId, contentType }: CommentsSectionProps) {

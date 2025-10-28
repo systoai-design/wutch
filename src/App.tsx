@@ -45,8 +45,6 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Leaderboards = lazy(() => import('./pages/Leaderboards'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const CommunityPosts = lazy(() => import('./pages/CommunityPosts'));
-const CommunityPostDetail = lazy(() => import('./pages/CommunityPostDetail'));
 const AdminVerification = lazy(() => import('./pages/AdminVerification'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
@@ -146,8 +144,6 @@ function AppContent() {
         <Route element={<AppLayout />}>
           <Route path="/app" element={<Home />} />
           <Route path="/streams" element={<Streams />} />
-          <Route path="/community" element={<CommunityPosts />} />
-          <Route path="/community/post/:postId" element={<CommunityPostDetail />} />
           
           {/* SEO-friendly routes */}
           <Route path="/stream/:username/:titleSlug/:id" element={<StreamDetail />} />
