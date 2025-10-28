@@ -29,6 +29,8 @@ import { VerificationBadge } from './VerificationBadge';
 import { AdminBadge } from './AdminBadge';
 import { ModeratorBadge } from './ModeratorBadge';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { X402Badge } from './X402Badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Navigation = () => {
   const location = useLocation();
@@ -152,6 +154,21 @@ const Navigation = () => {
 
           {/* Notification Bell */}
           {!isGuest && <NotificationBell />}
+
+          {/* X402 Badge */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/x402-explained" className="inline-flex items-center">
+                  <X402Badge size="sm" showText className="hidden sm:inline-flex" />
+                  <X402Badge size="sm" showText={false} className="sm:hidden" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Powered by X402</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           {/* PumpFun Icon */}
           <Button

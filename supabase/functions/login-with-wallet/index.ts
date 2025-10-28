@@ -167,6 +167,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         session: linkData,
+        userId: walletData.user_id,
+        email: authUser.user.email,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

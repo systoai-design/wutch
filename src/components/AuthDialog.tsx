@@ -298,6 +298,20 @@ export const AuthDialog = () => {
         throw verifyError;
       }
 
+      // Verify we're logged into the correct account
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData.user && authData.user.id !== walletData.user_id) {
+        console.error('User ID mismatch after wallet login', {
+          expected: walletData.user_id,
+          actual: authData.user.id,
+        });
+        
+        // Sign out the wrong account
+        await supabase.auth.signOut();
+        
+        throw new Error('This wallet is linked to another account. Please try again.');
+      }
+
       sonnerToast.success('Logged in successfully!');
       close();
     } catch (error: any) {
