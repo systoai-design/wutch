@@ -8,8 +8,9 @@ import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { TypewriterText } from '@/components/TypewriterText';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
-import { scrollToSection } from '@/utils/performanceOptimization';
+import { useSolPrice } from '@/hooks/useSolPrice';
 import { Skeleton } from '@/components/ui/skeleton';
+import { scrollToSection } from '@/utils/performanceOptimization';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import wutchLogo from '@/assets/wutch-logo.png';
 import xLogo from '@/assets/x-logo.png';
@@ -52,6 +53,8 @@ const Landing = () => {
     x402PremiumEarnings: 0,
     x402ActiveCreators: 0
   });
+  
+  const { solPrice, isLoading: isLoadingSolPrice } = useSolPrice();
   const [sectionsVisible, setSectionsVisible] = useState({
     bounties: false,
     leaderboard: false,
@@ -425,8 +428,8 @@ const Landing = () => {
           {/* Stats with subtle background */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 pt-8 sm:pt-12 md:pt-16 max-w-3xl mx-auto px-2">
             <StatCard 
-              value={stats.totalRewards}
-              label="Total Paid Out"
+              value={isLoadingSolPrice ? 0 : stats.totalRewards * solPrice}
+              label={`Total Paid Out${isLoadingSolPrice ? '' : ` (${stats.totalRewards.toFixed(4)} SOL)`}`}
               delay="0.4s"
               isNumber={true}
             />
@@ -921,13 +924,22 @@ const Landing = () => {
 
           {/* Hero Stats */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-16">
-            <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate">
-              <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold text-primary mb-2">
-                ${creatorStats.totalPaidToCreators.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </div>
-              <div className="text-sm text-muted-foreground font-medium">Total Paid to Creators</div>
-            </Card>
+                <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate">
+                  <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    {isLoadingSolPrice ? (
+                      <Skeleton className="h-10 w-32 mx-auto" />
+                    ) : (
+                      <>
+                        ${(creatorStats.totalPaidToCreators * solPrice).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        <div className="text-base text-primary/70 mt-1">
+                          {creatorStats.totalPaidToCreators.toFixed(4)} SOL
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">Total Paid to Creators</div>
+                </Card>
             <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.1s' }}>
               <Users className="h-12 w-12 text-primary mx-auto mb-4" />
               <div className="text-4xl font-bold text-primary mb-2">
@@ -935,20 +947,38 @@ const Landing = () => {
               </div>
               <div className="text-sm text-muted-foreground font-medium">Active Creators</div>
             </Card>
-            <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.2s' }}>
-              <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold text-primary mb-2">
-                ${creatorStats.averageEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </div>
-              <div className="text-sm text-muted-foreground font-medium">Average Creator Earnings</div>
-            </Card>
-            <Card className="p-8 text-center glass-card bg-gradient-to-br from-purple-500/5 to-purple-500/10 hover:border-purple-500/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.3s' }}>
-              <Lock className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-              <div className="text-4xl font-bold text-purple-500 mb-2">
-                ${creatorStats.x402PremiumEarnings.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-              </div>
-              <div className="text-sm text-muted-foreground font-medium">X402 Premium Sales</div>
-            </Card>
+                <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.2s' }}>
+                  <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    {isLoadingSolPrice ? (
+                      <Skeleton className="h-10 w-32 mx-auto" />
+                    ) : (
+                      <>
+                        ${(creatorStats.averageEarnings * solPrice).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        <div className="text-base text-primary/70 mt-1">
+                          {creatorStats.averageEarnings.toFixed(4)} SOL
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">Average Creator Earnings</div>
+                </Card>
+                <Card className="p-8 text-center glass-card bg-gradient-to-br from-purple-500/5 to-purple-500/10 hover:border-purple-500/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.3s' }}>
+                  <Lock className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+                  <div className="text-4xl font-bold text-purple-500 mb-2">
+                    {isLoadingSolPrice ? (
+                      <Skeleton className="h-10 w-32 mx-auto" />
+                    ) : (
+                      <>
+                        {creatorStats.x402PremiumEarnings.toFixed(4)} SOL
+                        <div className="text-xl text-purple-400 mt-1">
+                          ${(creatorStats.x402PremiumEarnings * solPrice).toFixed(2)} USD
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">X402 Premium Sales</div>
+                </Card>
           </div>
 
           {/* Revenue Streams Grid */}
