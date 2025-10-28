@@ -109,23 +109,29 @@ export const WalletConnect = () => {
         }
 
         if (data?.session?.properties?.action_link) {
-          const token = new URL(data.session.properties.action_link).searchParams.get('token');
-          if (token) {
-            const { error: signInError } = await supabase.auth.verifyOtp({
-              token_hash: token,
-              type: 'magiclink',
-            });
-
-            if (signInError) {
-              console.error('Sign in error:', signInError);
-              sonnerToast.error('Failed to sign in');
-              return;
-            }
-
-            sonnerToast.success('Logged in successfully!');
-            // Immediately set wallet address to avoid second click
-            setWalletAddress(result.address);
+          const url = new URL(data.session.properties.action_link);
+          const tokenHash = url.searchParams.get('token_hash') ?? url.searchParams.get('token');
+          
+          if (!tokenHash) {
+            console.error('No token_hash found in action_link');
+            sonnerToast.error('Authentication failed - missing token');
+            return;
           }
+
+          const { error: signInError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'magiclink',
+          });
+
+          if (signInError) {
+            console.error('Sign in error:', signInError);
+            sonnerToast.error('Failed to sign in');
+            return;
+          }
+
+          sonnerToast.success('Logged in successfully!');
+          // Immediately set wallet address to avoid second click
+          setWalletAddress(result.address);
         }
       } catch (error: any) {
         console.error('Login error:', error);
