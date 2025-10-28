@@ -55,6 +55,22 @@ export const X402PaymentModal = ({
     setErrorMessage('');
 
     try {
+      // Pre-flight balance check
+      const balance = await connection.getBalance(publicKey);
+      const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
+      const creatorLamports = Math.floor(priceLamports * 95 / 100);
+      const platformLamports = priceLamports - creatorLamports;
+      const feeBuffer = 15000; // ~0.000015 SOL for network fees
+      const requiredLamports = creatorLamports + platformLamports + feeBuffer;
+
+      if (balance < requiredLamports) {
+        const requiredSOL = (requiredLamports / LAMPORTS_PER_SOL).toFixed(6);
+        const actualSOL = (balance / LAMPORTS_PER_SOL).toFixed(6);
+        throw new Error(
+          `Insufficient balance. Need ${requiredSOL} SOL (price + network fee), but you have ${actualSOL} SOL`
+        );
+      }
+
       // Create transaction with two transfers: 95% to creator, 5% to platform
       const transaction = new Transaction();
 
@@ -63,7 +79,7 @@ export const X402PaymentModal = ({
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(creatorWallet),
-          lamports: Math.floor(creatorAmount * LAMPORTS_PER_SOL),
+          lamports: creatorLamports,
         })
       );
 
@@ -72,29 +88,68 @@ export const X402PaymentModal = ({
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(PLATFORM_WALLET),
-          lamports: Math.floor(platformFee * LAMPORTS_PER_SOL),
+          lamports: platformLamports,
         })
       );
+
+      // Get latest blockhash for confirmation
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
 
       // Send transaction
       const signature = await sendTransaction(transaction, connection);
       console.log('Transaction sent:', signature);
 
-      // Wait for confirmation
-      toast.info('Confirming transaction...');
-      await connection.confirmTransaction(signature, 'confirmed');
+      // Wait for finalized confirmation
+      toast.info('Confirming transaction on blockchain...');
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      }, 'finalized');
 
-      // Verify payment via edge function
-      const { data, error } = await supabase.functions.invoke('x402-verify-payment', {
-        body: {
-          transactionSignature: signature,
-          contentType,
-          contentId,
-        },
-      });
+      console.log('Transaction finalized, verifying payment...');
 
-      if (error || !data?.success) {
-        throw new Error(error?.message || 'Payment verification failed');
+      // Verify payment via edge function with retry logic
+      let verifyAttempts = 0;
+      let verifySuccess = false;
+      let verifyError: any = null;
+
+      while (verifyAttempts < 3 && !verifySuccess) {
+        verifyAttempts++;
+        
+        const { data, error } = await supabase.functions.invoke('x402-verify-payment', {
+          body: {
+            transactionSignature: signature,
+            contentType,
+            contentId,
+          },
+        });
+
+        if (error) {
+          verifyError = error;
+          // Check if it's a transient "not found" error
+          const errorMsg = error.message?.toLowerCase() || '';
+          if (errorMsg.includes('not found') || errorMsg.includes('indexing')) {
+            if (verifyAttempts < 3) {
+              console.log(`Verification attempt ${verifyAttempts} failed, retrying in 1s...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+          }
+          throw error;
+        }
+
+        if (!data?.success) {
+          throw new Error('Payment verification failed');
+        }
+
+        verifySuccess = true;
+      }
+
+      if (!verifySuccess) {
+        throw verifyError || new Error('Payment verification failed after retries');
       }
 
       setPaymentStatus('success');
@@ -108,8 +163,24 @@ export const X402PaymentModal = ({
     } catch (error: any) {
       console.error('Payment error:', error);
       setPaymentStatus('error');
-      setErrorMessage(error.message || 'Payment failed. Please try again.');
-      toast.error('Payment failed: ' + (error.message || 'Unknown error'));
+      
+      // Try to extract detailed error from backend
+      let errorMessage = error.message || 'Payment failed. Please try again.';
+      
+      // If there's a context with JSON error details from the edge function
+      if (error.context) {
+        try {
+          const contextJson = await error.context.json();
+          if (contextJson.error) {
+            errorMessage = contextJson.error;
+          }
+        } catch {
+          // Ignore JSON parsing errors
+        }
+      }
+      
+      setErrorMessage(errorMessage);
+      toast.error('Payment failed: ' + errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -171,7 +242,14 @@ export const X402PaymentModal = ({
           {paymentStatus === 'error' && (
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
+              <AlertDescription>
+                <div className="space-y-1">
+                  <p>{errorMessage}</p>
+                  <p className="text-xs opacity-80">
+                    Need help? Contact support with your transaction details.
+                  </p>
+                </div>
+              </AlertDescription>
             </Alert>
           )}
 

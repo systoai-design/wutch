@@ -106,7 +106,8 @@ serve(async (req) => {
 
     // Verify transaction is confirmed
     if (transaction.meta?.err) {
-      throw new Error('Transaction failed');
+      console.error('Transaction failed with meta.err:', JSON.stringify(transaction.meta.err));
+      throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err)}`);
     }
 
     // Extract transaction details
@@ -118,18 +119,22 @@ serve(async (req) => {
 
     // Parse transfer instructions - should have 2 transfers (95% to creator, 5% to platform)
     let transferCount = 0;
+    let creatorAmountLamports = 0;
+    let platformAmountLamports = 0;
+    
     for (const instruction of instructions) {
       if ('parsed' in instruction && instruction.parsed?.type === 'transfer') {
         const info = instruction.parsed.info;
-        const amount = info.lamports / LAMPORTS_PER_SOL;
         
         if (info.destination === creatorWallet.wallet_address) {
           creatorRecipient = info.destination;
-          creatorAmount = amount;
+          creatorAmountLamports = info.lamports;
+          creatorAmount = info.lamports / LAMPORTS_PER_SOL;
           transferCount++;
         } else if (info.destination === PLATFORM_WALLET) {
           platformRecipient = info.destination;
-          platformAmount = amount;
+          platformAmountLamports = info.lamports;
+          platformAmount = info.lamports / LAMPORTS_PER_SOL;
           transferCount++;
         }
       }
@@ -139,16 +144,25 @@ serve(async (req) => {
       throw new Error('Invalid transaction structure. Expected 2 transfers (creator + platform)');
     }
 
-    // Verify amounts (95% to creator, 5% to platform)
-    const expectedCreatorAmount = price * 0.95;
-    const expectedPlatformAmount = price * 0.05;
+    // Verify amounts using integer lamports math (95% to creator, 5% to platform)
+    const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
+    const expectedCreatorLamports = Math.floor(priceLamports * 95 / 100);
+    const expectedPlatformLamports = priceLamports - expectedCreatorLamports;
 
-    if (Math.abs(creatorAmount - expectedCreatorAmount) > 0.0001) {
-      throw new Error(`Invalid creator amount. Expected ${expectedCreatorAmount} SOL, got ${creatorAmount} SOL`);
+    console.log('Amount verification:', {
+      priceLamports,
+      expectedCreatorLamports,
+      actualCreatorLamports: creatorAmountLamports,
+      expectedPlatformLamports,
+      actualPlatformLamports: platformAmountLamports,
+    });
+
+    if (creatorAmountLamports !== expectedCreatorLamports) {
+      throw new Error(`Invalid creator amount. Expected ${expectedCreatorLamports} lamports, got ${creatorAmountLamports} lamports`);
     }
 
-    if (Math.abs(platformAmount - expectedPlatformAmount) > 0.0001) {
-      throw new Error(`Invalid platform amount. Expected ${expectedPlatformAmount} SOL, got ${platformAmount} SOL`);
+    if (platformAmountLamports !== expectedPlatformLamports) {
+      throw new Error(`Invalid platform amount. Expected ${expectedPlatformLamports} lamports, got ${platformAmountLamports} lamports`);
     }
 
     // Check if transaction already used
