@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Coins, Gift, Heart, TrendingUp, RefreshCw } from 'lucide-react';
+import { Coins, TrendingUp, CreditCard, Heart, RefreshCw, Sparkles, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -21,6 +21,7 @@ interface FinancialStats {
     view_earnings: number;
     bounty_earnings: number;
     share_earnings: number;
+    x402_earnings: number;
     pending: number;
     paid_out: number;
   };
@@ -34,6 +35,25 @@ interface FinancialStats {
   };
 }
 
+interface X402Stats {
+  total_premium_earned: number;
+  premium_sales_count: number;
+  total_premium_spent: number;
+  premium_purchases_count: number;
+  livestream_sales: number;
+  livestream_sales_count: number;
+  shortvideo_sales: number;
+  shortvideo_sales_count: number;
+  wutch_video_sales: number;
+  wutch_video_sales_count: number;
+  livestream_purchases: number;
+  livestream_purchases_count: number;
+  shortvideo_purchases: number;
+  shortvideo_purchases_count: number;
+  wutch_video_purchases: number;
+  wutch_video_purchases_count: number;
+}
+
 interface ProfileFinancialStatsProps {
   userId: string;
   isOwnProfile: boolean;
@@ -42,10 +62,10 @@ interface ProfileFinancialStatsProps {
 
 export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: ProfileFinancialStatsProps) {
   const [stats, setStats] = useState<FinancialStats | null>(null);
+  const [x402Stats, setX402Stats] = useState<X402Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [x402Stats, setX402Stats] = useState<any>(null);
   const { toast } = useToast();
 
   const fetchFinancialStats = useCallback(async (showRefreshing = false) => {
@@ -55,24 +75,39 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
       } else {
         setLoading(true);
       }
-      const { data, error } = await supabase.rpc('get_user_financial_stats', {
-        p_user_id: userId
-      });
 
-      if (error) throw error;
+      // Fetch main financial stats
+      const { data: financialData, error: financialError } = await supabase
+        .rpc('get_user_financial_stats', { p_user_id: userId })
+        .single();
 
-      if (data && data.length > 0) {
-        const rawData = data[0];
-        setStats({
-          total_earned: rawData.total_earned,
-          total_rewards_given: rawData.total_rewards_given,
-          total_donated: rawData.total_donated,
-          total_received: rawData.total_received,
-          earnings_breakdown: rawData.earnings_breakdown as any,
-          rewards_breakdown: rawData.rewards_breakdown as any,
-        });
-        setLastUpdated(new Date());
+      if (financialError) throw financialError;
+
+      // Fetch X402 stats
+      const { data: x402Data, error: x402Error } = await supabase
+        .rpc('get_user_x402_stats', { p_user_id: userId })
+        .single();
+
+      if (x402Error) {
+        console.error('Error fetching X402 stats:', x402Error);
       }
+
+      if (financialData) {
+        setStats({
+          total_earned: financialData.total_earned,
+          total_rewards_given: financialData.total_rewards_given,
+          total_donated: financialData.total_donated,
+          total_received: financialData.total_received,
+          earnings_breakdown: financialData.earnings_breakdown as any,
+          rewards_breakdown: financialData.rewards_breakdown as any,
+        });
+      }
+
+      if (x402Data) {
+        setX402Stats(x402Data as X402Stats);
+      }
+
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching financial stats:', error);
       if (!showRefreshing) {
@@ -91,7 +126,7 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
   useEffect(() => {
     fetchFinancialStats();
 
-    // Set up real-time subscriptions for tables that affect stats
+    // Set up real-time subscriptions
     const channel = supabase
       .channel('financial-stats-changes')
       .on(
@@ -102,69 +137,27 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
           table: 'profiles',
           filter: `id=eq.${userId}`,
         },
-        () => {
-          fetchFinancialStats(true);
-        }
+        () => fetchFinancialStats(true)
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'stream_bounties',
-          filter: `creator_id=eq.${userId}`,
+          table: 'platform_transactions',
+          filter: `seller_id=eq.${userId}`,
         },
-        () => {
-          fetchFinancialStats(true);
-        }
+        () => fetchFinancialStats(true)
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'bounty_claims',
-          filter: `user_id=eq.${userId}`,
+          table: 'platform_transactions',
+          filter: `buyer_id=eq.${userId}`,
         },
-        () => {
-          fetchFinancialStats(true);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_shares',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchFinancialStats(true);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'view_earnings',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchFinancialStats(true);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'sharing_campaigns',
-          filter: `creator_id=eq.${userId}`,
-        },
-        () => {
-          fetchFinancialStats(true);
-        }
+        () => fetchFinancialStats(true)
       )
       .subscribe();
 
@@ -184,12 +177,12 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
   };
 
   const formatSOL = (amount: number) => {
-    return `${amount.toFixed(3)} SOL`;
+    return `${amount.toFixed(4)} SOL`;
   };
 
   if (loading) {
     return (
-      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-4 ${className}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${className}`}>
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="p-4">
             <Skeleton className="h-4 w-16 mb-2" />
@@ -202,69 +195,81 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
 
   if (!stats) return null;
 
+  // Calculate total spent (premiums + bounties + campaigns + donations)
+  const totalSpent = 
+    (x402Stats?.total_premium_spent || 0) + 
+    stats.total_rewards_given + 
+    stats.total_donated;
+
   const statCards = [
     {
       label: 'Total Earned',
-      value: stats.total_earned,
+      value: formatSOL(stats.total_earned),
       icon: Coins,
-      color: 'text-green-500',
+      color: 'text-green-600',
       show: true,
       tooltip: (
-        <div className="space-y-1 text-sm">
-          <div className="font-semibold mb-2">Earnings Breakdown</div>
-          <div>View Earnings: {formatSOL(stats.earnings_breakdown.view_earnings)}</div>
-          <div>Bounty Rewards: {formatSOL(stats.earnings_breakdown.bounty_earnings)}</div>
-          <div>Share Rewards: {formatSOL(stats.earnings_breakdown.share_earnings)}</div>
-          <div className="border-t pt-1 mt-1">
-            <div>Pending: {formatSOL(stats.earnings_breakdown.pending)}</div>
-            <div>Paid Out: {formatSOL(stats.earnings_breakdown.paid_out)}</div>
-          </div>
+        <div className="space-y-1 text-xs">
+          <p className="font-semibold mb-2">Earnings Breakdown</p>
+          <p>View Earnings: {formatSOL(stats.earnings_breakdown.view_earnings)}</p>
+          <p>Stream Challenges: {formatSOL(stats.earnings_breakdown.bounty_earnings)}</p>
+          <p>Viral Campaigns: {formatSOL(stats.earnings_breakdown.share_earnings)}</p>
+          <p>Premium (X402): {formatSOL(stats.earnings_breakdown.x402_earnings || 0)}</p>
+          <p className="font-bold pt-1 border-t">Pending: {formatSOL(stats.earnings_breakdown.pending)}</p>
+          <p className="font-bold">Paid Out: {formatSOL(stats.earnings_breakdown.paid_out)}</p>
         </div>
-      )
+      ),
     },
     {
-      label: 'Rewards Given',
-      value: stats.total_rewards_given,
-      icon: Gift,
-      color: 'text-purple-500',
-      show: true,
-      tooltip: (
-        <div className="space-y-1 text-sm">
-          <div className="font-semibold mb-2">Rewards Breakdown</div>
-          <div>Bounties Created: {stats.rewards_breakdown.bounties_created}</div>
-          <div>Bounties Deposited: {formatSOL(stats.rewards_breakdown.bounties_total)}</div>
-          <div>Bounties Claimed: {formatSOL(stats.rewards_breakdown.bounties_paid)}</div>
-          <div className="border-t pt-1 mt-1">
-            <div>Campaigns Created: {stats.rewards_breakdown.campaigns_created}</div>
-            <div>Campaign Budget: {formatSOL(stats.rewards_breakdown.campaigns_total)}</div>
-            <div>Campaign Spent: {formatSOL(stats.rewards_breakdown.campaigns_spent)}</div>
-          </div>
-        </div>
-      )
-    },
-    {
-      label: 'Donated',
-      value: stats.total_donated,
-      icon: Heart,
-      color: 'text-red-500',
+      label: 'Premium Earned',
+      value: formatSOL(x402Stats?.total_premium_earned || 0),
+      icon: Sparkles,
+      color: 'text-purple-600',
       show: isOwnProfile,
       tooltip: (
-        <div className="text-sm">
-          Total donations you've made to other creators
+        <div className="space-y-1 text-xs">
+          <p className="font-semibold mb-2">X402 Premium Sales</p>
+          <p>Livestreams: {formatSOL(x402Stats?.livestream_sales || 0)} ({x402Stats?.livestream_sales_count || 0} sales)</p>
+          <p>Short Videos: {formatSOL(x402Stats?.shortvideo_sales || 0)} ({x402Stats?.shortvideo_sales_count || 0} sales)</p>
+          <p>Wutch Videos: {formatSOL(x402Stats?.wutch_video_sales || 0)} ({x402Stats?.wutch_video_sales_count || 0} sales)</p>
+          <p className="font-bold pt-1 border-t">Total Sales: {x402Stats?.premium_sales_count || 0}</p>
         </div>
-      )
+      ),
+    },
+    {
+      label: 'Total Spent',
+      value: formatSOL(totalSpent),
+      icon: CreditCard,
+      color: 'text-orange-600',
+      show: isOwnProfile,
+      tooltip: (
+        <div className="space-y-1 text-xs">
+          <p className="font-semibold mb-2">Spending Breakdown</p>
+          <p>Premium Content: {formatSOL(x402Stats?.total_premium_spent || 0)}</p>
+          <p>├ Livestreams: {formatSOL(x402Stats?.livestream_purchases || 0)} ({x402Stats?.livestream_purchases_count || 0})</p>
+          <p>├ Shorts: {formatSOL(x402Stats?.shortvideo_purchases || 0)} ({x402Stats?.shortvideo_purchases_count || 0})</p>
+          <p>└ Videos: {formatSOL(x402Stats?.wutch_video_purchases || 0)} ({x402Stats?.wutch_video_purchases_count || 0})</p>
+          <p className="pt-1">Stream Challenges: {formatSOL(stats.rewards_breakdown.bounties_total)}</p>
+          <p>├ Created: {stats.rewards_breakdown.bounties_created}</p>
+          <p>└ Claimed: {formatSOL(stats.rewards_breakdown.bounties_paid)}</p>
+          <p className="pt-1">Viral Campaigns: {formatSOL(stats.rewards_breakdown.campaigns_total)}</p>
+          <p>├ Created: {stats.rewards_breakdown.campaigns_created}</p>
+          <p>└ Spent: {formatSOL(stats.rewards_breakdown.campaigns_spent)}</p>
+          <p className="pt-1">Donations: {formatSOL(stats.total_donated)}</p>
+        </div>
+      ),
     },
     {
       label: 'Received',
-      value: stats.total_received,
-      icon: TrendingUp,
-      color: 'text-blue-500',
+      value: formatSOL(stats.total_received),
+      icon: Heart,
+      color: 'text-red-600',
       show: true,
       tooltip: (
-        <div className="text-sm">
+        <div className="text-xs">
           Total donations received from supporters
         </div>
-      )
+      ),
     },
   ];
 
@@ -288,19 +293,19 @@ export function ProfileFinancialStats({ userId, isOwnProfile, className = '' }: 
             <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <div className={`grid grid-cols-2 ${isOwnProfile ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 sm:gap-4`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${isOwnProfile ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
         {visibleCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
-                <Card className="p-3 sm:p-4 hover:scale-105 transition-transform cursor-help bg-card/50 backdrop-blur">
+                <Card className="p-4 hover:scale-[1.02] transition-transform cursor-help bg-card/50 backdrop-blur">
                   <div className="flex items-center gap-2 mb-2">
-                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
-                    <span className="text-xs sm:text-sm text-muted-foreground">{stat.label}</span>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                    <span className="text-sm text-muted-foreground font-medium">{stat.label}</span>
                   </div>
-                  <div className="text-lg sm:text-2xl font-bold">
-                    {formatSOL(stat.value)}
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {stat.value}
                   </div>
                 </Card>
               </TooltipTrigger>

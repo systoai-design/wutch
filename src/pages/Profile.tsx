@@ -470,170 +470,174 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Banner */}
-      {profile.banner_url ? (
-        <div 
-          className="relative h-32 md:h-48 lg:h-64 w-full overflow-hidden group cursor-pointer"
-          onClick={() => handleViewImage(profile.banner_url || '', `${profile.username}'s banner`)}
-        >
-          <img 
-            src={profile.banner_url} 
-            alt="Profile banner" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <Maximize2 className="w-12 h-12 text-white" />
+      {/* Banner - Facebook style with larger height */}
+      <div className="relative">
+        {profile.banner_url ? (
+          <div 
+            className="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full overflow-hidden group cursor-pointer"
+            onClick={() => handleViewImage(profile.banner_url || '', `${profile.username}'s banner`)}
+          >
+            <img 
+              src={profile.banner_url} 
+              alt="Profile banner" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/10" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <Maximize2 className="w-12 h-12 text-white" />
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="h-32 md:h-48 lg:h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5" />
-      )}
+        ) : (
+          <div className="h-48 sm:h-64 md:h-80 lg:h-96 w-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5" />
+        )}
 
-      {/* Header */}
-      <div className="border-b border-border bg-card -mt-12 md:-mt-16 relative">
-        <div className="max-w-6xl mx-auto p-4 md:p-6">
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center">
+        {/* Avatar overlapping banner - Facebook style */}
+        <div className="absolute bottom-0 left-0 right-0 translate-y-1/2">
+          <div className="max-w-6xl mx-auto px-4 md:px-6">
             <div 
-              className="relative group cursor-pointer"
+              className="relative group cursor-pointer w-fit"
               onClick={() => handleViewImage(profile.avatar_url || '', `${profile.username}'s avatar`)}
             >
-              <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background">
+              <Avatar className="h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 border-4 sm:border-6 border-background shadow-xl">
                 <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
-                <AvatarFallback className="text-2xl md:text-3xl">
+                <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl">
                   {(profile.display_name || profile.username)[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <Maximize2 className="w-8 h-8 text-white" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <Maximize2 className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header - Adjusted spacing for overlapping avatar */}
+      <div className="border-b border-border bg-card pt-20 sm:pt-24 md:pt-28">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-6">
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">{profile.display_name || profile.username}</h1>
+                {profile.verification_type && profile.verification_type !== 'none' && (
+                  <VerificationBadge 
+                    verificationType={profile.verification_type as 'blue' | 'red'} 
+                    size="lg"
+                  />
+                )}
+              </div>
+              <p className="text-sm md:text-base text-muted-foreground">@{profile.username}</p>
+            </div>
+
+            {profile.bio && (
+              <p className="text-sm md:text-base text-foreground max-w-3xl line-clamp-3">
+                {profile.bio}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-3 md:gap-5 text-xs sm:text-sm">
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                <span className="font-semibold">{followerCount.toLocaleString()}</span>
+                <span className="text-muted-foreground">followers</span>
+              </div>
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <Wallet className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                <span className="font-semibold">
+                  {'total_donations_received' in profile ? (profile.total_donations_received || 0) : 0} SOL
+                </span>
+                <span className="text-muted-foreground">donated</span>
               </div>
             </div>
 
-            <div className="flex-1 space-y-3 md:space-y-4 w-full">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-1 md:mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold">{profile.display_name || profile.username}</h1>
-                  {profile.verification_type && profile.verification_type !== 'none' && (
-                    <VerificationBadge 
-                      verificationType={profile.verification_type as 'blue' | 'red'} 
-                      size="lg"
+            <ProfileFinancialStats 
+              userId={profile.id}
+              isOwnProfile={isOwnProfile}
+              className="mt-4"
+            />
+
+            <div className="flex flex-wrap gap-2 items-center">
+              {isOwnProfile ? (
+                <>
+                  {'total_earnings' in profile && (
+                    <EditProfileDialog 
+                      profile={profile as Profile} 
+                      onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
                     />
                   )}
-                </div>
-                <p className="text-sm md:text-base text-muted-foreground">@{profile.username}</p>
-              </div>
-
-              {profile.bio && (
-                <p className="text-sm md:text-base text-foreground max-w-2xl line-clamp-3">
-                  {profile.bio}
-                </p>
+                  {!profile.is_verified && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setVerificationType('blue');
+                        setVerificationDialogOpen(true);
+                      }}
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Get Verified
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"} size="sm" className="sm:size-default">
+                    {isFollowing ? "Following" : "Follow"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowMessageDialog(true)} size="sm" className="sm:size-default">
+                    Message
+                  </Button>
+                  {isAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this user? This will permanently remove their profile and all their content (streams, shorts, comments). This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete User
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </>
               )}
-
-              <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
-                  <span className="font-semibold">{followerCount.toLocaleString()}</span>
-                  <span className="text-muted-foreground">followers</span>
-                </div>
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <Wallet className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
-                  <span className="font-semibold">
-                    {'total_donations_received' in profile ? (profile.total_donations_received || 0) : 0} SOL
-                  </span>
-                  <span className="text-muted-foreground">donated</span>
-                </div>
-              </div>
-
-              <ProfileFinancialStats 
-                userId={profile.id}
-                isOwnProfile={isOwnProfile}
-                className="mt-4"
+              <PublicWalletButton 
+                walletAddress={profile.public_wallet_address} 
+                username={profile.username}
               />
-
-
-              <div className="flex flex-wrap gap-2 items-center">
-                {isOwnProfile ? (
-                  <>
-                    {'total_earnings' in profile && (
-                      <EditProfileDialog 
-                        profile={profile as Profile} 
-                        onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)} 
-                      />
-                    )}
-                    {!profile.is_verified && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setVerificationType('blue');
-                          setVerificationDialogOpen(true);
-                        }}
-                      >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Get Verified
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"}>
-                      {isFollowing ? "Following" : "Follow"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowMessageDialog(true)}>
-                      Message
-                    </Button>
-                    {isAdmin && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="icon">
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete User</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this user? This will permanently remove their profile and all their content (streams, shorts, comments). This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                              Delete User
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </>
-                )}
-                <PublicWalletButton 
-                  walletAddress={profile.public_wallet_address} 
-                  username={profile.username}
-                />
-                {socialLinks.twitter && (
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
-                      <Twitter className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-                {socialLinks.website && (
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={socialLinks.website} target="_blank" rel="noopener noreferrer">
-                      <Globe className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-                {profile.promotional_link && (
-                  <Button variant="default" className="gap-2" asChild>
-                    <a href={profile.promotional_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                      {profile.promotional_link_text || 'Check this out!'}
-                    </a>
-                  </Button>
-                )}
-              </div>
+              {socialLinks.twitter && (
+                <Button variant="outline" size="icon" asChild>
+                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+              {socialLinks.website && (
+                <Button variant="outline" size="icon" asChild>
+                  <a href={socialLinks.website} target="_blank" rel="noopener noreferrer">
+                    <Globe className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+              {profile.promotional_link && (
+                <Button variant="default" size="sm" className="gap-2" asChild>
+                  <a href={profile.promotional_link} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    {profile.promotional_link_text || 'Check this out!'}
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         </div>

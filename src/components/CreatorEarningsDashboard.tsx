@@ -91,7 +91,7 @@ export function CreatorEarningsDashboard() {
       bgColor: 'bg-purple-500/10',
     },
     {
-      label: 'Share Rewards',
+      label: 'Viral Campaigns',
       icon: Share2,
       count: earnings.share_rewards.count,
       amount: earnings.share_rewards.amount,
@@ -99,7 +99,7 @@ export function CreatorEarningsDashboard() {
       bgColor: 'bg-blue-500/10',
     },
     {
-      label: 'Bounty Rewards',
+      label: 'Stream Challenges',
       icon: Trophy,
       count: earnings.bounty_rewards.count,
       amount: earnings.bounty_rewards.amount,
@@ -133,6 +133,7 @@ export function CreatorEarningsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Confirmed Earnings</p>
               <p className="text-3xl font-bold">{earnings.total_earned.toFixed(4)} SOL</p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum payout: 0.1 SOL</p>
             </div>
           </div>
         </Card>
@@ -163,7 +164,7 @@ export function CreatorEarningsDashboard() {
 
         <div className="pt-4 border-t">
           <p className="text-xs text-muted-foreground">
-            Platform takes 5% fee on X402 purchases. All rewards paid 100% to you.
+            Platform takes 5% fee on X402 purchases. Stream Challenges and Viral Campaigns paid 100% to you. Minimum payout: 0.1 SOL
           </p>
         </div>
       </div>
