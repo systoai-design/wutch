@@ -60,7 +60,7 @@ export const X402PaymentModal = ({
       const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
       const creatorLamports = Math.floor(priceLamports * 95 / 100);
       const platformLamports = priceLamports - creatorLamports;
-      const feeBuffer = 15000; // ~0.000015 SOL for network fees
+      const feeBuffer = 50000; // ~0.00005 SOL for network fees (increased for 2-instruction tx)
       const requiredLamports = creatorLamports + platformLamports + feeBuffer;
 
       if (balance < requiredLamports) {
@@ -93,23 +93,48 @@ export const X402PaymentModal = ({
       );
 
       // Get latest blockhash for confirmation
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
+      // Estimate real fee
+      const message = transaction.compileMessage();
+      const estimatedFeeResponse = await connection.getFeeForMessage(message, 'confirmed');
+      const estimatedFee = estimatedFeeResponse.value || feeBuffer;
+      
+      console.log('[X402Payment] Fee estimation:', {
+        estimatedFee: estimatedFee / LAMPORTS_PER_SOL,
+        feeBuffer: feeBuffer / LAMPORTS_PER_SOL,
+        totalWithFee: (creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL
+      });
+
+      // Final balance check with real estimated fee
+      if (balance < (creatorLamports + platformLamports + estimatedFee)) {
+        const needed = ((creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL).toFixed(6);
+        throw new Error(`Insufficient balance for transaction + fees. You need ${needed} SOL`);
+      }
+
       // Send transaction
       const signature = await sendTransaction(transaction, connection);
-      console.log('Transaction sent:', signature);
+      console.log('[X402Payment] Transaction sent:', signature);
+      console.log('[X402Payment] View on Solana Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=mainnet`);
 
       // Wait for finalized confirmation
       toast.info('Confirming transaction on blockchain...');
-      await connection.confirmTransaction({
+      const confirmation = await connection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight,
       }, 'finalized');
 
-      console.log('Transaction finalized, verifying payment...');
+      console.log('[X402Payment] Transaction confirmed:', confirmation);
+
+      if (confirmation.value.err) {
+        console.error('[X402Payment] Transaction failed on-chain:', confirmation.value.err);
+        throw new Error(`Transaction failed on blockchain: ${JSON.stringify(confirmation.value.err)}`);
+      }
+
+      console.log('[X402Payment] Transaction finalized, verifying payment...');
 
       // Verify payment via edge function with retry logic
       let verifyAttempts = 0;
@@ -161,7 +186,7 @@ export const X402PaymentModal = ({
         onClose();
       }, 1500);
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error('[X402Payment] Payment error:', error);
       setPaymentStatus('error');
       
       // Try to extract detailed error from backend
@@ -173,6 +198,10 @@ export const X402PaymentModal = ({
           const contextJson = await error.context.json();
           if (contextJson.error) {
             errorMessage = contextJson.error;
+            // Include transaction signature if available
+            if (contextJson.signature) {
+              errorMessage += `\n\nTransaction: ${contextJson.signature}`;
+            }
           }
         } catch {
           // Ignore JSON parsing errors
@@ -180,7 +209,7 @@ export const X402PaymentModal = ({
       }
       
       setErrorMessage(errorMessage);
-      toast.error('Payment failed: ' + errorMessage);
+      toast.error('Payment failed: ' + errorMessage.split('\n\n')[0]);
     } finally {
       setIsProcessing(false);
     }
@@ -243,10 +272,32 @@ export const X402PaymentModal = ({
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
               <AlertDescription>
-                <div className="space-y-1">
-                  <p>{errorMessage}</p>
-                  <p className="text-xs opacity-80">
-                    Need help? Contact support with your transaction details.
+                <div className="space-y-2">
+                  <p>{errorMessage?.split('\n\n')[0]}</p>
+                  {errorMessage?.includes('Transaction:') && (
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => {
+                          const sig = errorMessage.split('Transaction: ')[1];
+                          navigator.clipboard.writeText(sig);
+                          toast.success('Transaction signature copied!');
+                        }}
+                        className="text-xs underline hover:opacity-80 text-left"
+                      >
+                        Copy Transaction Signature
+                      </button>
+                      <a
+                        href={`https://explorer.solana.com/tx/${errorMessage.split('Transaction: ')[1]}?cluster=mainnet`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs underline hover:opacity-80"
+                      >
+                        View on Solana Explorer
+                      </a>
+                    </div>
+                  )}
+                  <p className="text-xs opacity-80 mt-2">
+                    Need help? Contact support with your transaction signature above.
                   </p>
                 </div>
               </AlertDescription>

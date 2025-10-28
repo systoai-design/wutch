@@ -96,19 +96,44 @@ serve(async (req) => {
     );
 
     // Get transaction details
+    console.log('[X402Verify] Fetching transaction:', transactionSignature);
     const transaction = await connection.getParsedTransaction(transactionSignature, {
       maxSupportedTransactionVersion: 0,
+      commitment: 'finalized'
     });
 
     if (!transaction) {
-      throw new Error('Transaction not found');
+      console.error('[X402Verify] Transaction not found on blockchain');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Transaction not found on blockchain. Please wait a few seconds and try again.',
+          signature: transactionSignature,
+          tip: 'Check on Solana Explorer if the transaction exists'
+        }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Verify transaction is confirmed
     if (transaction.meta?.err) {
-      console.error('Transaction failed with meta.err:', JSON.stringify(transaction.meta.err));
-      throw new Error(`Transaction failed: ${JSON.stringify(transaction.meta.err)}`);
+      console.error('[X402Verify] Transaction failed on-chain:', {
+        signature: transactionSignature,
+        error: transaction.meta.err,
+        logs: transaction.meta.logMessages?.slice(-5)
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Transaction failed on blockchain', 
+          signature: transactionSignature,
+          details: transaction.meta.err,
+          logs: transaction.meta.logMessages?.slice(-5),
+          tip: 'Check Solana Explorer for detailed error information'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    console.log('[X402Verify] Transaction confirmed successfully');
 
     // Extract transaction details
     const instructions = transaction.transaction.message.instructions;
@@ -141,8 +166,15 @@ serve(async (req) => {
     }
 
     if (transferCount !== 2) {
-      throw new Error('Invalid transaction structure. Expected 2 transfers (creator + platform)');
+      console.error('[X402Verify] Invalid transaction structure:', {
+        expected: 2,
+        actual: transferCount,
+        signature: transactionSignature
+      });
+      throw new Error(`Invalid transaction structure. Expected 2 transfers, got ${transferCount}`);
     }
+
+    console.log('[X402Verify] Transaction structure valid: 2 transfers found');
 
     // Verify amounts using integer lamports math (95% to creator, 5% to platform)
     const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
