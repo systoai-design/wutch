@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock, Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Lock, Loader2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,11 +35,83 @@ export const X402PaymentModal = ({
   onSuccess,
 }: X402PaymentModalProps) => {
   const { user } = useAuth();
-  const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
+
+  // Primary and fallback RPC connections
+  const primaryConnection = useMemo(
+    () => new Connection("https://mainnet.helius-rpc.com/", {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000,
+    }),
+    []
+  );
+
+  const fallbackConnection = useMemo(
+    () => new Connection("https://api.mainnet-beta.solana.com", {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000,
+    }),
+    []
+  );
+
+  // Try primary RPC, fallback to public RPC if needed
+  const getConnectionWithFallback = async () => {
+    try {
+      await primaryConnection.getLatestBlockhash();
+      console.log('[RPC] Using primary Helius RPC');
+      return primaryConnection;
+    } catch (error) {
+      console.warn('[RPC] Primary RPC failed, falling back to public RPC:', error);
+      return fallbackConnection;
+    }
+  };
+
+  // Check and display wallet balance
+  const checkBalance = async () => {
+    if (!publicKey) return null;
+    
+    setIsRefreshingBalance(true);
+    try {
+      const connection = await getConnectionWithFallback();
+      const timestamp = new Date().toISOString();
+      
+      console.log('[Balance Check]', {
+        timestamp,
+        publicKey: publicKey.toBase58(),
+        rpcEndpoint: connection.rpcEndpoint
+      });
+
+      const balanceLamports = await connection.getBalance(publicKey);
+      const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
+      
+      console.log('[Balance Check] Result:', {
+        balanceLamports,
+        balanceSOL,
+        required: price + 0.0001,
+        sufficient: balanceSOL >= (price + 0.0001)
+      });
+
+      setWalletBalance(balanceSOL);
+      return balanceSOL;
+    } catch (error) {
+      console.error('[Balance Check] Failed:', error);
+      return null;
+    } finally {
+      setIsRefreshingBalance(false);
+    }
+  };
+
+  // Check balance when modal opens
+  useEffect(() => {
+    if (isOpen && publicKey) {
+      checkBalance();
+    }
+  }, [isOpen, publicKey]);
 
   const creatorAmount = price * 0.95;
   const platformFee = price * 0.05;
@@ -55,21 +127,44 @@ export const X402PaymentModal = ({
     setErrorMessage('');
 
     try {
+      console.log('[Payment] Starting payment process:', {
+        timestamp: new Date().toISOString(),
+        buyer: publicKey.toBase58(),
+        creator: creatorWallet,
+        price,
+        contentType,
+        contentId
+      });
+
+      // Get connection with fallback
+      const connection = await getConnectionWithFallback();
+
+      // Fresh balance check with detailed logging
+      const currentBalance = await checkBalance();
+      const requiredAmount = price + 0.0001; // price + buffer for fees
+
+      console.log('[Payment] Balance verification:', {
+        current: currentBalance,
+        required: requiredAmount,
+        sufficient: currentBalance && currentBalance >= requiredAmount,
+        difference: currentBalance ? (currentBalance - requiredAmount).toFixed(6) : 'N/A'
+      });
+
+      if (!currentBalance || currentBalance < requiredAmount) {
+        throw new Error(
+          `Insufficient balance\n\n` +
+          `Your balance: ${currentBalance?.toFixed(6) || '0.000000'} SOL\n` +
+          `Required: ${requiredAmount.toFixed(6)} SOL\n` +
+          `Need ${currentBalance ? (requiredAmount - currentBalance).toFixed(6) : requiredAmount.toFixed(6)} SOL more`
+        );
+      }
+
       // Pre-flight balance check
       const balance = await connection.getBalance(publicKey);
       const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
       const creatorLamports = Math.floor(priceLamports * 95 / 100);
       const platformLamports = priceLamports - creatorLamports;
-      const feeBuffer = 50000; // ~0.00005 SOL for network fees (increased for 2-instruction tx)
-      const requiredLamports = creatorLamports + platformLamports + feeBuffer;
-
-      if (balance < requiredLamports) {
-        const requiredSOL = (requiredLamports / LAMPORTS_PER_SOL).toFixed(6);
-        const actualSOL = (balance / LAMPORTS_PER_SOL).toFixed(6);
-        throw new Error(
-          `Insufficient balance. Need ${requiredSOL} SOL (price + network fee), but you have ${actualSOL} SOL`
-        );
-      }
+      const feeBuffer = 50000;
 
       // Create transaction with two transfers: 95% to creator, 5% to platform
       const transaction = new Transaction();
@@ -229,6 +324,27 @@ export const X402PaymentModal = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Wallet Balance Display */}
+          {walletBalance !== null && (
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Your Balance</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{walletBalance.toFixed(6)} SOL</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={checkBalance}
+                    disabled={isRefreshingBalance}
+                    className="h-7 w-7 p-0"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingBalance ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Payment Breakdown */}
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
