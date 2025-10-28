@@ -372,7 +372,7 @@ const WutchVideoDetail = () => {
                   thumbnailUrl={video.thumbnail_url}
                   onTimeUpdate={(time) => setWatchTime(time)}
                   className="aspect-video"
-                  hasAccess={true}
+                  hasAccess={hasAccess}
                 />
               )}
             </div>
