@@ -142,7 +142,7 @@ const Landing = () => {
         0
       );
 
-      // Fetch X402 premium purchase volume (full amounts users paid)
+      // Fetch X402 premium purchase volume from platform_transactions
       const { data: x402Data, error: x402Error } = await supabase
         .from('platform_transactions')
         .select('gross_amount')
@@ -152,10 +152,25 @@ const Landing = () => {
 
       if (x402Error) throw x402Error;
 
-      const x402PurchaseVolume = (x402Data || []).reduce(
+      const x402PlatformVolume = (x402Data || []).reduce(
         (sum, tx) => sum + parseFloat(tx.gross_amount?.toString() || '0'),
         0
       );
+
+      // Fetch X402 premium purchases from x402_purchases table (wutch_videos, livestreams, short_videos)
+      const { data: x402PurchasesData, error: x402PurchasesError } = await supabase
+        .from('x402_purchases')
+        .select('amount')
+        .eq('is_active', true);
+
+      if (x402PurchasesError) throw x402PurchasesError;
+
+      const x402DirectPurchaseVolume = (x402PurchasesData || []).reduce(
+        (sum, purchase) => sum + parseFloat(purchase.amount?.toString() || '0'),
+        0
+      );
+
+      const x402PurchaseVolume = x402PlatformVolume + x402DirectPurchaseVolume;
 
       // Fetch donation volume (full amounts users donated)
       const { data: donationsData, error: donationsError } = await supabase
