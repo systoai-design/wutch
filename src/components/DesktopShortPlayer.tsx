@@ -260,8 +260,8 @@ export function DesktopShortPlayer({
         </div>
       )}
 
-      {/* Video - Only render if has access (security: prevents URL exposure) */}
-      {hasAccess && (
+      {/* Video - Render if has access OR in preview mode */}
+      {(hasAccess || isPreviewMode) && (
         <video
           ref={videoRef}
           src={short.video_url}

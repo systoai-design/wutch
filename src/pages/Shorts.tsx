@@ -78,6 +78,11 @@ const Shorts = () => {
     hasInitializedRef.current = true;
   }, [shorts, location, isMobile]);
 
+  // Reset initialization flag when location changes (for navigation from home)
+  useEffect(() => {
+    hasInitializedRef.current = false;
+  }, [location.pathname, location.search]);
+
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
     if (isMobile || !desktopScrollRef.current) return;
