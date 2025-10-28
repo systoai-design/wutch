@@ -41,20 +41,15 @@ export const WalletSignUpDialog = ({
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("username", usernameToCheck)
-        .single();
+    const { data } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("username", usernameToCheck)
+      .maybeSingle();
 
-      if (data) {
-        setUsernameError("Username is already taken");
-      } else {
-        setUsernameError("");
-      }
-    } catch (error) {
-      // Username is available
+    if (data) {
+      setUsernameError("Username is already taken");
+    } else {
       setUsernameError("");
     }
   };
@@ -84,7 +79,10 @@ export const WalletSignUpDialog = ({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        toast.error(data?.error || error.message || "Registration failed");
+        return;
+      }
 
       if (data?.error) {
         toast.error(data.error);

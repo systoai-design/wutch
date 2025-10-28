@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import * as nacl from 'https://esm.sh/tweetnacl@1.0.3';
+import nacl from 'https://esm.sh/tweetnacl@1.0.3';
 import { decode as decodeBase58 } from 'https://deno.land/std@0.205.0/encoding/base58.ts';
 
 const corsHeaders = {
@@ -91,6 +91,10 @@ Deno.serve(async (req) => {
 
     // Verify wallet signature
     try {
+      if (!nacl?.sign?.detached?.verify) {
+        throw new Error('Signature verification not available');
+      }
+
       const messageBytes = new TextEncoder().encode(message);
       const signatureBytes = decodeBase58(signature);
       const publicKeyBytes = decodeBase58(walletAddress);
