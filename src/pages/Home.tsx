@@ -360,8 +360,8 @@ const Home = () => {
                           {activeFilter === 'recent' && 'Recently Ended'}
                           {activeFilter === 'trending' && 'Trending Streams'}
                           {activeFilter === 'upcoming' && 'Upcoming Streams'}
-                          {activeFilter === 'with-rewards' && 'Streams with Rewards 💰'}
-                          {activeFilter === 'with-bounty' && 'Streams with Bounties'}
+                          {activeFilter === 'with-rewards' && 'Paid Campaigns 💰'}
+                          {activeFilter === 'with-bounty' && 'Paid Livestreams'}
                           {activeFilter === 'without-bounty' && 'Streams without Bounties'}
                         </h2>
                       </div>

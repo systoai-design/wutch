@@ -49,6 +49,7 @@ const AdminVerification = lazy(() => import('./pages/AdminVerification'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminRoleManagement = lazy(() => import('./pages/AdminRoleManagement'));
+const X402Explained = lazy(() => import('./pages/X402Explained'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +140,7 @@ function AppContent() {
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/x402-explained" element={<X402Explained />} />
         
         {/* App routes with Navigation and Sidebar */}
         <Route element={<AppLayout />}>

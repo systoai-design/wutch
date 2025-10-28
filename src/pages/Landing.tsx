@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, memo, lazy, Suspense } from '
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CardStack } from '@/components/CardStack';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight, Lock, Briefcase, ShoppingCart, MessageSquare } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight, Lock, Briefcase, ShoppingCart, MessageSquare, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -346,9 +346,9 @@ const Landing = () => {
               <Coins className="h-3 w-3 sm:h-4 sm:w-4" />
               Turn Attention Into SOL
             </div>
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-purple-500/10 text-purple-500 text-xs sm:text-sm font-medium animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-purple-500/10 text-purple-500 text-xs sm:text-sm font-medium animate-fade-in animate-pulse-subtle" style={{ animationDelay: '0.1s' }}>
               <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
-              Powered by X402 Protocol
+              🔒 X402 Protocol - Instant Blockchain Payments
             </div>
           </div>
           
@@ -1106,7 +1106,7 @@ const Landing = () => {
               </div>
               <h3 className="text-2xl font-bold text-foreground">X402 Payment Protocol</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Decentralized premium content monetization with instant crypto payments. Secure on-chain verification with 95% revenue going directly to creators.
+                Revolutionary decentralized payment system for premium content. Instant crypto payments with 95% revenue going directly to creators. Secure blockchain verification, no chargebacks, no middlemen. The future of content monetization.
               </p>
             </Card>
           </div>
@@ -1131,6 +1131,15 @@ const Landing = () => {
                     <span className="text-primary text-sm">✓</span>
                   </div>
                   <div>
+                    <p className="font-semibold text-foreground mb-1">Premium Content (X402): 95% to Creators</p>
+                    <p className="text-sm">Blockchain-verified payments with 95% going directly to creators, 5% platform fee. No chargebacks, instant settlement</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-primary text-sm">✓</span>
+                  </div>
+                  <div>
                     <p className="font-semibold text-foreground mb-1">Donations: 95% to Creators</p>
                     <p className="text-sm">You keep 95%, we take 5% to maintain the platform and cover transaction costs</p>
                   </div>
@@ -1140,8 +1149,8 @@ const Landing = () => {
                     <span className="text-primary text-sm">✓</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Bounties: 95% to Rewards Pool (5% Platform Fee)</p>
-                    <p className="text-sm">Creators pay 5% fee when creating bounties. Users receive 100% of the advertised reward when claiming</p>
+                    <p className="font-semibold text-foreground mb-1">Paid Campaigns: 95% to Rewards Pool (5% Platform Fee)</p>
+                    <p className="text-sm">Creators pay 5% fee when creating share campaigns. Users receive 100% of the advertised reward when claiming</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
@@ -1149,8 +1158,8 @@ const Landing = () => {
                     <span className="text-primary text-sm">✓</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Share Campaigns: 100% Pre-Funded</p>
-                    <p className="text-sm">Creators deposit campaign budgets upfront. No hidden costs or deductions</p>
+                    <p className="font-semibold text-foreground mb-1">Paid Livestreams (Bounties): 95% to Rewards Pool</p>
+                    <p className="text-sm">Creators deposit bounty funds upfront. Viewers earn by watching + sharing + submitting secret words. 5% platform fee</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-background/50 rounded-lg">
@@ -1165,6 +1174,135 @@ const Landing = () => {
               </div>
             </div>
           </Card>
+        </div>
+      </section>
+
+      {/* X402 Trust & Comparison Section */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Why Creators Choose X402 Protocol
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Traditional payment platforms take massive cuts and delay your earnings. X402 changes everything.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {/* Traditional Payments */}
+            <Card className="p-8 bg-muted/50 border-destructive/20">
+              <h3 className="text-xl font-bold mb-6 text-muted-foreground flex items-center gap-2">
+                <span className="text-2xl">❌</span> Traditional Platforms
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive mt-1">×</span>
+                  <div>
+                    <p className="font-semibold text-foreground">30% Platform Fees</p>
+                    <p className="text-sm text-muted-foreground">Platforms like Patreon take up to 30% of your earnings</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive mt-1">×</span>
+                  <div>
+                    <p className="font-semibold text-foreground">7-30 Day Payouts</p>
+                    <p className="text-sm text-muted-foreground">Wait weeks to access your own money</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive mt-1">×</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Chargebacks & Fraud</p>
+                    <p className="text-sm text-muted-foreground">Buyers can reverse payments, leaving you with nothing</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive mt-1">×</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Payment Processing Failures</p>
+                    <p className="text-sm text-muted-foreground">Card declines, failed transactions, lost revenue</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive mt-1">×</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Account Suspensions</p>
+                    <p className="text-sm text-muted-foreground">Platforms can freeze or ban your account anytime</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* X402 Protocol */}
+            <Card className="p-8 bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/30 shadow-xl">
+              <h3 className="text-xl font-bold mb-6 text-foreground flex items-center gap-2">
+                <span className="text-2xl">✅</span> X402 Protocol
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1">✓</span>
+                  <div>
+                    <p className="font-semibold text-foreground">5% Platform Fee (95% to You)</p>
+                    <p className="text-sm text-muted-foreground">Keep 95% of every payment - fair and transparent</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1">✓</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Instant Payouts</p>
+                    <p className="text-sm text-muted-foreground">Payments arrive in your wallet within seconds</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1">✓</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Zero Chargebacks</p>
+                    <p className="text-sm text-muted-foreground">Blockchain transactions are irreversible - your earnings are safe</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1">✓</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Guaranteed Payment Success</p>
+                    <p className="text-sm text-muted-foreground">Blockchain ensures secure, reliable transactions every time</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-primary mt-1">✓</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Full Control & Ownership</p>
+                    <p className="text-sm text-muted-foreground">Your wallet, your funds - no middlemen can freeze your money</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* X402 Stats */}
+          <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 rounded-2xl p-8 border border-primary/20">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">$0</div>
+                <p className="text-muted-foreground">Chargebacks (Ever)</p>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">&lt;30s</div>
+                <p className="text-muted-foreground">Average Payout Time</p>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">95%</div>
+                <p className="text-muted-foreground">Revenue to Creators</p>
+              </div>
+            </div>
+            <div className="mt-6 text-center">
+              <Link to="/x402-explained">
+                <Button variant="outline" size="sm" className="gap-2">
+                  Learn More About X402 <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1226,6 +1364,12 @@ const Landing = () => {
                   <a href="#features" className="hover:text-foreground transition-colors">
                     Features
                   </a>
+                </li>
+                <li>
+                  <Link to="/x402-explained" className="hover:text-foreground transition-colors flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    X402 Protocol
+                  </Link>
                 </li>
                 <li>
                   <Link to="/bounties" className="hover:text-foreground transition-colors">

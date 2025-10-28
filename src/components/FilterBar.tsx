@@ -17,8 +17,8 @@ const FilterBar = ({ activeFilter, onFilterChange }: FilterBarProps) => {
   const filters: { label: string; value: FilterOption; icon?: typeof Circle }[] = [
     { label: 'All', value: 'all' },
     { label: 'Live Now', value: 'live', icon: Circle },
-    { label: 'With Rewards 💰', value: 'with-rewards' },
-    { label: 'With Bounty', value: 'with-bounty', icon: Coins },
+    { label: 'Paid Campaigns 💰', value: 'with-rewards' },
+    { label: 'Paid Livestreams', value: 'with-bounty', icon: Coins },
     { label: 'Without Bounty', value: 'without-bounty' },
     { label: 'Upcoming', value: 'upcoming' },
     { label: 'Recently Ended', value: 'recent' },

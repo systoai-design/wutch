@@ -34,7 +34,7 @@ export const usePhantomConnect = () => {
       
       // Wait for publicKey to be populated with retry logic
       let address: string | undefined;
-      let retries = 5;
+      let retries = 10;
       
       console.log('Waiting for wallet publicKey...');
       while (retries > 0 && !address) {
