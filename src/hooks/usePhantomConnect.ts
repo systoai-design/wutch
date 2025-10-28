@@ -5,12 +5,18 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface WalletConnectionData {
+  address: string;
+  signature: string;
+  message: string;
+}
+
 export const usePhantomConnect = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const isMobile = useIsMobile();
   const { publicKey, connect, disconnect, signMessage, select, wallets, connected } = useWallet();
 
-  const connectPhantomWallet = async (): Promise<string | null> => {
+  const connectPhantomWallet = async (requireAuth: boolean = true): Promise<string | WalletConnectionData | null> => {
     // Debounce: prevent double clicks
     if (isConnecting) {
       console.log('Connection already in progress, ignoring click');
@@ -122,15 +128,19 @@ export const usePhantomConnect = () => {
       }
 
       // Create message to sign for wallet ownership verification
-      const nonce = Math.random().toString(36).substring(2, 15);
+      const nonce = crypto.randomUUID();
       const timestamp = Date.now();
-      const message = `Sign this message to verify your wallet: ${timestamp}:${nonce}`;
+      const message = requireAuth 
+        ? `Sign this message to verify your wallet: ${timestamp}:${nonce}`
+        : `Sign this message to authenticate with Wutch:\n${timestamp}\n${nonce}`;
       console.log('Message to sign:', message);
       
-      // Verify message format before proceeding
-      const messagePattern = /^Sign this message to verify your wallet: \d+:[a-z0-9]+$/;
-      if (!messagePattern.test(message)) {
-        throw new Error('Invalid message format generated');
+      // Verify message format before proceeding (only for requireAuth flow)
+      if (requireAuth) {
+        const messagePattern = /^Sign this message to verify your wallet: \d+:[a-f0-9-]+$/;
+        if (!messagePattern.test(message)) {
+          throw new Error('Invalid message format generated');
+        }
       }
       
       const encodedMessage = new TextEncoder().encode(message);
@@ -152,6 +162,15 @@ export const usePhantomConnect = () => {
       // Convert signature to base58
       const bs58 = (await import('bs58')).default;
       const base58Signature = bs58.encode(signature);
+
+      // If requireAuth is false, return the connection data without verifying
+      if (!requireAuth) {
+        return {
+          address,
+          signature: base58Signature,
+          message,
+        };
+      }
 
       // Ensure we have a valid session token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();

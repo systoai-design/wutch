@@ -134,15 +134,12 @@ Deno.serve(async (req) => {
       .eq('wallet_address', walletAddress);
 
     // Generate session for the user
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
+    const { data: linkData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
-      email: `${walletData.user_id}@wallet.wutch.app`,
-      options: {
-        redirectTo: `${req.headers.get('origin') || 'https://3561f8c1-735e-43eb-9412-fe29af22feae.lovableproject.com'}/`,
-      },
+      email: walletData.user_id + '@wallet.internal',
     });
 
-    if (sessionError) {
+    if (sessionError || !linkData) {
       console.error('Session generation error:', sessionError);
       return new Response(
         JSON.stringify({ error: 'Failed to create login session' }),
@@ -155,7 +152,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        session: sessionData,
+        session: linkData,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

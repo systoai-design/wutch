@@ -4,11 +4,15 @@ import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { usePhantomConnect } from '@/hooks/usePhantomConnect';
+import { usePhantomConnect, type WalletConnectionData } from '@/hooks/usePhantomConnect';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { WalletSignUpDialog } from './WalletSignUpDialog';
+import { toast as sonnerToast } from 'sonner';
 
 export const WalletConnect = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [showWalletSignUp, setShowWalletSignUp] = useState(false);
+  const [walletSignUpData, setWalletSignUpData] = useState<WalletConnectionData | null>(null);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const isMobile = useIsMobile();
@@ -63,9 +67,71 @@ export const WalletConnect = () => {
   }, [user]);
 
   const connectWallet = async () => {
-    const address = await connectPhantomWallet();
-    if (address) {
-      setWalletAddress(address);
+    // If user is authenticated, use the original flow
+    if (user) {
+      const result = await connectPhantomWallet(true);
+      if (typeof result === 'string') {
+        setWalletAddress(result);
+      }
+      return;
+    }
+
+    // If user is NOT authenticated, connect wallet without auth requirement
+    const result = await connectPhantomWallet(false);
+    
+    if (!result || typeof result === 'string') {
+      return;
+    }
+
+    // Check if wallet is already registered
+    const { data: walletData } = await supabase
+      .from('profile_wallets')
+      .select('user_id')
+      .eq('wallet_address', result.address)
+      .maybeSingle();
+
+    if (walletData) {
+      // Wallet is registered, log them in
+      try {
+        const { data, error } = await supabase.functions.invoke('login-with-wallet', {
+          body: {
+            walletAddress: result.address,
+            signature: result.signature,
+            message: result.message,
+          },
+        });
+
+        if (error) {
+          sonnerToast.error(error.message || 'Failed to log in with wallet');
+          return;
+        }
+
+        if (data?.session?.properties?.action_link) {
+          const token = new URL(data.session.properties.action_link).searchParams.get('token');
+          if (token) {
+            const { error: signInError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'magiclink',
+            });
+
+            if (signInError) {
+              console.error('Sign in error:', signInError);
+              sonnerToast.error('Failed to sign in');
+              return;
+            }
+
+            sonnerToast.success('Logged in successfully!');
+            // Wallet address will be loaded by the useEffect
+          }
+        }
+      } catch (error: any) {
+        console.error('Login error:', error);
+        sonnerToast.error(error.message || 'Failed to log in');
+      }
+    } else {
+      // Wallet is NOT registered, show signup dialog
+      setWalletSignUpData(result);
+      setShowWalletSignUp(true);
     }
   };
 
@@ -112,19 +178,38 @@ export const WalletConnect = () => {
   }
 
   return (
-    <Button
-      onClick={connectWallet}
-      disabled={isConnecting || authLoading || !user}
-      size="sm"
-      className="gap-2"
-    >
-      <Wallet className="h-4 w-4" />
-      <span className="hidden sm:inline">
-        {authLoading ? 'Loading...' : isConnecting ? 'Connecting...' : 'Connect Wallet'}
-      </span>
-      {isMobile && !isConnecting && !authLoading && (
-        <span className="sm:hidden">Connect</span>
+    <>
+      <Button
+        onClick={connectWallet}
+        disabled={isConnecting || authLoading}
+        size="sm"
+        className="gap-2"
+      >
+        <Wallet className="h-4 w-4" />
+        <span className="hidden sm:inline">
+          {authLoading ? 'Loading...' : isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        </span>
+        {isMobile && !isConnecting && !authLoading && (
+          <span className="sm:hidden">Connect</span>
+        )}
+      </Button>
+
+      {showWalletSignUp && walletSignUpData && (
+        <WalletSignUpDialog
+          open={showWalletSignUp}
+          walletAddress={walletSignUpData.address}
+          signature={walletSignUpData.signature}
+          message={walletSignUpData.message}
+          onComplete={() => {
+            setShowWalletSignUp(false);
+            setWalletSignUpData(null);
+          }}
+          onCancel={() => {
+            setShowWalletSignUp(false);
+            setWalletSignUpData(null);
+          }}
+        />
       )}
-    </Button>
+    </>
   );
 };
