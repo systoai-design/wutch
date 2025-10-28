@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, memo, lazy, Suspense } from '
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CardStack } from '@/components/CardStack';
-import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight, Lock, Briefcase, ShoppingCart, MessageSquare, ArrowRight } from 'lucide-react';
+import { Eye, Coins, TrendingUp, Users, Zap, Shield, Moon, Sun, Gift, Video, Wallet, DollarSign, Clock, Share2, Trophy, Upload, ChevronRight, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -675,7 +675,7 @@ const Landing = () => {
           {/* What You Can Buy */}
           <div className="max-w-5xl mx-auto">
             <h3 className="text-3xl font-bold text-center mb-12 text-foreground">What You Can Access with x402</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -685,20 +685,6 @@ const Landing = () => {
                     <h4 className="font-bold text-foreground mb-2">Premium Content</h4>
                     <p className="text-sm text-muted-foreground">
                       Unlock exclusive livestreams, videos, and shorts. Pay once, watch forever.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Briefcase className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground mb-2">Service Marketplace</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Order graphic design, video editing, consulting, and more. Direct messaging with sellers included.
                     </p>
                   </div>
                 </div>
@@ -717,30 +703,7 @@ const Landing = () => {
                   </div>
                 </div>
               </Card>
-
-              <Card className="p-6 bg-gradient-to-br from-muted/50 to-muted/30">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-foreground mb-2">Direct Communication</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Chat directly with service sellers, get updates, and collaborate seamlessly.
-                    </p>
-                  </div>
-                </div>
-              </Card>
             </div>
-          </div>
-
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-              <Link to="/community">
-                <ShoppingCart className="h-5 w-5" />
-                Explore Service Marketplace
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
