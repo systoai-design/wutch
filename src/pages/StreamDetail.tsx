@@ -215,7 +215,7 @@ const StreamDetail = () => {
   const avatarUrl = streamer?.avatar_url || '/placeholder.svg';
   const followerCount = streamer?.follower_count ?? 0;
   const username = streamer?.username || '';
-  const showPaywall = isPremium && !hasAccess && !isPremiumOwner;
+  const showPaywall = stream?.is_premium && isPremium && !hasAccess && !isPremiumOwner;
 
   const handleDeleteStream = async () => {
     if (!id) return;

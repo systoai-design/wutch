@@ -105,6 +105,18 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     }
   };
 
+  // Reset all state when contentId changes to prevent stale data
+  useEffect(() => {
+    setHasAccess(false);
+    setIsPremium(false);
+    setIsOwner(false);
+    setPrice(undefined);
+    setAsset(undefined);
+    setNetwork(undefined);
+    setPreviewDuration(undefined);
+    setError(undefined);
+  }, [contentId]);
+
   useEffect(() => {
     checkAccess();
   }, [user, contentId, contentType]);
