@@ -2,7 +2,8 @@ import { ServiceMarketplaceCard } from "./ServiceMarketplaceCard";
 import { SkeletonStreamCard } from "./SkeletonCard";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, Package } from "lucide-react";
 
 interface ServiceMarketplaceGridProps {
   services?: any[];
@@ -17,21 +18,23 @@ export const ServiceMarketplaceGrid = ({
 }: ServiceMarketplaceGridProps) => {
   const [sortBy, setSortBy] = useState<SortOption>('rating');
 
-  // Sort services
-  const sortedServices = [...services].sort((a, b) => {
-    switch (sortBy) {
-      case 'rating':
-        return (b.user.service_rating_avg || 0) - (a.user.service_rating_avg || 0);
-      case 'price-low':
-        return (a.x402_price || 0) - (b.x402_price || 0);
-      case 'price-high':
-        return (b.x402_price || 0) - (a.x402_price || 0);
-      case 'popular':
-        return (b.user.service_orders_completed || 0) - (a.user.service_orders_completed || 0);
-      default:
-        return 0;
-    }
-  });
+  // Filter out services with null users and sort
+  const sortedServices = [...services]
+    .filter(s => s.user !== null)
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'rating':
+          return (b.user?.service_rating_avg || 0) - (a.user?.service_rating_avg || 0);
+        case 'price-low':
+          return (a.x402_price || 0) - (b.x402_price || 0);
+        case 'price-high':
+          return (b.x402_price || 0) - (a.x402_price || 0);
+        case 'popular':
+          return (b.user?.service_orders_completed || 0) - (a.user?.service_orders_completed || 0);
+        default:
+          return 0;
+      }
+    });
 
   if (isLoading) {
     return (
@@ -47,10 +50,15 @@ export const ServiceMarketplaceGrid = ({
 
   if (sortedServices.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">
-          No services available yet. Be the first to offer a service!
+      <div className="text-center py-12 px-4">
+        <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+        <h3 className="text-xl font-semibold mb-2">No Services Available</h3>
+        <p className="text-muted-foreground mb-6">
+          Be the first to offer a service in the marketplace!
         </p>
+        <Button onClick={() => window.location.href = '/community'}>
+          Create Service Post
+        </Button>
       </div>
     );
   }
@@ -85,7 +93,7 @@ export const ServiceMarketplaceGrid = ({
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {sortedServices.map((service) => (
           <ServiceMarketplaceCard key={service.id} service={service} />
         ))}

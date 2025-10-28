@@ -69,12 +69,12 @@ export default function CommunityPosts() {
           />
         </TabsContent>
 
-            <TabsContent value="services" className="mt-6">
-              <ServiceMarketplaceGrid
-                services={posts?.filter(p => p.post_type === 'service')}
-                isLoading={isLoading}
-              />
-            </TabsContent>
+        <TabsContent value="services" className="mt-6">
+          <ServiceMarketplaceGrid
+            services={posts?.filter(p => p.post_type === 'service' && p.user !== null)}
+            isLoading={isLoading}
+          />
+        </TabsContent>
 
         <TabsContent value="all" className="mt-6">
           <CommunityPostFeed

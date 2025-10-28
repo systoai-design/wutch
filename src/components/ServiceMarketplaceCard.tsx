@@ -31,6 +31,11 @@ interface ServiceMarketplaceCardProps {
 export const ServiceMarketplaceCard = ({ service }: ServiceMarketplaceCardProps) => {
   const navigate = useNavigate();
   
+  // Null safety check
+  if (!service.user) {
+    return null;
+  }
+  
   const rating = service.user.service_rating_avg || 0;
   const ratingCount = service.user.service_rating_count || 0;
   const ordersCompleted = service.user.service_orders_completed || 0;
@@ -63,15 +68,15 @@ export const ServiceMarketplaceCard = ({ service }: ServiceMarketplaceCardProps)
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Title */}
-        <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+        <h3 className="font-semibold text-base sm:text-lg line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
 
         {/* Description */}
         {description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
         )}
@@ -95,7 +100,7 @@ export const ServiceMarketplaceCard = ({ service }: ServiceMarketplaceCardProps)
         </div>
 
         {/* Stats Bar */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
           {rating > 0 && (
             <div className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
@@ -118,13 +123,13 @@ export const ServiceMarketplaceCard = ({ service }: ServiceMarketplaceCardProps)
         </div>
 
         {/* Price & CTA */}
-        <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-          <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div className="pt-2 sm:pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+          <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {service.x402_price} SOL
           </div>
           <Button 
             size="sm"
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 text-xs sm:text-sm"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/community/post/${service.id}`);

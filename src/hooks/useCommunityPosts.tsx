@@ -16,7 +16,12 @@ export const useCommunityPosts = () => {
             id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            service_rating_avg,
+            service_rating_count,
+            service_orders_completed,
+            is_verified,
+            verification_type
           )
         `)
         .eq("moderation_status", "approved")
