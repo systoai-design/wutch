@@ -54,7 +54,6 @@ export const X402PaymentModal = ({
     
     // Fallback endpoints
     endpoints.push(
-      "https://mainnet.helius-rpc.com/",
       "https://rpc.ankr.com/solana",
       "https://solana.public-rpc.com",
       "https://api.mainnet-beta.solana.com"
@@ -191,8 +190,15 @@ export const X402PaymentModal = ({
         toast.info('Balance check unavailable. Your wallet will confirm if you have enough SOL.');
       }
 
-      // Pre-flight balance check
-      const balance = await connection.getBalance(publicKey);
+      // Pre-flight balance check (non-critical - wallet will enforce)
+      let balance: number | null = null;
+      try {
+        balance = await connection.getBalance(publicKey);
+        console.log('[Payment] Pre-flight balance check:', balance / LAMPORTS_PER_SOL, 'SOL');
+      } catch (error) {
+        console.warn('[Payment] Pre-flight balance check failed (non-critical):', error);
+      }
+
       const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
       const creatorLamports = Math.floor(priceLamports * 95 / 100);
       const platformLamports = priceLamports - creatorLamports;
@@ -235,8 +241,8 @@ export const X402PaymentModal = ({
         totalWithFee: (creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL
       });
 
-      // Final balance check with real estimated fee
-      if (balance < (creatorLamports + platformLamports + estimatedFee)) {
+      // Final balance check with real estimated fee (only if we got balance)
+      if (balance !== null && balance < (creatorLamports + platformLamports + estimatedFee)) {
         const needed = ((creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL).toFixed(6);
         throw new Error(`Insufficient balance for transaction + fees. You need ${needed} SOL`);
       }
