@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   ...(isDevelopment && {
     server: {
-      url: 'https://3561f8c1-735e-43eb-9412-fe29af22feae.lovableproject.com?forceHideBadge=true',
+      url: 'https://wutch.fun?forceHideBadge=true',
       cleartext: true
     },
     android: {

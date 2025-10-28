@@ -234,7 +234,7 @@ export const AuthDialog = () => {
       const isEmbedded = window.self !== window.top;
       
       if (isEmbedded) {
-        // When embedded in iframe (like Lovable editor), use skipBrowserRedirect
+        // When embedded in iframe, use skipBrowserRedirect
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {

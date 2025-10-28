@@ -43,6 +43,7 @@ const Shorts = () => {
     return saved === null ? false : saved === 'true';
   });
   const hasInitializedRef = useRef(false);
+  const isDeepLinkingRef = useRef(false);
   const desktopScrollRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const isScrollingRef = useRef(false);
@@ -63,21 +64,31 @@ const Shorts = () => {
       const targetIndex = shorts.findIndex(s => s.id === targetShortId);
       if (targetIndex !== -1) {
         console.log('[Shorts] Deep-linking to short at index:', targetIndex);
+        isDeepLinkingRef.current = true;
         setActiveShortIndex(targetIndex);
         
-        // Scroll to target if on desktop - defer to avoid IntersectionObserver override
-        if (desktopScrollRef.current && !isMobile) {
-          setTimeout(() => {
-            const targetElement = desktopScrollRef.current?.children[targetIndex] as HTMLElement;
+        // Scroll to target with longer timeout to prevent IntersectionObserver override
+        const scrollTimeout = isMobile ? 100 : 100;
+        setTimeout(() => {
+          if (isMobile && containerRef.current) {
+            const targetElement = containerRef.current.children[targetIndex] as HTMLElement;
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+            }
+          } else if (desktopScrollRef.current) {
+            const targetElement = desktopScrollRef.current.children[targetIndex] as HTMLElement;
             if (targetElement) {
               targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
               // Fallback if scrollIntoView doesn't work reliably
-              if (desktopScrollRef.current) {
-                desktopScrollRef.current.scrollTo({ top: targetElement.offsetTop, behavior: 'auto' });
-              }
+              desktopScrollRef.current.scrollTo({ top: targetElement.offsetTop, behavior: 'auto' });
             }
-          }, 50);
-        }
+          }
+          
+          // Reset deep-linking flag after scroll completes
+          setTimeout(() => {
+            isDeepLinkingRef.current = false;
+          }, 500);
+        }, scrollTimeout);
       }
     }
 
@@ -95,6 +106,9 @@ const Shorts = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Don't update if we're deep-linking
+        if (isDeepLinkingRef.current) return;
+        
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
@@ -125,6 +139,9 @@ const Shorts = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Don't update if we're deep-linking
+        if (isDeepLinkingRef.current) return;
+        
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
