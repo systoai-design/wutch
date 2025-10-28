@@ -67,7 +67,13 @@ Deno.serve(async (req) => {
     // Parse message to extract timestamp and nonce
     const messageMatch = message.match(/Sign this message to verify your wallet: (\d+):(\w+)/);
     if (!messageMatch) {
-      console.error('Invalid message format:', message);
+      console.error('Invalid message format received:', {
+        message,
+        messageLength: message.length,
+        messageBytes: Array.from(new TextEncoder().encode(message)),
+        expectedPattern: 'Sign this message to verify your wallet: {timestamp}:{nonce}',
+        receivedLines: message.split('\n').length
+      });
       return new Response(
         JSON.stringify({ error: 'Invalid message format. Please ensure your wallet is unlocked and try again.' }),
         {

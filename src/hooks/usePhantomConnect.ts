@@ -22,12 +22,14 @@ export const usePhantomConnect = () => {
         return null;
       }
       
-      // Select Phantom wallet
+      // Select Phantom wallet only if not already selected
       const phantomWallet = wallets.find(w => 
         w.adapter.name.toLowerCase().includes('phantom')
       );
-      if (phantomWallet) {
+      if (phantomWallet && phantomWallet.adapter.name !== wallets.find(w => w.adapter.connected)?.adapter.name) {
         select(phantomWallet.adapter.name);
+        // Wait a bit for wallet selection to settle
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
       await connect();
@@ -66,6 +68,14 @@ export const usePhantomConnect = () => {
       const nonce = Math.random().toString(36).substring(2, 15);
       const timestamp = Date.now();
       const message = `Sign this message to verify your wallet: ${timestamp}:${nonce}`;
+      console.log('Message to sign:', message);
+      
+      // Verify message format before proceeding
+      const messagePattern = /^Sign this message to verify your wallet: \d+:[a-z0-9]+$/;
+      if (!messagePattern.test(message)) {
+        throw new Error('Invalid message format generated');
+      }
+      
       const encodedMessage = new TextEncoder().encode(message);
 
       let signature: Uint8Array;
@@ -103,6 +113,12 @@ export const usePhantomConnect = () => {
 
       if (error) {
         console.error('Wallet verification error:', error);
+        
+        // Handle message format errors
+        if (error.message?.includes('Invalid message format')) {
+          console.error('Message format mismatch. Sent message:', message);
+          throw new Error('Wallet verification failed due to message format. Please try again.');
+        }
         
         // Handle authentication errors
         if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
