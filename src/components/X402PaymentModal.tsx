@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, Loader2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -164,7 +164,7 @@ export const X402PaymentModal = ({
 
       // Fresh balance check (non-blocking if RPC fails)
       const currentBalance = await checkBalance();
-      const requiredAmount = price + 0.0001; // price + buffer for fees
+      const requiredAmount = price + 0.002; // price + larger buffer for fees (increased from 0.0001)
 
       console.log('[Payment] Balance verification:', {
         current: currentBalance,
@@ -204,50 +204,100 @@ export const X402PaymentModal = ({
       const platformLamports = priceLamports - creatorLamports;
       const feeBuffer = 50000;
 
-      // Create transaction with two transfers: 95% to creator, 5% to platform
-      const transaction = new Transaction();
-
-      // Transfer to creator (95%)
-      transaction.add(
-        SystemProgram.transfer({
+      // Helper to create transfer instructions
+      const createTransferInstructions = (creatorFirst: boolean): TransactionInstruction[] => {
+        const creatorTransfer = SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(creatorWallet),
           lamports: creatorLamports,
-        })
-      );
-
-      // Transfer to platform (5%)
-      transaction.add(
-        SystemProgram.transfer({
+        });
+        const platformTransfer = SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(PLATFORM_WALLET),
           lamports: platformLamports,
-        })
-      );
+        });
+        return creatorFirst ? [creatorTransfer, platformTransfer] : [platformTransfer, creatorTransfer];
+      };
 
-      // Get latest blockhash for confirmation
+      // Get latest blockhash
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+
+      // Try simulation with both instruction orderings
+      let instructions = createTransferInstructions(true); // Creator first
+      let transaction = new Transaction().add(...instructions);
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      // Estimate real fee
+      // Simulate transaction
+      console.log('[X402Payment] Pre-simulating transaction (creator-first)...');
       const message = transaction.compileMessage();
-      const estimatedFeeResponse = await connection.getFeeForMessage(message, 'confirmed');
+      let simulationResult = await connection.simulateTransaction(transaction);
+
+      // If simulation failed with InsufficientFundsForRent, try reordering
+      if (simulationResult.value.err) {
+        const errStr = JSON.stringify(simulationResult.value.err);
+        console.warn('[X402Payment] Initial simulation failed:', errStr);
+
+        if (errStr.includes('InsufficientFundsForRent')) {
+          console.log('[X402Payment] Trying reordered instructions (platform-first)...');
+          toast.info('Optimizing transaction order...');
+          
+          instructions = createTransferInstructions(false); // Platform first
+          transaction = new Transaction().add(...instructions);
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = publicKey;
+
+          simulationResult = await connection.simulateTransaction(transaction);
+          
+          if (!simulationResult.value.err) {
+            console.log('[X402Payment] Reordering resolved the issue!');
+          }
+        }
+      }
+
+      // If both orderings failed, fall back to single-transfer
+      let useFallback = false;
+      if (simulationResult.value.err) {
+        const errStr = JSON.stringify(simulationResult.value.err);
+        console.warn('[X402Payment] Both orderings failed. Error:', errStr);
+        
+        if (errStr.includes('InsufficientFundsForRent')) {
+          console.log('[X402Payment] Using single-transfer fallback...');
+          toast.info('Using alternative payment method for reliability...');
+          useFallback = true;
+
+          // Create single transfer to creator with full amount
+          transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: new PublicKey(creatorWallet),
+              lamports: priceLamports,
+            })
+          );
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = publicKey;
+        }
+      }
+
+      // Estimate fee
+      const estimatedFeeResponse = await connection.getFeeForMessage(transaction.compileMessage(), 'confirmed');
       const estimatedFee = estimatedFeeResponse.value || feeBuffer;
       
       console.log('[X402Payment] Fee estimation:', {
         estimatedFee: estimatedFee / LAMPORTS_PER_SOL,
-        feeBuffer: feeBuffer / LAMPORTS_PER_SOL,
-        totalWithFee: (creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL
+        totalWithFee: ((useFallback ? priceLamports : creatorLamports + platformLamports) + estimatedFee) / LAMPORTS_PER_SOL,
+        fallbackMode: useFallback
       });
 
-      // Final balance check with real estimated fee (only if we got balance)
-      if (balance !== null && balance < (creatorLamports + platformLamports + estimatedFee)) {
-        const needed = ((creatorLamports + platformLamports + estimatedFee) / LAMPORTS_PER_SOL).toFixed(6);
+      // Final balance check
+      const totalLamports = (useFallback ? priceLamports : creatorLamports + platformLamports) + estimatedFee;
+      if (balance !== null && balance < totalLamports) {
+        const needed = (totalLamports / LAMPORTS_PER_SOL).toFixed(6);
         throw new Error(`Insufficient balance for transaction + fees. You need ${needed} SOL`);
       }
 
       // Send transaction
+      console.log(`[X402Payment] Sending transaction (${useFallback ? 'single-transfer fallback' : 'two-transfer'})`);
       const signature = await sendTransaction(transaction, connection);
       console.log('[X402Payment] Transaction sent:', signature);
       console.log('[X402Payment] View on Solana Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=mainnet`);
@@ -282,6 +332,7 @@ export const X402PaymentModal = ({
             transactionSignature: signature,
             contentType,
             contentId,
+            allowSingleTransferFallback: useFallback,
           },
         });
 

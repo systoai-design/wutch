@@ -82,13 +82,19 @@ serve(async (req) => {
     const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
     await checkRateLimit(supabaseAdmin, user.id, ipAddress);
 
-    const { transactionSignature, contentType, contentId } = await req.json();
+    const { transactionSignature, contentType, contentId, allowSingleTransferFallback } = await req.json();
 
     if (!transactionSignature || !contentType || !contentId) {
       throw new Error('Missing required fields: transactionSignature, contentType, contentId');
     }
 
-    console.log('[X402-V2] Verifying payment:', { transactionSignature, contentType, contentId, userId: user.id });
+    console.log('[X402-V2] Verifying payment:', { 
+      transactionSignature, 
+      contentType, 
+      contentId, 
+      userId: user.id,
+      fallbackMode: allowSingleTransferFallback || false
+    });
 
     // Get content details and price
     let creatorId: string;
@@ -183,17 +189,35 @@ serve(async (req) => {
       }
     }
 
-    if (transferCount !== 2) {
-      throw new Error(`Invalid transaction structure. Expected 2 transfers, got ${transferCount}`);
-    }
-
-    // Verify amounts (95/5 split)
     const priceLamports = Math.round(price * LAMPORTS_PER_SOL);
-    const expectedCreatorLamports = Math.floor(priceLamports * 95 / 100);
-    const expectedPlatformLamports = priceLamports - expectedCreatorLamports;
+    
+    // Support two patterns:
+    // 1. Two-transfer (95/5 split on-chain) - default
+    // 2. Single-transfer (full amount to creator) - fallback for rent issues
+    
+    if (transferCount === 2) {
+      // Normal two-transfer pattern
+      const expectedCreatorLamports = Math.floor(priceLamports * 95 / 100);
+      const expectedPlatformLamports = priceLamports - expectedCreatorLamports;
 
-    if (creatorAmountLamports !== expectedCreatorLamports || platformAmountLamports !== expectedPlatformLamports) {
-      throw new Error('Payment amounts do not match expected values');
+      if (creatorAmountLamports !== expectedCreatorLamports || platformAmountLamports !== expectedPlatformLamports) {
+        throw new Error('Payment amounts do not match expected 95/5 split');
+      }
+      
+      console.log('[X402-V2] Verified two-transfer pattern (95/5 on-chain)');
+    } else if (transferCount === 1 && allowSingleTransferFallback) {
+      // Single-transfer fallback pattern
+      if (creatorAmountLamports !== priceLamports) {
+        throw new Error(`Single transfer amount ${creatorAmountLamports} does not match price ${priceLamports}`);
+      }
+      
+      // Calculate platform fee for off-chain accounting (5%)
+      platformAmountLamports = Math.floor(priceLamports * 5 / 100);
+      creatorAmountLamports = priceLamports - platformAmountLamports; // Adjust for accounting
+      
+      console.log('[X402-V2] Verified single-transfer fallback pattern (full amount to creator, 5% fee off-chain)');
+    } else {
+      throw new Error(`Invalid transaction structure. Expected 2 transfers or 1 transfer with fallback flag. Got ${transferCount} transfers, fallback=${allowSingleTransferFallback}`);
     }
 
     // Check if transaction already used
