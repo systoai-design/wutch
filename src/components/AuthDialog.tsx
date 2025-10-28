@@ -11,9 +11,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { MFAVerification } from '@/components/MFAVerification';
-import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { WalletSignUpDialog } from '@/components/WalletSignUpDialog';
+import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { toast as sonnerToast } from 'sonner';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string()
@@ -49,6 +52,15 @@ export const AuthDialog = () => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' });
+  const [showWalletSignUp, setShowWalletSignUp] = useState(false);
+  const [walletSignUpData, setWalletSignUpData] = useState<{
+    walletAddress: string;
+    signature: string;
+    message: string;
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  
+  const { publicKey, signMessage, connected, disconnect } = useWallet();
 
   const [loginData, setLoginData] = useState({ emailOrUsername: '', password: '' });
   const [signupData, setSignupData] = useState({
@@ -328,10 +340,32 @@ export const AuthDialog = () => {
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue={defaultTab}>
-          <TabsList className="grid w-full grid-cols-2">
+        {showWalletSignUp && walletSignUpData && (
+          <WalletSignUpDialog
+            open={showWalletSignUp}
+            walletAddress={walletSignUpData.walletAddress}
+            signature={walletSignUpData.signature}
+            message={walletSignUpData.message}
+            onComplete={() => {
+              setShowWalletSignUp(false);
+              setWalletSignUpData(null);
+              close();
+            }}
+            onCancel={() => {
+              setShowWalletSignUp(false);
+              setWalletSignUpData(null);
+              if (connected) {
+                disconnect();
+              }
+            }}
+          />
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
@@ -574,9 +608,107 @@ export const AuthDialog = () => {
                 Sign up with Google
               </Button>
             </form>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+        </TabsContent>
+
+        <TabsContent value="wallet" className="space-y-4">
+          <div className="text-center space-y-2 py-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8 10c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2-12h4v2h-4V5z"/>
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold">Sign Up with Your Wallet</h3>
+            <p className="text-sm text-muted-foreground">
+              Connect your Phantom wallet to get started - no email required
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              try {
+                if (!publicKey || !signMessage) {
+                  sonnerToast("Please install Phantom wallet");
+                  return;
+                }
+
+                setIsLoading(true);
+
+                // Generate message to sign
+                const timestamp = Date.now();
+                const nonce = crypto.randomUUID();
+                const message = `Sign this message to authenticate with Wutch:\n${timestamp}\n${nonce}`;
+                const messageBytes = new TextEncoder().encode(message);
+
+                // Request signature
+                const signature = await signMessage(messageBytes);
+                const signatureBase58 = btoa(String.fromCharCode(...signature));
+
+                setWalletSignUpData({
+                  walletAddress: publicKey.toString(),
+                  signature: signatureBase58,
+                  message,
+                });
+                setShowWalletSignUp(true);
+              } catch (error: any) {
+                console.error('Wallet connection error:', error);
+                sonnerToast(error.message || "Failed to connect wallet");
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8 10c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2-12h4v2h-4V5z"/>
+                </svg>
+                Connect Phantom Wallet
+              </>
+            )}
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Benefits
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-muted p-4 space-y-2">
+            <p className="text-sm font-medium">Why use wallet login?</p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>✓ No email required to get started</li>
+              <li>✓ Secure authentication with your wallet</li>
+              <li>✓ Add email later in settings (optional)</li>
+              <li>✓ Full access to all features</li>
+            </ul>
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Already have an account?{" "}
+            <button
+              onClick={() => setActiveTab("login")}
+              className="text-primary hover:underline"
+            >
+              Log in
+            </button>
+          </p>
+        </TabsContent>
+      </Tabs>
+    </DialogContent>
+  </Dialog>
   );
 };
