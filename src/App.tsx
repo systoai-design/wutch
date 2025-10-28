@@ -64,20 +64,17 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isVerified } = useAuth();
-  const { open: openAuthDialog } = useAuthDialog();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      openAuthDialog('signup');
-    } else if (!isLoading && user && !isVerified) {
+    if (!isLoading && user && !isVerified) {
       toast({
         title: "Email Verification Required",
         description: "Please verify your email to continue. Check your inbox for the verification link.",
         variant: "destructive",
       });
     }
-  }, [user, isLoading, isVerified, openAuthDialog, toast]);
+  }, [user, isLoading, isVerified, toast]);
 
   if (isLoading) {
     return (
