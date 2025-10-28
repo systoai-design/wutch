@@ -153,8 +153,10 @@ Deno.serve(async (req) => {
         expires_at: new Date(timestamp + fiveMinutes).toISOString(),
       });
 
-    // Create anonymous auth user with wallet metadata
+    // Create auth user with deterministic email
+    const pseudoEmail = `${walletAddress}@wallet.wutch.app`;
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: pseudoEmail,
       email_confirm: true,
       user_metadata: {
         wallet_address: walletAddress,
@@ -219,7 +221,7 @@ Deno.serve(async (req) => {
     // Generate session token for the new user
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
-      email: `${userId}@wallet.wutch.app`, // Placeholder email for wallet-only accounts
+      email: pseudoEmail,
       options: {
         redirectTo: `${req.headers.get('origin') || '/'}/`,
       },

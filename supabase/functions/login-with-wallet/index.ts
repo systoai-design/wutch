@@ -137,10 +137,11 @@ Deno.serve(async (req) => {
       })
       .eq('wallet_address', walletAddress);
 
-    // Generate session for the user
+    // Generate session for the user using deterministic email
+    const pseudoEmail = `${walletAddress}@wallet.wutch.app`;
     const { data: linkData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
-      email: walletData.user_id + '@wallet.internal',
+      email: pseudoEmail,
     });
 
     if (sessionError || !linkData) {
