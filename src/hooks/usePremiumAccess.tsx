@@ -101,9 +101,15 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     } catch (err: any) {
       console.error('Error checking premium access:', err);
       setError(err.message || 'Failed to check access');
-      // Fail secure - deny access on error, but preserve premium status check
+      // Fail secure - reset ALL premium-related state on error
       setHasAccess(false);
-      // Don't set isPremium to false on error - keep it as it was or set to true to be safe
+      setIsPremium(false);
+      setIsOwner(false);
+      setPrice(undefined);
+      setAsset(undefined);
+      setNetwork(undefined);
+      setPreviewDuration(undefined);
+      setCreatorWallet(null);
     } finally {
       setIsLoading(false);
     }
