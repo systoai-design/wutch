@@ -121,7 +121,8 @@ export const WalletConnect = () => {
             }
 
             sonnerToast.success('Logged in successfully!');
-            // Wallet address will be loaded by the useEffect
+            // Immediately set wallet address to avoid second click
+            setWalletAddress(result.address);
           }
         }
       } catch (error: any) {
