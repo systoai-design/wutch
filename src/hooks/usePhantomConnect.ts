@@ -67,6 +67,9 @@ export const usePhantomConnect = () => {
         console.log('Selecting Phantom wallet...');
         select(phantomWallet.adapter.name);
         
+        // Allow brief time for selection to settle
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Poll for wallet to be ready (up to 2 seconds)
         let ready = false;
         for (let i = 0; i < 8; i++) {
@@ -83,12 +86,19 @@ export const usePhantomConnect = () => {
         }
       }
       
-      // Connect with retry on race conditions
+      // Connect with retry on race conditions and selection errors
       try {
         await connect();
       } catch (connectError: any) {
-        // Retry once if we hit a race condition
-        if (connectError.message?.includes('already connecting') || connectError.message?.includes('ready state')) {
+        // Handle WalletNotSelectedError specifically
+        if (connectError.name === 'WalletNotSelectedError' || connectError.message?.includes('WalletNotSelected')) {
+          console.log('WalletNotSelectedError detected, re-selecting and retrying...');
+          select(phantomWallet.adapter.name);
+          await new Promise(resolve => setTimeout(resolve, 150));
+          await connect();
+        } 
+        // Retry once if we hit other race conditions
+        else if (connectError.message?.includes('already connecting') || connectError.message?.includes('ready state')) {
           console.log('Retry connect after race condition');
           await new Promise(resolve => setTimeout(resolve, 500));
           await connect();
