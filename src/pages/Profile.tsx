@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Wallet, Twitter, Globe, Shield, UserX, ExternalLink, Copy, Video, Film, PlayCircle, Maximize2, CalendarDays, Settings as SettingsIcon, Link as LinkIcon, CheckCircle2, MessageSquare } from 'lucide-react';
+import { CommunityPostFeed } from '@/components/CommunityPostFeed';
 import { UpcomingFeatureBanner } from '@/components/UpcomingFeatureBanner';
 import StreamCard from '@/components/StreamCard';
 import { ShortCard } from '@/components/ShortCard';
@@ -63,6 +64,16 @@ type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
     display_name?: string | null;
     avatar_url?: string | null;
   } | null;
+};
+
+type CommunityPost = Database['public']['Tables']['community_posts']['Row'] & {
+  user?: {
+    id: string;
+    username: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  isLiked?: boolean;
 };
 
 // Component to display user's private wallet address (only visible to owner)
@@ -155,11 +166,13 @@ const ProfilePage = () => {
   const [streams, setStreams] = useState<LivestreamWithProfile[]>([]);
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [videos, setVideos] = useState<WutchVideo[]>([]);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingStreams, setIsLoadingStreams] = useState(true);
   const [isLoadingShorts, setIsLoadingShorts] = useState(true);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   
   const [showMFAEnrollment, setShowMFAEnrollment] = useState(false);
   const [hasMFA, setHasMFA] = useState(false);
@@ -270,8 +283,8 @@ const ProfilePage = () => {
         setProfile(profileData as DisplayProfile);
         setFollowerCount(profileData.follower_count || 0);
 
-      // Fetch user's streams, shorts, and videos in parallel
-      const [streamsResult, shortsResult, videosResult, followResult] = await Promise.all([
+      // Fetch user's streams, shorts, videos, and posts in parallel
+      const [streamsResult, shortsResult, videosResult, postsResult, followResult] = await Promise.all([
         supabase
           .from('livestreams')
           .select('*')
@@ -289,6 +302,21 @@ const ProfilePage = () => {
           .select('*')
           .eq('user_id', profileData.id)
           .eq('status', 'published')
+          .order('created_at', { ascending: false }),
+        
+        supabase
+          .from('community_posts')
+          .select(`
+            *,
+            user:profiles!community_posts_user_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('user_id', profileData.id)
+          .eq('moderation_status', 'approved')
           .order('created_at', { ascending: false }),
         
         // Check following status if authenticated
@@ -335,6 +363,22 @@ const ProfilePage = () => {
       }));
       setVideos(videosWithProfile);
 
+      // Check if user has liked posts
+      let postsWithLikes = postsResult.data || [];
+      if (user && postsResult.data) {
+        const { data: likes } = await supabase
+          .from('community_post_likes')
+          .select('post_id')
+          .eq('user_id', user.id);
+        
+        const likedPostIds = new Set(likes?.map(l => l.post_id) || []);
+        postsWithLikes = postsResult.data.map(post => ({
+          ...post,
+          isLiked: likedPostIds.has(post.id),
+        }));
+      }
+      setPosts(postsWithLikes);
+
       // Set following status
       setIsFollowing(!!followResult.data);
       } catch (error) {
@@ -351,6 +395,7 @@ const ProfilePage = () => {
         setIsLoadingStreams(false);
         setIsLoadingShorts(false);
         setIsLoadingVideos(false);
+        setIsLoadingPosts(false);
       }
     };
 
@@ -651,8 +696,7 @@ const ProfilePage = () => {
                 Shorts {shorts.length > 0 && `(${shorts.length})`}
               </TabsTrigger>
               <TabsTrigger value="posts" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
-                Posts
-                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+                Posts {posts.length > 0 && `(${posts.length})`}
               </TabsTrigger>
               {isOwnProfile && (
                 <TabsTrigger value="analytics" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
@@ -753,17 +797,64 @@ const ProfilePage = () => {
           </TabsContent>
 
           <TabsContent value="posts" className="mt-6">
-            <UpcomingFeatureBanner
-              title="Community Posts - Coming Soon!"
-              description="Share text updates, images, and connect with your audience in a whole new way. This feature will be available soon!"
-            />
-            <div className="mt-6">
+            {isLoadingPosts ? (
+              <div className="space-y-6">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonStreamCard key={i} />
+                ))}
+              </div>
+            ) : posts.length === 0 ? (
               <EmptyState
                 icon={MessageSquare}
                 title="No posts yet"
-                description="Community posts feature is coming soon. Stay tuned!"
+                description={isOwnProfile ? "Share your first post with the community!" : `${profile.display_name || profile.username} hasn't posted yet.`}
+                action={isOwnProfile ? {
+                  label: "Create Post",
+                  onClick: () => navigate('/community')
+                } : undefined}
               />
-            </div>
+            ) : (
+              <CommunityPostFeed
+                posts={posts}
+                isLoading={isLoadingPosts}
+                onLike={async (postId) => {
+                  if (!user) return;
+                  const post = posts.find(p => p.id === postId);
+                  if (!post) return;
+                  
+                  if (post.isLiked) {
+                    await supabase
+                      .from('community_post_likes')
+                      .delete()
+                      .eq('post_id', postId)
+                      .eq('user_id', user.id);
+                  } else {
+                    await supabase
+                      .from('community_post_likes')
+                      .insert({ post_id: postId, user_id: user.id });
+                  }
+                  
+                  setPosts(posts.map(p => 
+                    p.id === postId 
+                      ? { ...p, isLiked: !p.isLiked, like_count: (p.like_count || 0) + (p.isLiked ? -1 : 1) }
+                      : p
+                  ));
+                }}
+                onDelete={async (postId) => {
+                  await supabase
+                    .from('community_posts')
+                    .delete()
+                    .eq('id', postId);
+                  setPosts(posts.filter(p => p.id !== postId));
+                  toast({
+                    title: 'Post deleted',
+                    description: 'Your post has been removed.',
+                  });
+                }}
+                currentUserId={user?.id}
+                filterByType="all"
+              />
+            )}
           </TabsContent>
 
           {isOwnProfile && (
