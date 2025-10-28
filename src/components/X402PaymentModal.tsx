@@ -42,64 +42,75 @@ export const X402PaymentModal = ({
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
 
-  // Primary and fallback RPC connections
-  const primaryConnection = useMemo(
-    () => new Connection("https://mainnet.helius-rpc.com/", {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
-    }),
-    []
-  );
+  // Multiple RPC endpoints with priority fallback
+  const rpcEndpoints = useMemo(() => [
+    "https://mainnet.helius-rpc.com/",
+    "https://rpc.ankr.com/solana",
+    "https://solana.public-rpc.com",
+    "https://api.mainnet-beta.solana.com"
+  ], []);
 
-  const fallbackConnection = useMemo(
-    () => new Connection("https://api.mainnet-beta.solana.com", {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
-    }),
-    []
-  );
-
-  // Try primary RPC, fallback to public RPC if needed
-  const getConnectionWithFallback = async () => {
-    try {
-      await primaryConnection.getLatestBlockhash();
-      console.log('[RPC] Using primary Helius RPC');
-      return primaryConnection;
-    } catch (error) {
-      console.warn('[RPC] Primary RPC failed, falling back to public RPC:', error);
-      return fallbackConnection;
+  // Try RPC endpoints in order until one works
+  const getConnectionWithFallback = async (): Promise<Connection> => {
+    for (const endpoint of rpcEndpoints) {
+      try {
+        const connection = new Connection(endpoint, {
+          commitment: 'confirmed',
+          confirmTransactionInitialTimeout: 60000,
+        });
+        await connection.getLatestBlockhash();
+        console.log(`[RPC] Using ${endpoint}`);
+        return connection;
+      } catch (error) {
+        console.warn(`[RPC] ${endpoint} failed:`, error);
+      }
     }
+    // Fallback to last endpoint even if it failed
+    console.warn('[RPC] All endpoints failed, using fallback');
+    return new Connection(rpcEndpoints[rpcEndpoints.length - 1], {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000,
+    });
   };
 
-  // Check and display wallet balance
+  // Check balance with multiple fallbacks including server-side check
   const checkBalance = async () => {
     if (!publicKey) return null;
     
     setIsRefreshingBalance(true);
     try {
-      const connection = await getConnectionWithFallback();
-      const timestamp = new Date().toISOString();
-      
-      console.log('[Balance Check]', {
-        timestamp,
-        publicKey: publicKey.toBase58(),
-        rpcEndpoint: connection.rpcEndpoint
+      // Try client-side RPC check first
+      for (const endpoint of rpcEndpoints) {
+        try {
+          const connection = new Connection(endpoint, { commitment: 'confirmed' });
+          const balanceLamports = await connection.getBalance(publicKey);
+          const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
+          
+          console.log('[Balance Check] Success via', endpoint, ':', balanceSOL, 'SOL');
+          setWalletBalance(balanceSOL);
+          return balanceSOL;
+        } catch (error) {
+          console.warn(`[Balance Check] ${endpoint} failed:`, error);
+        }
+      }
+
+      // All client RPCs failed, try server-side check as last resort
+      console.log('[Balance Check] All client RPCs failed, trying server-side check');
+      const { data, error } = await supabase.functions.invoke('solana-balance-check', {
+        body: { walletAddress: publicKey.toBase58() }
       });
 
-      const balanceLamports = await connection.getBalance(publicKey);
-      const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
-      
-      console.log('[Balance Check] Result:', {
-        balanceLamports,
-        balanceSOL,
-        required: price + 0.0001,
-        sufficient: balanceSOL >= (price + 0.0001)
-      });
+      if (error) throw error;
+      if (data?.balance !== undefined) {
+        console.log('[Balance Check] Server-side success:', data.balance, 'SOL');
+        setWalletBalance(data.balance);
+        return data.balance;
+      }
 
-      setWalletBalance(balanceSOL);
-      return balanceSOL;
+      throw new Error('No balance data from server');
     } catch (error) {
-      console.error('[Balance Check] Failed:', error);
+      console.error('[Balance Check] All methods failed:', error);
+      setWalletBalance(null);
       return null;
     } finally {
       setIsRefreshingBalance(false);
@@ -139,24 +150,32 @@ export const X402PaymentModal = ({
       // Get connection with fallback
       const connection = await getConnectionWithFallback();
 
-      // Fresh balance check with detailed logging
+      // Fresh balance check (non-blocking if RPC fails)
       const currentBalance = await checkBalance();
       const requiredAmount = price + 0.0001; // price + buffer for fees
 
       console.log('[Payment] Balance verification:', {
         current: currentBalance,
         required: requiredAmount,
-        sufficient: currentBalance && currentBalance >= requiredAmount,
+        rpcAvailable: currentBalance !== null,
+        sufficient: currentBalance !== null ? currentBalance >= requiredAmount : 'unknown',
         difference: currentBalance ? (currentBalance - requiredAmount).toFixed(6) : 'N/A'
       });
 
-      if (!currentBalance || currentBalance < requiredAmount) {
+      // Only block payment if we successfully got balance AND it's insufficient
+      if (currentBalance !== null && currentBalance < requiredAmount) {
         throw new Error(
           `Insufficient balance\n\n` +
-          `Your balance: ${currentBalance?.toFixed(6) || '0.000000'} SOL\n` +
+          `Your balance: ${currentBalance.toFixed(6)} SOL\n` +
           `Required: ${requiredAmount.toFixed(6)} SOL\n` +
-          `Need ${currentBalance ? (requiredAmount - currentBalance).toFixed(6) : requiredAmount.toFixed(6)} SOL more`
+          `Need ${(requiredAmount - currentBalance).toFixed(6)} SOL more`
         );
+      }
+
+      // If balance check failed (null), show warning but allow proceeding
+      if (currentBalance === null) {
+        console.warn('[Payment] Balance check unavailable (RPC blocked). Proceeding - wallet will enforce limits.');
+        toast.info('Balance check unavailable. Your wallet will confirm if you have enough SOL.');
       }
 
       // Pre-flight balance check
@@ -325,12 +344,16 @@ export const X402PaymentModal = ({
 
         <div className="space-y-4">
           {/* Wallet Balance Display */}
-          {walletBalance !== null && (
+          {publicKey && (
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Your Balance</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{walletBalance.toFixed(6)} SOL</span>
+                  {walletBalance !== null ? (
+                    <span className="font-semibold">{walletBalance.toFixed(6)} SOL</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Balance check unavailable (RPC blocked)</span>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -342,6 +365,11 @@ export const X402PaymentModal = ({
                   </Button>
                 </div>
               </div>
+              {walletBalance === null && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your wallet will confirm if you have enough SOL to proceed with payment.
+                </p>
+              )}
             </div>
           )}
 
