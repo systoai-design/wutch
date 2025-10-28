@@ -47,6 +47,10 @@ export function MobileShortPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [previewEnded, setPreviewEnded] = useState(false);
+  const [previewCountdown, setPreviewCountdown] = useState<number>(0);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
   
@@ -56,7 +60,7 @@ export function MobileShortPlayer({
   const { isFollowing, isLoading: isFollowLoading, toggleFollow, showGuestDialog: showFollowGuestDialog, setShowGuestDialog: setShowFollowGuestDialog } = 
     useFollow(short.user_id);
 
-  const { hasAccess, isPremium, price } = usePremiumAccess({
+  const { hasAccess, isPremium, price, isOwner, previewDuration, isLoading } = usePremiumAccess({
     contentType: 'shortvideo',
     contentId: short.id,
   });
@@ -111,6 +115,41 @@ export function MobileShortPlayer({
       videoRef.current.muted = isMuted;
     }
   }, [isActive, isMuted]);
+
+  // Preview mode logic
+  useEffect(() => {
+    if (isPremium && !hasAccess && !isOwner && previewDuration && previewDuration > 0) {
+      setIsPreviewMode(true);
+      setPreviewEnded(false);
+      setPreviewCountdown(previewDuration);
+    } else {
+      setIsPreviewMode(false);
+      setPreviewEnded(false);
+    }
+  }, [isPremium, hasAccess, isOwner, previewDuration]);
+
+  // Handle preview timeupdate
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isPreviewMode) return;
+
+    const handleTimeUpdate = () => {
+      const current = video.currentTime;
+      setCurrentTime(current);
+      
+      if (previewDuration && current >= previewDuration) {
+        video.pause();
+        setIsPlaying(false);
+        setPreviewEnded(true);
+      } else if (previewDuration) {
+        const remaining = Math.ceil(previewDuration - current);
+        setPreviewCountdown(remaining);
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [isPreviewMode, previewDuration]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -176,13 +215,31 @@ export function MobileShortPlayer({
 
   return (
     <div className="mobile-short-item relative w-full h-[100dvh] bg-black overflow-hidden">
-      {/* Premium Paywall Overlay */}
-      {isPremium && !hasAccess && (
+      {/* Preview Badge */}
+      {isPreviewMode && !previewEnded && (
+        <div className="absolute top-4 left-4 z-20 bg-purple-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+          PREVIEW
+        </div>
+      )}
+
+      {/* Preview Countdown */}
+      {isPreviewMode && !previewEnded && isPlaying && previewCountdown > 0 && (
+        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-medium">
+          Preview: {previewCountdown}s left
+        </div>
+      )}
+
+      {/* Premium Paywall Overlay - Show only if preview ended or no preview */}
+      {isPremium && !hasAccess && !isOwner && !isLoading && (previewEnded || !isPreviewMode) && (
         <div className="absolute inset-0 z-50 bg-gradient-to-br from-purple-900/95 to-pink-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
           <Lock className="h-20 w-20 text-white mb-6 animate-pulse" />
-          <h3 className="text-2xl font-bold text-white text-center mb-2">Premium Short</h3>
+          <h3 className="text-2xl font-bold text-white text-center mb-2">
+            {previewEnded ? 'Preview Ended' : 'Premium Short'}
+          </h3>
           <p className="text-white/90 text-center mb-2">
-            Unlock for {price} SOL
+            {previewEnded 
+              ? `${previewDuration}-second preview ended` 
+              : `Unlock for ${price} SOL`}
           </p>
           <p className="text-sm text-white/70 text-center mb-8 max-w-xs">
             One-time payment • Permanent access

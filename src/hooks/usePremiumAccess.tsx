@@ -14,6 +14,7 @@ interface PremiumAccessResult {
   price?: number;
   asset?: string;
   network?: string;
+  previewDuration?: number;
   isLoading: boolean;
   error?: string;
   checkAccess: () => Promise<void>;
@@ -27,6 +28,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
   const [price, setPrice] = useState<number>();
   const [asset, setAsset] = useState<string>();
   const [network, setNetwork] = useState<string>();
+  const [previewDuration, setPreviewDuration] = useState<number>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -64,6 +66,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
               setPrice(errorData.price);
               setAsset(errorData.asset || 'SOL');
               setNetwork(errorData.network || 'solana');
+              setPreviewDuration(errorData.previewDuration || 0);
               // Don't throw - this is expected behavior for premium content
               setIsLoading(false);
               return;
@@ -84,6 +87,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
           setPrice(data.price);
           setAsset(data.asset || 'SOL');
           setNetwork(data.network || 'solana');
+          setPreviewDuration(data.previewDuration || 0);
         }
       }
     } catch (err: any) {
@@ -108,6 +112,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     price,
     asset,
     network,
+    previewDuration,
     isLoading,
     error,
     checkAccess,

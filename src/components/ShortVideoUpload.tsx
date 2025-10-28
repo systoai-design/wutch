@@ -26,6 +26,7 @@ export const ShortVideoUpload = () => {
     promotional_link_text: '',
     is_premium: false,
     x402_price: 0.001,
+    preview_duration: 3,
   });
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -267,6 +268,7 @@ export const ShortVideoUpload = () => {
           x402_price: formData.is_premium ? formData.x402_price : null,
           x402_asset: 'SOL',
           x402_network: 'solana',
+          preview_duration: formData.is_premium ? formData.preview_duration : null,
         })
         .select()
         .single();
@@ -434,23 +436,43 @@ export const ShortVideoUpload = () => {
           </div>
 
           {formData.is_premium && (
-            <div className="space-y-2 pl-6 border-l-2 border-purple-600/20">
-              <Label htmlFor="x402_price">
-                Price (SOL) <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="x402_price"
-                type="number"
-                step="0.001"
-                min="0.001"
-                max="100"
-                value={formData.x402_price}
-                onChange={(e) => setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.001 })}
-                placeholder="0.001"
-              />
-              <p className="text-xs text-muted-foreground">
-                Set your price in SOL. Minimum: 0.001 SOL
-              </p>
+            <div className="space-y-4 pl-6 border-l-2 border-purple-600/20">
+              <div className="space-y-2">
+                <Label htmlFor="x402_price">
+                  Price (SOL) <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="x402_price"
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  max="100"
+                  value={formData.x402_price}
+                  onChange={(e) => setFormData({ ...formData, x402_price: parseFloat(e.target.value) || 0.001 })}
+                  placeholder="0.001"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set your price in SOL. Minimum: 0.001 SOL
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="preview_duration">
+                  Preview Duration (seconds)
+                </Label>
+                <Input
+                  id="preview_duration"
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={formData.preview_duration}
+                  onChange={(e) => setFormData({ ...formData, preview_duration: parseInt(e.target.value) || 3 })}
+                  placeholder="3"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Let viewers watch a preview before purchasing. Default: 3 seconds. Set to 0 to disable preview.
+                </p>
+              </div>
               <div className="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg space-y-1">
                 <p className="text-sm font-medium">Earnings Breakdown:</p>
                 <div className="text-xs space-y-0.5">

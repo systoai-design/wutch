@@ -1827,6 +1827,7 @@ export type Database = {
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
+          preview_duration: number | null
           promotional_link: string | null
           promotional_link_text: string | null
           thumbnail_url: string | null
@@ -1849,6 +1850,7 @@ export type Database = {
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
+          preview_duration?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           thumbnail_url?: string | null
@@ -1871,6 +1873,7 @@ export type Database = {
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
+          preview_duration?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           thumbnail_url?: string | null
