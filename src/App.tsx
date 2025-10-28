@@ -25,6 +25,7 @@ import {
   createDefaultWalletNotFoundHandler
 } from '@solana-mobile/wallet-standard-mobile';
 import { Capacitor } from '@capacitor/core';
+import { APP_BASE_URL } from '@/utils/appUrl';
 
 // Lazy load pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -215,7 +216,8 @@ const App = () => {
     registerMwa({
       appIdentity: {
         name: 'Wutch',
-        uri: window.location.origin,
+        uri: APP_BASE_URL,
+        icon: `${APP_BASE_URL}/favicon.png`,
       },
       authorizationCache: createDefaultAuthorizationCache(),
       chains: ['solana:mainnet'],
