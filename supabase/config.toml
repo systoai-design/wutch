@@ -75,3 +75,6 @@ verify_jwt = true
 
 [functions.update-service-order]
 verify_jwt = true
+
+[functions.get-creator-wallet]
+verify_jwt = false

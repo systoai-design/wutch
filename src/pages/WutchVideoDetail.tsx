@@ -110,16 +110,20 @@ const WutchVideoDetail = () => {
 
       setCreator(profileData);
 
-      // Fetch creator wallet if premium content
+      // Fetch creator wallet if premium content using backend function
       if (videoData.is_premium) {
-        const { data: walletData } = await supabase
-          .from('profile_wallets')
-          .select('wallet_address')
-          .eq('user_id', videoData.user_id)
-          .maybeSingle();
+        console.log('Fetching creator wallet for premium content...');
+        const { data: walletData, error: walletError } = await supabase.functions.invoke('get-creator-wallet', {
+          body: { userId: videoData.user_id },
+        });
         
-        if (walletData?.wallet_address) {
+        if (walletError) {
+          console.error('Error fetching creator wallet:', walletError);
+        } else if (walletData?.wallet_address) {
+          console.log('Creator wallet found:', walletData.wallet_address);
           setCreatorWallet(walletData.wallet_address);
+        } else {
+          console.log('No creator wallet configured');
         }
       }
 
@@ -346,7 +350,7 @@ const WutchVideoDetail = () => {
                     Unlock this video for {price} {asset}
                   </p>
                   <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
-                    One-time payment • Permanent access • {creatorWallet ? '95% goes to creator' : 'Creator receives 95%'}
+                    One-time payment • Permanent access • 95% goes to creator
                   </p>
                   {creatorWallet ? (
                     <Button 
@@ -357,10 +361,25 @@ const WutchVideoDetail = () => {
                       <Lock className="h-4 w-4 mr-2" />
                       Unlock for {price} SOL
                     </Button>
+                  ) : isVideoOwner ? (
+                    <div className="text-center space-y-4">
+                      <Alert className="max-w-md">
+                        <AlertDescription>
+                          You need to connect your payout wallet before viewers can purchase this content.
+                        </AlertDescription>
+                      </Alert>
+                      <Button 
+                        size="lg" 
+                        onClick={() => window.location.href = '/profile/' + creator?.username}
+                        variant="outline"
+                      >
+                        Connect Payout Wallet
+                      </Button>
+                    </div>
                   ) : (
-                    <Alert variant="destructive" className="max-w-md">
+                    <Alert className="max-w-md">
                       <AlertDescription>
-                        Creator wallet not configured. Cannot purchase at this time.
+                        The creator hasn't set up payouts yet. You'll be able to unlock this content once it's ready.
                       </AlertDescription>
                     </Alert>
                   )}
