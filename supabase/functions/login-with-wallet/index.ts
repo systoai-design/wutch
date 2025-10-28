@@ -136,11 +136,21 @@ Deno.serve(async (req) => {
       })
       .eq('wallet_address', walletAddress);
 
-    // Generate session for the user using deterministic email
-    const pseudoEmail = `${walletAddress}@wallet.wutch.app`;
+    // Get the auth user associated with this wallet
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(walletData.user_id);
+
+    if (authError || !authUser?.user || !authUser.user.email) {
+      console.error('Auth user not found:', authError);
+      return new Response(
+        JSON.stringify({ error: 'User account not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate session link for the EXISTING user's email
     const { data: linkData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
-      email: pseudoEmail,
+      email: authUser.user.email,
     });
 
     if (sessionError || !linkData) {

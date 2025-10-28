@@ -290,7 +290,7 @@ export const AuthDialog = () => {
 
       // Verify the OTP token to complete login
       const { error: verifyError } = await supabase.auth.verifyOtp({
-        token_hash: data.session.hashed_token,
+        token_hash: data.session.properties.hashed_token,
         type: 'magiclink',
       });
 
