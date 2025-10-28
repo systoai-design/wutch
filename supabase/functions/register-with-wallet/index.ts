@@ -176,42 +176,59 @@ Deno.serve(async (req) => {
 
     const userId = authData.user.id;
 
-    // Create profile
-    const { error: profileError } = await supabaseAdmin
+    // Create or update profile safely (handle existing row from triggers)
+    const { data: updatedProfile, error: updateProfileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        id: userId,
+      .update({
         username: username,
         display_name: displayName || username,
         public_wallet_address: walletAddress,
-      });
+      })
+      .eq('id', userId)
+      .select('id');
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Clean up auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create user profile' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (updateProfileError) {
+      console.error('Profile update error, attempting upsert:', updateProfileError);
     }
 
-    // Create profile_wallets entry
-    const { error: walletError } = await supabaseAdmin
-      .from('profile_wallets')
-      .insert({
-        user_id: userId,
-        wallet_address: walletAddress,
-        first_connected_at: new Date().toISOString(),
-        last_connected_at: new Date().toISOString(),
-        connection_count: 1,
-      });
+    if (updateProfileError || !updatedProfile || updatedProfile.length === 0) {
+      const { error: upsertProfileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert(
+          {
+            id: userId,
+            username: username,
+            display_name: displayName || username,
+            public_wallet_address: walletAddress,
+          },
+          { onConflict: 'id' }
+        );
 
-    if (walletError) {
-      console.error('Wallet linking error:', walletError);
-      // Clean up profile and auth user
-      await supabaseAdmin.from('profiles').delete().eq('id', userId);
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (upsertProfileError) {
+        console.error('Profile upsert error:', upsertProfileError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create/update user profile' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Create or update profile_wallets entry (idempotent)
+    const { error: walletUpsertError } = await supabaseAdmin
+      .from('profile_wallets')
+      .upsert(
+        {
+          user_id: userId,
+          wallet_address: walletAddress,
+          first_connected_at: new Date().toISOString(),
+          last_connected_at: new Date().toISOString(),
+          connection_count: 1,
+        },
+        { onConflict: 'wallet_address' }
+      );
+
+    if (walletUpsertError) {
+      console.error('Wallet linking error:', walletUpsertError);
       return new Response(
         JSON.stringify({ error: 'Failed to link wallet to profile' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

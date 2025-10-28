@@ -133,7 +133,6 @@ Deno.serve(async (req) => {
       .from('profile_wallets')
       .update({
         last_connected_at: new Date().toISOString(),
-        connection_count: supabaseAdmin.rpc('increment', { x: 1 }),
       })
       .eq('wallet_address', walletAddress);
 
