@@ -43,7 +43,7 @@ const Landing = () => {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
   const [stats, setStats] = useState({
     totalRewards: 0,
-    activeWatchers: 0,
+    activeEarners: 0,
     liveStreams: 0
   });
   const [creatorStats, setCreatorStats] = useState({
@@ -173,25 +173,28 @@ const Landing = () => {
       // Total paid out = bounties + X402 purchases + donations + share rewards
       const totalRewards = bountyRewards + x402PurchaseVolume + donationVolume + shareRewards;
 
-      // Fetch active watchers count
-      const { count: activeWatchers, error: watchersError } = await supabase
-        .from('viewing_sessions')
-        .select('user_id', { count: 'exact', head: true })
-        .eq('is_active', true);
+      // Fetch active earners count (users with any earnings)
+      const { count: activeEarners, error: earnersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .or('total_earnings.gt.0,pending_earnings.gt.0');
 
-      if (watchersError) throw watchersError;
+      if (earnersError) throw earnersError;
 
-      // Fetch live streams count
+      // Fetch live streams count (only truly active streams from last 24 hours)
       const { count: liveStreams, error: streamsError } = await supabase
         .from('livestreams')
         .select('*', { count: 'exact', head: true })
-        .eq('is_live', true);
+        .eq('is_live', true)
+        .eq('status', 'live')
+        .not('started_at', 'is', null)
+        .gte('started_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (streamsError) throw streamsError;
 
       setStats({
         totalRewards,
-        activeWatchers: activeWatchers || 0,
+        activeEarners: activeEarners || 0,
         liveStreams: liveStreams || 0
       });
     } catch (error) {
@@ -435,7 +438,7 @@ const Landing = () => {
                   decimals={2}
                 />
             <StatCard 
-              value={`${stats.activeWatchers.toLocaleString()}+`}
+              value={`${stats.activeEarners.toLocaleString()}+`}
               label="Active Earners"
               delay="0.5s"
             />
