@@ -858,9 +858,9 @@ const Landing = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-live/10 text-live text-xs font-medium mb-3">
                 🔴 Live Now
               </div>
-              <h2 className="text-4xl font-bold mb-2 text-foreground">Claim Live Bounties Now</h2>
+              <h2 className="text-4xl font-bold mb-2 text-foreground">Active Bounty Streams</h2>
               <p className="text-xl text-muted-foreground">
-                Active bounties waiting to be claimed - earn SOLANA in minutes
+                Watch, engage, and earn SOLANA in minutes - no experience needed
               </p>
             </div>
             <Button 
@@ -868,7 +868,7 @@ const Landing = () => {
               onClick={() => navigate('/bounties')}
               className="flex items-center gap-2"
             >
-              Browse All Jobs
+              Explore Bounties
             </Button>
           </div>
 
