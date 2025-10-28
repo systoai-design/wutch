@@ -22,10 +22,8 @@ serve(async (req) => {
       }
     );
 
+    // Get user (but allow null for unauthenticated requests)
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
 
     const { contentType, contentId } = await req.json();
 
@@ -33,7 +31,11 @@ serve(async (req) => {
       throw new Error('Missing required fields: contentType, contentId');
     }
 
-    console.log('Checking premium access:', { contentType, contentId, userId: user.id });
+    console.log('Checking premium access:', { 
+      contentType, 
+      contentId, 
+      userId: user?.id || 'unauthenticated' 
+    });
 
     // Get content details
     const tableName = contentType === 'livestream' ? 'livestreams' 
@@ -43,7 +45,7 @@ serve(async (req) => {
 
     const { data: content, error: contentError } = await supabaseClient
       .from(tableName)
-      .select('user_id, x402_price, is_premium')
+      .select('user_id, x402_price, is_premium, x402_asset, x402_network')
       .eq('id', contentId)
       .single();
 
@@ -52,6 +54,37 @@ serve(async (req) => {
         JSON.stringify({ error: 'Content not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // If not authenticated, return premium status but no access
+    if (!user) {
+      if (content.is_premium) {
+        return new Response(JSON.stringify({
+          hasAccess: false,
+          isPremium: true,
+          isOwner: false,
+          price: content.x402_price,
+          asset: content.x402_asset || 'SOL',
+          network: content.x402_network || 'solana',
+          message: 'Please sign in to access this premium content',
+        }), {
+          status: 402,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-Payment-Required': 'true',
+          }
+        });
+      } else {
+        return new Response(JSON.stringify({
+          hasAccess: true,
+          isPremium: false,
+          isOwner: false,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // If content is not premium, grant access
@@ -114,8 +147,8 @@ serve(async (req) => {
           isPremium: true,
           isOwner: false,
           price: content.x402_price,
-          asset: 'SOL',
-          network: 'solana',
+          asset: content.x402_asset || 'SOL',
+          network: content.x402_network || 'solana',
           message: 'Payment required to access this premium content',
         }),
         { 
@@ -124,8 +157,8 @@ serve(async (req) => {
             ...corsHeaders, 
             'Content-Type': 'application/json',
             'X-Payment-Required': 'true',
-            'X-Payment-Amount': content.x402_price.toString(),
-            'X-Payment-Asset': 'SOL',
+            'X-Payment-Amount': content.x402_price?.toString() || '0',
+            'X-Payment-Asset': content.x402_asset || 'SOL',
           } 
         }
       );

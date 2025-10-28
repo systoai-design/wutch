@@ -31,7 +31,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
   const [error, setError] = useState<string>();
 
   const checkAccess = async () => {
-    if (!user || !contentId) {
+    if (!contentId) {
       setIsLoading(false);
       return;
     }
@@ -40,6 +40,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     setError(undefined);
 
     try {
+      // Always call backend to check premium status, even without user
       const { data, error: accessError } = await supabase.functions.invoke('check-premium-access', {
         body: {
           contentType,
@@ -48,35 +49,36 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
       });
 
       if (accessError) {
-        // Handle 402 Payment Required
+        // Handle 402 Payment Required (premium content without access)
         if (accessError.message?.includes('402')) {
           setHasAccess(false);
           setIsPremium(true);
           setIsOwner(false);
           if (data) {
             setPrice(data.price);
-            setAsset(data.asset);
-            setNetwork(data.network);
+            setAsset(data.asset || 'SOL');
+            setNetwork(data.network || 'solana');
           }
         } else {
           throw accessError;
         }
       } else if (data) {
-        setHasAccess(data.hasAccess);
-        setIsPremium(data.isPremium);
-        setIsOwner(data.isOwner);
-        if (!data.hasAccess) {
+        // Always set premium status correctly
+        setHasAccess(data.hasAccess || false);
+        setIsPremium(data.isPremium || false);
+        setIsOwner(data.isOwner || false);
+        if (data.isPremium && !data.hasAccess) {
           setPrice(data.price);
-          setAsset(data.asset);
-          setNetwork(data.network);
+          setAsset(data.asset || 'SOL');
+          setNetwork(data.network || 'solana');
         }
       }
     } catch (err: any) {
       console.error('Error checking premium access:', err);
       setError(err.message || 'Failed to check access');
-      // Fail secure - deny access on error for security
+      // Fail secure - deny access on error, but preserve premium status check
       setHasAccess(false);
-      setIsPremium(false);
+      // Don't set isPremium to false on error - keep it as it was or set to true to be safe
     } finally {
       setIsLoading(false);
     }

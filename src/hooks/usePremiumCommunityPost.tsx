@@ -32,12 +32,16 @@ export const usePremiumCommunityPost = ({
   const [error, setError] = useState<string>();
 
   const checkAccess = async () => {
-    if (!postId) return;
+    if (!postId) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     setError(undefined);
 
     try {
+      // Always call backend to check premium status, even without user
       const { data, error: functionError } = await supabase.functions.invoke(
         "check-premium-access",
         {
@@ -49,7 +53,7 @@ export const usePremiumCommunityPost = ({
       );
 
       if (functionError) {
-        // Check if it's a 402 Payment Required (expected for premium content)
+        // Handle 402 Payment Required (premium content without access)
         if (functionError.message?.includes("402") || data?.isPremium) {
           setHasAccess(false);
           setIsPremium(true);
@@ -61,9 +65,10 @@ export const usePremiumCommunityPost = ({
           throw functionError;
         }
       } else {
-        setHasAccess(data.hasAccess);
-        setIsPremium(data.isPremium);
-        setIsOwner(data.isOwner);
+        // Always set premium status correctly
+        setHasAccess(data.hasAccess || false);
+        setIsPremium(data.isPremium || false);
+        setIsOwner(data.isOwner || false);
         
         if (data.isPremium && !data.hasAccess) {
           setPrice(data.price);
@@ -83,11 +88,9 @@ export const usePremiumCommunityPost = ({
   };
 
   useEffect(() => {
-    if (user && postId) {
+    if (postId) {
+      // Always check premium status, even without user
       checkAccess();
-    } else if (postId) {
-      // Not logged in, default to no access for premium
-      setIsLoading(false);
     }
   }, [user, postId]);
 
