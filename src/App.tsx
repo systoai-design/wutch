@@ -14,6 +14,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { AuthDialog } from '@/components/AuthDialog';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { ChatWidget } from '@/components/ChatWidget';
+import { PhantomWarmup } from '@/components/PhantomWarmup';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -227,6 +228,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect={false}>
+          <PhantomWarmup />
           <BrowserRouter>
             <AuthProvider>
               <Toaster />

@@ -64,11 +64,12 @@ export const usePhantomConnect = () => {
 
       // Only select if not already selected and connected
       if (!connected) {
-        console.log('Selecting Phantom wallet...');
+        console.log('[PhantomConnect] Selecting Phantom wallet...');
         select(phantomWallet.adapter.name);
         
-        // Allow brief time for selection to settle
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Increased settle time to 150ms for more reliable selection
+        console.log('[PhantomConnect] Waiting for selection to settle...');
+        await new Promise(resolve => setTimeout(resolve, 150));
         
         // Poll for wallet to be ready (up to 2 seconds)
         let ready = false;
@@ -77,51 +78,77 @@ export const usePhantomConnect = () => {
           const currentWallet = wallets.find(w => w.adapter.name === phantomWallet.adapter.name);
           if (currentWallet && currentWallet.adapter.readyState !== WalletReadyState.NotDetected) {
             ready = true;
+            console.log('[PhantomConnect] Phantom is ready');
             break;
           }
         }
         
         if (!ready) {
-          console.warn('Wallet not ready after selection, proceeding anyway');
+          throw new Error('Phantom wallet took too long to initialize');
         }
       }
       
       // Connect with retry on race conditions and selection errors
+      console.log('[PhantomConnect] Initiating connection...');
       try {
         await connect();
+        console.log('[PhantomConnect] Connection successful');
       } catch (connectError: any) {
         // Handle WalletNotSelectedError specifically
         if (connectError.name === 'WalletNotSelectedError' || connectError.message?.includes('WalletNotSelected')) {
-          console.log('WalletNotSelectedError detected, re-selecting and retrying...');
+          console.log('[PhantomConnect] WalletNotSelectedError - re-selecting and retrying...');
           select(phantomWallet.adapter.name);
           await new Promise(resolve => setTimeout(resolve, 150));
           await connect();
+          console.log('[PhantomConnect] Retry connection successful');
         } 
         // Retry once if we hit other race conditions
         else if (connectError.message?.includes('already connecting') || connectError.message?.includes('ready state')) {
-          console.log('Retry connect after race condition');
+          console.log('[PhantomConnect] Race condition detected - retrying...');
           await new Promise(resolve => setTimeout(resolve, 500));
           await connect();
+          console.log('[PhantomConnect] Retry connection successful');
         } else {
           throw connectError;
         }
       }
+
+      // Wait for publicKey to propagate after connection
+      console.log('[PhantomConnect] Waiting for publicKey to propagate...');
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Wait for publicKey to be populated with retry logic
       let address: string | undefined;
       let retries = 10;
       
-      console.log('Waiting for wallet publicKey...');
+      console.log('[PhantomConnect] Waiting for wallet publicKey...');
       while (retries > 0 && !address) {
         if (publicKey) {
           address = publicKey.toBase58();
-          console.log('Wallet connected successfully, address:', address);
+          console.log('[PhantomConnect] Wallet connected successfully, address:', address);
           break;
         }
         
         await new Promise(resolve => setTimeout(resolve, 500));
         retries--;
-        console.log(`Retrying... ${retries} attempts left`);
+        console.log(`[PhantomConnect] Retrying... ${retries} attempts left`);
+      }
+      
+      // If publicKey still not available, try one more connect
+      if (!address) {
+        console.log('[PhantomConnect] publicKey not available, attempting final connect...');
+        await new Promise(resolve => setTimeout(resolve, 250));
+        try {
+          await connect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (publicKey) {
+            address = publicKey.toBase58();
+            console.log('[PhantomConnect] Address obtained after final connect:', address);
+          }
+        } catch (finalConnectError) {
+          console.log('[PhantomConnect] Final connect attempt failed:', finalConnectError);
+        }
       }
       
       // If still no address, try window.solana as fallback (desktop)
@@ -129,7 +156,7 @@ export const usePhantomConnect = () => {
         const solana = (window as any)?.solana;
         if (solana?.publicKey) {
           address = solana.publicKey.toString();
-          console.log('Retrieved address from window.solana fallback');
+          console.log('[PhantomConnect] Retrieved address from window.solana fallback');
         }
       }
       
@@ -157,16 +184,39 @@ export const usePhantomConnect = () => {
 
       let signature: Uint8Array;
 
-      // Request signature
-      if (signMessage) {
-        signature = await signMessage(encodedMessage);
-      } else {
-        const solana = (window as any)?.solana;
-        if (!solana?.signMessage) {
-          throw new Error('Wallet does not support message signing');
+      // Request signature with retry on transient connection issues
+      console.log('[PhantomConnect] Requesting message signature...');
+      try {
+        if (signMessage) {
+          signature = await signMessage(encodedMessage);
+          console.log('[PhantomConnect] Signature obtained');
+        } else {
+          const solana = (window as any)?.solana;
+          if (!solana?.signMessage) {
+            throw new Error('Wallet does not support message signing');
+          }
+          const result = await solana.signMessage(encodedMessage, 'utf8');
+          signature = result.signature;
+          console.log('[PhantomConnect] Signature obtained via window.solana');
         }
-        const result = await solana.signMessage(encodedMessage, 'utf8');
-        signature = result.signature;
+      } catch (signError: any) {
+        // Retry signature if transient connection issue
+        if (signError.message?.includes('not connected') || signError.message?.includes('ready')) {
+          console.log('[PhantomConnect] Signature failed due to connection state - reconnecting...');
+          await connect();
+          await new Promise(resolve => setTimeout(resolve, 150));
+          
+          if (signMessage) {
+            signature = await signMessage(encodedMessage);
+          } else {
+            const solana = (window as any)?.solana;
+            const result = await solana.signMessage(encodedMessage, 'utf8');
+            signature = result.signature;
+          }
+          console.log('[PhantomConnect] Signature obtained on retry');
+        } else {
+          throw signError;
+        }
       }
       
       // Convert signature to base58
