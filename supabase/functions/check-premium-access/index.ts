@@ -45,7 +45,7 @@ serve(async (req) => {
 
     const { data: content, error: contentError } = await supabaseClient
       .from(tableName)
-      .select('user_id, x402_price, is_premium, x402_asset, x402_network, preview_duration')
+      .select('user_id, x402_price, is_premium, x402_asset, x402_network')
       .eq('id', contentId)
       .single();
 
@@ -78,7 +78,7 @@ serve(async (req) => {
           price: content.x402_price,
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
-          previewDuration: content.preview_duration ?? 3,
+          previewDuration: 3,
           creatorWallet,
           message: 'Please sign in to access this premium content',
         }), {
@@ -163,7 +163,7 @@ serve(async (req) => {
           price: content.x402_price,
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
-          previewDuration: content.preview_duration ?? 3,
+          previewDuration: 3,
           creatorWallet,
           message: 'Payment required to access this premium content',
         }),
