@@ -25,6 +25,12 @@ serve(async (req) => {
       }
     );
 
+    // Service role client to bypass RLS for wallet lookup
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
       throw new Error('Unauthorized');
@@ -71,14 +77,15 @@ serve(async (req) => {
 
     console.log('Content details:', { creatorId, price, isPremium: content.is_premium, postType });
 
-    // Get creator's wallet address
-    const { data: creatorWallet, error: walletError } = await supabaseClient
+    // Get creator's wallet address (using admin client to bypass RLS)
+    const { data: creatorWallet, error: walletError } = await supabaseAdmin
       .from('profile_wallets')
       .select('wallet_address')
       .eq('user_id', creatorId)
       .maybeSingle();
 
     if (walletError || !creatorWallet) {
+      console.error('Wallet lookup error:', walletError);
       throw new Error('Creator wallet not found');
     }
 
