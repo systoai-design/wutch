@@ -86,18 +86,24 @@ export const WalletSignUpDialog = ({
 
       // Use the magic link to sign in
       if (data?.session?.properties?.action_link) {
-        const token = new URL(data.session.properties.action_link).searchParams.get('token');
-        if (token) {
-          const { error: signInError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'magiclink',
-          });
+        const url = new URL(data.session.properties.action_link);
+        const tokenHash = url.searchParams.get('token_hash') ?? url.searchParams.get('token');
+        
+        if (!tokenHash) {
+          console.error('No token_hash found in action_link');
+          toast.error('Registration completed but authentication failed - please try logging in');
+          return;
+        }
 
-          if (signInError) {
-            console.error('Sign in error:', signInError);
-            toast.error('Failed to sign in');
-            return;
-          }
+        const { error: signInError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'magiclink',
+        });
+
+        if (signInError) {
+          console.error('Sign in error:', signInError);
+          toast.error('Failed to sign in');
+          return;
         }
       }
 

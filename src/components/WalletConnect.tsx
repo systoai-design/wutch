@@ -37,14 +37,9 @@ export const WalletConnect = () => {
         return;
       }
 
-      // Wait for session to be fully established
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session available yet, skipping wallet load');
-        return;
-      }
-
       try {
+        console.log('Loading wallet data for user:', user.id);
+        
         // Load saved wallet address from profile_wallets
         const { data: walletData, error: walletError } = await supabase
           .from('profile_wallets')
@@ -52,15 +47,21 @@ export const WalletConnect = () => {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (walletError) throw walletError;
+        if (walletError) {
+          console.error('Error fetching wallet from profile_wallets:', walletError);
+          throw walletError;
+        }
 
         if (walletData?.wallet_address) {
+          console.log('Wallet address loaded from database:', walletData.wallet_address);
           setWalletAddress(walletData.wallet_address);
         } else {
+          console.log('No wallet address found in database for user');
           setWalletAddress(null);
         }
       } catch (error) {
         console.error('Error loading wallet data:', error);
+        setWalletAddress(null);
       }
     };
 
