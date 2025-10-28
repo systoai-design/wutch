@@ -48,7 +48,9 @@ const Landing = () => {
   const [creatorStats, setCreatorStats] = useState({
     totalPaidToCreators: 0,
     activeCreators: 0,
-    averageEarnings: 0
+    averageEarnings: 0,
+    x402PremiumEarnings: 0,
+    x402ActiveCreators: 0
   });
   const [sectionsVisible, setSectionsVisible] = useState({
     bounties: false,
@@ -110,7 +112,7 @@ const Landing = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch total rewards paid
+      // Fetch bounty rewards
       const { data: claimsData, error: claimsError } = await supabase
         .from('bounty_claims')
         .select('reward_amount')
@@ -118,10 +120,55 @@ const Landing = () => {
 
       if (claimsError) throw claimsError;
 
-      const totalRewards = (claimsData || []).reduce(
+      const bountyRewards = (claimsData || []).reduce(
         (sum, claim) => sum + parseFloat(claim.reward_amount?.toString() || '0'),
         0
       );
+
+      // Fetch X402 premium earnings
+      const { data: x402Data, error: x402Error } = await supabase
+        .from('platform_transactions')
+        .select('creator_amount')
+        .eq('transaction_type', 'x402_purchase')
+        .eq('status', 'confirmed')
+        .not('seller_id', 'is', null);
+
+      if (x402Error) throw x402Error;
+
+      const x402Earnings = (x402Data || []).reduce(
+        (sum, tx) => sum + parseFloat(tx.creator_amount?.toString() || '0'),
+        0
+      );
+
+      // Fetch donations
+      const { data: donationsData, error: donationsError } = await supabase
+        .from('platform_transactions')
+        .select('creator_amount')
+        .eq('transaction_type', 'donation')
+        .eq('status', 'confirmed');
+
+      if (donationsError) throw donationsError;
+
+      const donations = (donationsData || []).reduce(
+        (sum, tx) => sum + parseFloat(tx.creator_amount?.toString() || '0'),
+        0
+      );
+
+      // Fetch share campaign payouts
+      const { data: shareData, error: shareError } = await supabase
+        .from('user_shares')
+        .select('reward_amount')
+        .eq('status', 'paid');
+
+      if (shareError) throw shareError;
+
+      const shareRewards = (shareData || []).reduce(
+        (sum, payout) => sum + parseFloat(payout.reward_amount?.toString() || '0'),
+        0
+      );
+
+      // Total rewards = bounties + X402 + donations + shares
+      const totalRewards = bountyRewards + x402Earnings + donations + shareRewards;
 
       // Fetch active watchers count
       const { count: activeWatchers, error: watchersError } = await supabase
@@ -227,6 +274,8 @@ const Landing = () => {
 
       const totalPaidToCreators = statsData?.[0]?.total_paid_to_creators || 0;
       const activeCreators = Number(statsData?.[0]?.active_creators || 0);
+      const x402PremiumEarnings = statsData?.[0]?.x402_premium_earnings || 0;
+      const x402ActiveCreators = Number(statsData?.[0]?.x402_active_creators || 0);
 
       // Calculate average earnings
       const averageEarnings = activeCreators > 0 ? totalPaidToCreators / activeCreators : 0;
@@ -234,7 +283,9 @@ const Landing = () => {
       setCreatorStats({
         totalPaidToCreators,
         activeCreators,
-        averageEarnings
+        averageEarnings,
+        x402PremiumEarnings,
+        x402ActiveCreators
       });
     } catch (error) {
       console.error('Error fetching creator stats:', error);
@@ -869,7 +920,7 @@ const Landing = () => {
           </div>
 
           {/* Hero Stats */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-16">
             <Card className="p-8 text-center glass-card bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/40 transition-all hover:scale-105 counter-animate">
               <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
               <div className="text-4xl font-bold text-primary mb-2">
@@ -890,6 +941,13 @@ const Landing = () => {
                 ${creatorStats.averageEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
               <div className="text-sm text-muted-foreground font-medium">Average Creator Earnings</div>
+            </Card>
+            <Card className="p-8 text-center glass-card bg-gradient-to-br from-purple-500/5 to-purple-500/10 hover:border-purple-500/40 transition-all hover:scale-105 counter-animate" style={{ animationDelay: '0.3s' }}>
+              <Lock className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+              <div className="text-4xl font-bold text-purple-500 mb-2">
+                ${creatorStats.x402PremiumEarnings.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+              </div>
+              <div className="text-sm text-muted-foreground font-medium">X402 Premium Sales</div>
             </Card>
           </div>
 

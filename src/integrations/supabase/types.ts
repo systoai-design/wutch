@@ -3160,6 +3160,8 @@ export type Database = {
         Returns: {
           active_creators: number
           total_paid_to_creators: number
+          x402_active_creators: number
+          x402_premium_earnings: number
         }[]
       }
       get_user_earnings_from_transactions: {
