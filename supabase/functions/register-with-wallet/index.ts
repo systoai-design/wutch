@@ -25,17 +25,23 @@ Deno.serve(async (req) => {
 
     console.log('Registration attempt for wallet:', walletAddress);
 
-    // Validate inputs
-    if (!walletAddress || !signature || !message || !username) {
+    // Validate required fields
+    if (!walletAddress || !signature || !message) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Auto-generate username if not provided
+    let finalUsername = username?.trim();
+    if (!finalUsername) {
+      finalUsername = walletAddress.slice(0, 4) + 'wutch';
+    }
+
     // Validate username format
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    if (!usernameRegex.test(username)) {
+    if (!usernameRegex.test(finalUsername)) {
       return new Response(
         JSON.stringify({ error: 'Username must be 3-20 characters and contain only letters, numbers, and underscores' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -67,7 +73,7 @@ Deno.serve(async (req) => {
     const { data: existingUsername } = await supabaseAdmin
       .from('profiles')
       .select('id')
-      .eq('username', username)
+      .eq('username', finalUsername)
       .single();
 
     if (existingUsername) {
@@ -160,8 +166,8 @@ Deno.serve(async (req) => {
       email_confirm: true,
       user_metadata: {
         wallet_address: walletAddress,
-        username: username,
-        display_name: displayName || username,
+        username: finalUsername,
+        display_name: displayName || finalUsername,
         wallet_only: true,
       },
     });
@@ -180,8 +186,8 @@ Deno.serve(async (req) => {
     const { data: updatedProfile, error: updateProfileError } = await supabaseAdmin
       .from('profiles')
       .update({
-        username: username,
-        display_name: displayName || username,
+        username: finalUsername,
+        display_name: displayName || finalUsername,
         public_wallet_address: walletAddress,
       })
       .eq('id', userId)
@@ -197,8 +203,8 @@ Deno.serve(async (req) => {
         .upsert(
           {
             id: userId,
-            username: username,
-            display_name: displayName || username,
+            username: finalUsername,
+            display_name: displayName || finalUsername,
             public_wallet_address: walletAddress,
           },
           { onConflict: 'id' }
@@ -259,7 +265,7 @@ Deno.serve(async (req) => {
         success: true,
         user: {
           id: userId,
-          username: username,
+          username: finalUsername,
           walletAddress: walletAddress,
         },
         session: sessionData,

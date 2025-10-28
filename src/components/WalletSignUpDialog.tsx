@@ -24,7 +24,7 @@ export const WalletSignUpDialog = ({
   onComplete,
   onCancel,
 }: WalletSignUpDialogProps) => {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(walletAddress.slice(0, 4) + "wutch");
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
@@ -56,11 +56,6 @@ export const WalletSignUpDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!username || username.length < 3) {
-      setUsernameError("Username is required (minimum 3 characters)");
-      return;
-    }
 
     if (usernameError) {
       return;
@@ -122,7 +117,7 @@ export const WalletSignUpDialog = ({
         <DialogHeader>
           <DialogTitle>Complete Your Registration</DialogTitle>
           <DialogDescription>
-            Choose a username to complete your account setup
+            Choose a username or use the auto-generated one
           </DialogDescription>
         </DialogHeader>
 
@@ -138,9 +133,7 @@ export const WalletSignUpDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username">
-              Username <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="username">Username</Label>
             <Input
               id="username"
               value={username}
@@ -148,15 +141,14 @@ export const WalletSignUpDialog = ({
                 setUsername(e.target.value);
                 checkUsernameAvailability(e.target.value);
               }}
-              placeholder="johndoe"
+              placeholder="e.g., E3a4wutch"
               maxLength={20}
-              required
             />
             {usernameError && (
               <p className="text-xs text-destructive">{usernameError}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              3-20 characters, letters, numbers, and underscores only
+              Auto-generated from your wallet. You can customize it if you'd like.
             </p>
           </div>
 
@@ -183,7 +175,7 @@ export const WalletSignUpDialog = ({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !!usernameError || !username}
+              disabled={isLoading || !!usernameError}
               className="flex-1"
             >
               {isLoading ? (
