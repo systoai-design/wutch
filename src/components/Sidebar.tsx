@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy } from 'lucide-react';
+import { Home, Flame, Clock, CalendarClock, Zap, DollarSign, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/store/sidebarStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -9,6 +9,9 @@ import { useEffect, useState } from 'react';
 import pumpFunLogo from '@/assets/pumpfun-logo.png';
 import wutchLogo from '@/assets/wutch-logo.png';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+
+const INITIAL_CATEGORIES_COUNT = 8;
 
 const Sidebar = () => {
   const location = useLocation();
@@ -16,6 +19,7 @@ const Sidebar = () => {
   const { isCollapsed, isMobileOpen, setMobileOpen, setCollapsed } = useSidebar();
   const activeCategory = searchParams.get('category');
   const [isHovering, setIsHovering] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   
   const isHomePage = location.pathname === '/app' || location.pathname === '/';
 
@@ -94,7 +98,7 @@ const Sidebar = () => {
           Categories
         </h3>
         <div className="space-y-1">
-          {CATEGORIES.map((category) => {
+          {(showAllCategories ? CATEGORIES : CATEGORIES.slice(0, INITIAL_CATEGORIES_COUNT)).map((category) => {
             const isActive = activeCategory === category.name;
             return (
               <Link
@@ -113,6 +117,26 @@ const Sidebar = () => {
               </Link>
             );
           })}
+          {CATEGORIES.length > INITIAL_CATEGORIES_COUNT && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllCategories(!showAllCategories)}
+              className="w-full justify-start gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              {showAllCategories ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show More ({CATEGORIES.length - INITIAL_CATEGORIES_COUNT} more)
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -191,7 +215,7 @@ const Sidebar = () => {
                 Categories
               </h3>
               <div className="space-y-1">
-                {CATEGORIES.map((category) => {
+                {(showAllCategories ? CATEGORIES : CATEGORIES.slice(0, INITIAL_CATEGORIES_COUNT)).map((category) => {
                   const isActive = activeCategory === category.name;
                   return (
                     <Link
@@ -209,13 +233,33 @@ const Sidebar = () => {
                     </Link>
                   );
                 })}
+                {CATEGORIES.length > INITIAL_CATEGORIES_COUNT && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCategories(!showAllCategories)}
+                    className="w-full justify-start gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    {showAllCategories ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        Show More ({CATEGORIES.length - INITIAL_CATEGORIES_COUNT} more)
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )}
 
           {(isCollapsed && !isHovering) && (
             <div className="mt-8 space-y-1">
-              {CATEGORIES.map((category) => {
+              {(showAllCategories ? CATEGORIES : CATEGORIES.slice(0, INITIAL_CATEGORIES_COUNT)).map((category) => {
                 const isActive = activeCategory === category.name;
                 return (
                   <Tooltip key={category.name}>
@@ -238,6 +282,27 @@ const Sidebar = () => {
                   </Tooltip>
                 );
               })}
+              {CATEGORIES.length > INITIAL_CATEGORIES_COUNT && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllCategories(!showAllCategories)}
+                      className="w-full justify-center px-2 py-3"
+                    >
+                      {showAllCategories ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{showAllCategories ? 'Show Less' : `Show ${CATEGORIES.length - INITIAL_CATEGORIES_COUNT} More`}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>

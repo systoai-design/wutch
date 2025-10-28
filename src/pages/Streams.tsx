@@ -37,8 +37,6 @@ const Streams = () => {
         return allStreams.filter(s => s.hasBounty || s.hasShareCampaign);
       case 'with-bounty':
         return allStreams.filter(s => s.hasBounty);
-      case 'without-bounty':
-        return allStreams.filter(s => !s.hasBounty);
       case 'trending':
         return [...liveStreams].sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
       default:

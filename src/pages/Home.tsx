@@ -305,11 +305,6 @@ const Home = () => {
           streams: allStreams.filter(stream => stream.has_active_bounty),
           videos: []
         };
-      case 'without-bounty':
-        return { 
-          streams: allStreams.filter(stream => !stream.has_active_bounty),
-          videos: []
-        };
       case 'upcoming':
         return { streams: upcomingStreams, videos: [] };
       case 'all':
@@ -362,7 +357,6 @@ const Home = () => {
                           {activeFilter === 'upcoming' && 'Upcoming Streams'}
                           {activeFilter === 'with-rewards' && 'Paid Campaigns 💰'}
                           {activeFilter === 'with-bounty' && 'Paid Livestreams'}
-                          {activeFilter === 'without-bounty' && 'Streams without Bounties'}
                         </h2>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -410,8 +404,6 @@ const Home = () => {
                       ? 'No trending content right now.'
                       : activeFilter === 'with-bounty'
                       ? 'No streams with bounties available.'
-                      : activeFilter === 'without-bounty'
-                      ? 'No streams without bounties.'
                       : 'No upcoming streams scheduled.'
                   }
                   action={{
