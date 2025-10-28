@@ -49,20 +49,32 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
       });
 
       if (accessError) {
-        // Supabase Functions returns error for non-2xx status codes
-        // But the response data is still available - check for payment-required fields
-        if (data && (data.isPremium !== undefined || data.price !== undefined)) {
-          // This is a 402-style response with payment details
-          setHasAccess(data.hasAccess || false);
-          setIsPremium(data.isPremium || true);
-          setIsOwner(data.isOwner || false);
-          setPrice(data.price);
-          setAsset(data.asset || 'SOL');
-          setNetwork(data.network || 'solana');
-        } else {
-          // Actual error, not a payment-required response
-          throw accessError;
+        // Supabase Functions throws FunctionsHttpError for non-2xx responses
+        // For 402 Payment Required, response body is in error.context
+        if (accessError.context) {
+          try {
+            const errorData = await accessError.context.json();
+            
+            // Check if this is a 402-style payment-required response
+            if (errorData.isPremium !== undefined || errorData.price !== undefined) {
+              // This is a 402 response with payment details
+              setHasAccess(errorData.hasAccess || false);
+              setIsPremium(errorData.isPremium || true);
+              setIsOwner(errorData.isOwner || false);
+              setPrice(errorData.price);
+              setAsset(errorData.asset || 'SOL');
+              setNetwork(errorData.network || 'solana');
+              // Don't throw - this is expected behavior for premium content
+              setIsLoading(false);
+              return;
+            }
+          } catch (parseError) {
+            console.error('Failed to parse error context:', parseError);
+          }
         }
+        
+        // If we get here, it's an actual error, not a payment-required response
+        throw accessError;
       } else if (data) {
         // Always set premium status correctly
         setHasAccess(data.hasAccess || false);
