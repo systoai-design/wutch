@@ -49,17 +49,18 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
       });
 
       if (accessError) {
-        // Handle 402 Payment Required (premium content without access)
-        if (accessError.message?.includes('402')) {
-          setHasAccess(false);
-          setIsPremium(true);
-          setIsOwner(false);
-          if (data) {
-            setPrice(data.price);
-            setAsset(data.asset || 'SOL');
-            setNetwork(data.network || 'solana');
-          }
+        // Supabase Functions returns error for non-2xx status codes
+        // But the response data is still available - check for payment-required fields
+        if (data && (data.isPremium !== undefined || data.price !== undefined)) {
+          // This is a 402-style response with payment details
+          setHasAccess(data.hasAccess || false);
+          setIsPremium(data.isPremium || true);
+          setIsOwner(data.isOwner || false);
+          setPrice(data.price);
+          setAsset(data.asset || 'SOL');
+          setNetwork(data.network || 'solana');
         } else {
+          // Actual error, not a payment-required response
           throw accessError;
         }
       } else if (data) {
