@@ -591,8 +591,8 @@ const Submit = () => {
 
             {/* Premium Content Section */}
             <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="space-y-1">
+              <div className="flex items-center justify-between mb-4 min-h-[44px]">
+                <div className="space-y-1 flex-1">
                   <Label className="flex items-center gap-2 font-semibold">
                     <Lock className="h-4 w-4" />
                     Premium Content (x402)
@@ -650,8 +650,8 @@ const Submit = () => {
 
             {/* Schedule Section */}
             <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="space-y-1">
+              <div className="flex items-center justify-between mb-4 min-h-[44px]">
+                <div className="space-y-1 flex-1">
                   <Label htmlFor="scheduleForLater" className="font-semibold cursor-pointer">
                     Schedule for Later
                   </Label>
@@ -826,12 +826,12 @@ const Submit = () => {
                 type="button" 
                 variant="outline" 
                 onClick={() => navigate(-1)} 
-                className="flex-1"
+                className="flex-1 h-12 sm:h-10"
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              <Button type="submit" className="flex-1 h-12 sm:h-10" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit Stream'}
               </Button>
             </div>
