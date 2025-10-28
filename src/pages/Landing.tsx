@@ -128,32 +128,32 @@ const Landing = () => {
         0
       );
 
-      // Fetch X402 premium earnings
+      // Fetch X402 premium purchase volume (full amounts users paid)
       const { data: x402Data, error: x402Error } = await supabase
         .from('platform_transactions')
-        .select('creator_amount')
+        .select('gross_amount')
         .eq('transaction_type', 'x402_purchase')
         .eq('status', 'confirmed')
         .not('seller_id', 'is', null);
 
       if (x402Error) throw x402Error;
 
-      const x402Earnings = (x402Data || []).reduce(
-        (sum, tx) => sum + parseFloat(tx.creator_amount?.toString() || '0'),
+      const x402PurchaseVolume = (x402Data || []).reduce(
+        (sum, tx) => sum + parseFloat(tx.gross_amount?.toString() || '0'),
         0
       );
 
-      // Fetch donations
+      // Fetch donation volume (full amounts users donated)
       const { data: donationsData, error: donationsError } = await supabase
         .from('platform_transactions')
-        .select('creator_amount')
+        .select('gross_amount')
         .eq('transaction_type', 'donation')
         .eq('status', 'confirmed');
 
       if (donationsError) throw donationsError;
 
-      const donations = (donationsData || []).reduce(
-        (sum, tx) => sum + parseFloat(tx.creator_amount?.toString() || '0'),
+      const donationVolume = (donationsData || []).reduce(
+        (sum, tx) => sum + parseFloat(tx.gross_amount?.toString() || '0'),
         0
       );
 
@@ -170,8 +170,8 @@ const Landing = () => {
         0
       );
 
-      // Total rewards = bounties + X402 + donations + shares
-      const totalRewards = bountyRewards + x402Earnings + donations + shareRewards;
+      // Total paid out = bounties + X402 purchases + donations + share rewards
+      const totalRewards = bountyRewards + x402PurchaseVolume + donationVolume + shareRewards;
 
       // Fetch active watchers count
       const { count: activeWatchers, error: watchersError } = await supabase
