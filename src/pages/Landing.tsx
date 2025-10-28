@@ -21,18 +21,18 @@ const OptimizedBountySection = lazy(() => import('@/components/OptimizedBountySe
 const LeaderboardTable = lazy(() => import('@/components/LeaderboardTable').then(m => ({ default: m.LeaderboardTable })));
 
 // Memoized stat card component with animated counter
-const StatCard = memo(({ value, label, delay, isNumber = false }: { value: string | number; label: string; delay: string; isNumber?: boolean }) => (
-  <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in-up transition-all hover:scale-105" style={{ animationDelay: delay }}>
-    <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-      {isNumber ? (
-        <AnimatedCounter value={typeof value === 'number' ? value : 0} prefix="$" />
-      ) : (
-        value
-      )}
+  const StatCard = memo(({ value, label, delay, isNumber = false, decimals = 2 }: { value: string | number; label: string; delay: string; isNumber?: boolean; decimals?: number }) => (
+    <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 animate-fade-in-up transition-all hover:scale-105" style={{ animationDelay: delay }}>
+      <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
+        {isNumber ? (
+          <AnimatedCounter value={typeof value === 'number' ? value : 0} prefix="$" decimals={decimals} />
+        ) : (
+          value
+        )}
+      </div>
+      <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">{label}</div>
     </div>
-    <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1 sm:mt-2 font-medium">{label}</div>
-  </div>
-));
+  ));
 
 const Landing = () => {
   const { isDark, toggleTheme } = useThemeStore();
@@ -427,12 +427,13 @@ const Landing = () => {
 
           {/* Stats with subtle background */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 pt-8 sm:pt-12 md:pt-16 max-w-3xl mx-auto px-2">
-            <StatCard 
-              value={isLoadingSolPrice ? 0 : stats.totalRewards * solPrice}
-              label={`Total Paid Out${isLoadingSolPrice ? '' : ` (${stats.totalRewards.toFixed(4)} SOL)`}`}
-              delay="0.4s"
-              isNumber={true}
-            />
+                <StatCard 
+                  value={isLoadingSolPrice ? 0 : stats.totalRewards * solPrice}
+                  label={`Total Paid Out${isLoadingSolPrice ? '' : ` (${stats.totalRewards.toFixed(4)} SOL)`}`}
+                  delay="0.4s"
+                  isNumber={true}
+                  decimals={2}
+                />
             <StatCard 
               value={`${stats.activeWatchers.toLocaleString()}+`}
               label="Active Earners"
