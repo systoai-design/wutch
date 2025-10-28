@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { SellerStatsCard } from "@/components/SellerStatsCard";
+import { X402Badge } from "@/components/X402Badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +78,10 @@ export const CommunityPostCard = ({
 
         <div className="flex items-center gap-2">
           {/* Post Type Badge */}
-          {post.post_type === 'service' && (
+          {post.post_type === 'service' && post.is_premium && (
+            <X402Badge size="sm" />
+          )}
+          {post.post_type === 'service' && !post.is_premium && (
             <Badge variant="outline" className="gap-1">
               <Briefcase className="h-3 w-3" />
               Service

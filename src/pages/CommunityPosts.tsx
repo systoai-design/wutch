@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MessageSquare, Plus } from "lucide-react";
 import { CommunityPostUpload } from "@/components/CommunityPostUpload";
 import { CommunityPostFeed } from "@/components/CommunityPostFeed";
+import { ServiceMarketplaceGrid } from "@/components/ServiceMarketplaceGrid";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,16 +69,12 @@ export default function CommunityPosts() {
           />
         </TabsContent>
 
-        <TabsContent value="services" className="mt-6">
-          <CommunityPostFeed
-            posts={posts}
-            isLoading={isLoading}
-            onLike={handleLike}
-            onDelete={handleDelete}
-            currentUserId={user?.id}
-            filterByType="service"
-          />
-        </TabsContent>
+            <TabsContent value="services" className="mt-6">
+              <ServiceMarketplaceGrid
+                services={posts?.filter(p => p.post_type === 'service')}
+                isLoading={isLoading}
+              />
+            </TabsContent>
 
         <TabsContent value="all" className="mt-6">
           <CommunityPostFeed

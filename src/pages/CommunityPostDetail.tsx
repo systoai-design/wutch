@@ -91,7 +91,7 @@ export default function CommunityPostDetail() {
           serviceDescription={post.service_description || ''}
           deliveryTime={post.delivery_time}
           price={price || post.x402_price || 0}
-          creatorWallet={(post.user as any).wallet_address || ''}
+          creatorWallet={(post.user as any).wallet_address || undefined}
           creatorName={post.user.display_name}
           hasAccess={hasAccess}
           onSuccess={() => {

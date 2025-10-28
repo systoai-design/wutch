@@ -29,14 +29,19 @@ export const useCommunityPostQuery = (postId: string) => {
       if (error) throw error;
 
       // Fetch wallet address separately
-      const { data: walletData } = await supabase
+      const { data: walletData, error: walletError } = await supabase
         .from("profile_wallets")
         .select("wallet_address")
         .eq("user_id", data?.user?.id)
         .single();
       
-      if (data && walletData) {
-        (data.user as any).wallet_address = walletData.wallet_address;
+      if (data) {
+        // Only set wallet_address if we have valid data, otherwise leave it null
+        (data.user as any).wallet_address = walletData?.wallet_address || null;
+        
+        if (walletError) {
+          console.warn('Could not fetch wallet address:', walletError);
+        }
       }
 
 

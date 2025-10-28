@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, Loader2, CheckCircle, XCircle, Briefcase, Clock, Wallet, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X402Badge } from '@/components/X402Badge';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +22,7 @@ interface ServiceOrderModalProps {
   serviceDescription: string;
   deliveryTime?: string;
   price: number;
-  creatorWallet: string;
+  creatorWallet: string | undefined;
   creatorName: string;
   onSuccess: () => void;
   hasAccess?: boolean;
@@ -96,6 +97,24 @@ export const ServiceOrderModal = ({
   const handlePayment = async () => {
     if (!user) {
       openAuthDialog();
+      return;
+    }
+
+    // Validate creator wallet first
+    if (!creatorWallet || creatorWallet.trim() === '') {
+      toast.error('Creator wallet not configured');
+      setErrorMessage('This creator needs to connect their Solana wallet before accepting payments');
+      setPaymentStatus('error');
+      return;
+    }
+
+    // Validate it's a valid Solana address
+    try {
+      new PublicKey(creatorWallet);
+    } catch (error) {
+      toast.error('Invalid creator wallet address');
+      setErrorMessage('Creator wallet address is invalid. Please contact the creator.');
+      setPaymentStatus('error');
       return;
     }
 
@@ -204,6 +223,7 @@ export const ServiceOrderModal = ({
           <DialogTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
             Order Service from {creatorName}
+            <X402Badge size="sm" />
           </DialogTitle>
           <DialogDescription>
             {currentStep === 'requirements' && 'Step 1: Describe your requirements'}
@@ -429,7 +449,13 @@ export const ServiceOrderModal = ({
               
               <div>
                 <h3 className="text-lg font-semibold mb-2">Order Placed Successfully!</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Secured by
+                  </p>
+                  <X402Badge size="sm" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
                   {creatorName} will start working on your order. You'll receive a notification when it's ready.
                 </p>
                 <p className="text-sm text-muted-foreground">
