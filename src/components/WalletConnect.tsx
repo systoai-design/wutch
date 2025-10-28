@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ export const WalletConnect = () => {
   const [showWalletSignUp, setShowWalletSignUp] = useState(false);
   const [walletSignUpData, setWalletSignUpData] = useState<WalletConnectionData | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const skipNextReload = useRef(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, signOut } = useAuth();
   const isMobile = useIsMobile();
@@ -21,6 +22,13 @@ export const WalletConnect = () => {
 
   useEffect(() => {
     const loadWalletData = async () => {
+      // Skip reload if we just manually set the wallet during login
+      if (skipNextReload.current) {
+        console.log('Skipping wallet reload - just logged in manually');
+        skipNextReload.current = false;
+        return;
+      }
+
       if (!user) {
         // Clear wallet state when user changes
         setWalletAddress(null);
@@ -57,11 +65,17 @@ export const WalletConnect = () => {
           setWalletAddress(walletData.wallet_address);
         } else {
           console.log('No wallet address found in database for user');
-          setWalletAddress(null);
+          // Only clear if we haven't just set it manually
+          if (!walletAddress) {
+            setWalletAddress(null);
+          }
         }
       } catch (error) {
         console.error('Error loading wallet data:', error);
-        setWalletAddress(null);
+        // Don't clear wallet address on error if it's already set
+        if (!walletAddress) {
+          setWalletAddress(null);
+        }
       }
     };
 
@@ -96,6 +110,8 @@ export const WalletConnect = () => {
       // Wallet is registered, log them in
       try {
         setIsLoggingIn(true);
+        sonnerToast.info('Existing wallet detected, logging you in...');
+        
         const { data, error } = await supabase.functions.invoke('login-with-wallet', {
           body: {
             walletAddress: result.address,
@@ -131,8 +147,9 @@ export const WalletConnect = () => {
           }
 
           sonnerToast.success('Logged in successfully!');
-          // Immediately set wallet address to avoid second click
+          // Immediately set wallet address and skip next reload
           setWalletAddress(result.address);
+          skipNextReload.current = true;
         }
       } catch (error: any) {
         console.error('Login error:', error);
