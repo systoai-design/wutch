@@ -15,6 +15,7 @@ interface PremiumAccessResult {
   asset?: string;
   network?: string;
   previewDuration?: number;
+  creatorWallet?: string | null;
   isLoading: boolean;
   error?: string;
   checkAccess: () => Promise<void>;
@@ -29,6 +30,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
   const [asset, setAsset] = useState<string>();
   const [network, setNetwork] = useState<string>();
   const [previewDuration, setPreviewDuration] = useState<number>();
+  const [creatorWallet, setCreatorWallet] = useState<string | null>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -69,6 +71,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
               // Guarantee at least 3 seconds preview
               const pd = errorData.previewDuration ?? 3;
               setPreviewDuration(pd > 0 ? pd : 3);
+              setCreatorWallet(errorData.creatorWallet || null);
               // Don't throw - this is expected behavior for premium content
               setIsLoading(false);
               return;
@@ -92,6 +95,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
           // Guarantee at least 3 seconds preview
           const pd = data.previewDuration ?? 3;
           setPreviewDuration(pd > 0 ? pd : 3);
+          setCreatorWallet(data.creatorWallet || null);
         }
       }
     } catch (err: any) {
@@ -114,6 +118,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     setAsset(undefined);
     setNetwork(undefined);
     setPreviewDuration(undefined);
+    setCreatorWallet(undefined);
     setError(undefined);
   }, [contentId]);
 
@@ -129,6 +134,7 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
     asset,
     network,
     previewDuration,
+    creatorWallet,
     isLoading,
     error,
     checkAccess,

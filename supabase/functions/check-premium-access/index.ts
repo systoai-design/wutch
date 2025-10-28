@@ -56,6 +56,18 @@ serve(async (req) => {
       );
     }
 
+    // Fetch creator wallet for payment purposes
+    let creatorWallet = null;
+    if (content.is_premium) {
+      const { data: walletData } = await supabaseClient
+        .from('profile_wallets')
+        .select('wallet_address')
+        .eq('user_id', content.user_id)
+        .maybeSingle();
+      
+      creatorWallet = walletData?.wallet_address || null;
+    }
+
     // If not authenticated, return premium status but no access
     if (!user) {
       if (content.is_premium) {
@@ -67,6 +79,7 @@ serve(async (req) => {
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
           previewDuration: content.preview_duration ?? 3,
+          creatorWallet,
           message: 'Please sign in to access this premium content',
         }), {
           status: 402,
@@ -151,6 +164,7 @@ serve(async (req) => {
           asset: content.x402_asset || 'SOL',
           network: content.x402_network || 'solana',
           previewDuration: content.preview_duration ?? 3,
+          creatorWallet,
           message: 'Payment required to access this premium content',
         }),
         { 

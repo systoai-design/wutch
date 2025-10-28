@@ -57,7 +57,6 @@ const StreamDetail = () => {
   const [showGuestPrompt, setShowGuestPrompt] = useState(false);
   const [guestPromptAction, setGuestPromptAction] = useState<'like' | 'donate'>('like');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [creatorWallet, setCreatorWallet] = useState<string>('');
   const { isAdmin: isStreamerAdmin, isModerator: isStreamerModerator } = useUserRoles(stream?.user_id);
 
   const { 
@@ -66,7 +65,8 @@ const StreamDetail = () => {
     isOwner: isPremiumOwner, 
     price, 
     asset, 
-    network, 
+    network,
+    creatorWallet,
     isLoading: isCheckingAccess,
     checkAccess 
   } = usePremiumAccess({
@@ -118,19 +118,6 @@ const StreamDetail = () => {
         // Update like count from stream data
         if (streamData.like_count !== undefined) {
           setLikeCount(streamData.like_count);
-        }
-
-        // Fetch creator wallet if premium content
-        if (streamData.is_premium) {
-          const { data: walletData } = await supabase
-            .from('profile_wallets')
-            .select('wallet_address')
-            .eq('user_id', streamData.user_id)
-            .maybeSingle();
-          
-          if (walletData?.wallet_address) {
-            setCreatorWallet(walletData.wallet_address);
-          }
         }
 
         // Fetch streamer profile (public fields only via view)
@@ -549,10 +536,11 @@ const StreamDetail = () => {
         contentTitle={stream.title}
         creatorName={streamer.display_name || streamer.username}
         price={price || 0}
-        creatorWallet={creatorWallet}
+        creatorWallet={creatorWallet || ''}
         onSuccess={() => {
-          checkAccess();
           setShowPaymentModal(false);
+          checkAccess();
+          toast.success('Payment successful! You now have access to this stream.');
         }}
       />
     )}
