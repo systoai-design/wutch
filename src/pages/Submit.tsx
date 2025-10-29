@@ -151,11 +151,39 @@ const Submit = () => {
       }
     }
 
+    // Enhanced bounty validation
     if (formData.createBounty) {
-      if (!formData.rewardPerPerson || !formData.participantLimit || !formData.secretWord) {
+      if (!formData.rewardPerPerson) {
         toast({
-          title: 'Bounty Information Required',
-          description: 'Please fill in all bounty fields',
+          title: 'Reward Amount Required',
+          description: 'Please enter the reward amount per participant',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!formData.participantLimit) {
+        toast({
+          title: 'Participant Limit Required',
+          description: 'Please specify how many participants can claim the bounty',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!formData.secretWord || formData.secretWord.trim().length === 0) {
+        toast({
+          title: 'Secret Word Required',
+          description: 'Please set a secret word for viewers to claim the bounty',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!formData.bountyWalletAddress || formData.bountyWalletAddress.trim().length === 0) {
+        toast({
+          title: 'Deposit Wallet Required',
+          description: 'Please provide your wallet address to deposit the bounty funds',
           variant: 'destructive',
         });
         return;
@@ -164,10 +192,30 @@ const Submit = () => {
       const reward = parseFloat(formData.rewardPerPerson);
       const participants = parseInt(formData.participantLimit);
       
-      if (reward < 0 || participants <= 0) {
+      if (isNaN(reward) || reward <= 0) {
         toast({
-          title: 'Invalid Bounty Values',
-          description: 'Reward must be 0 or greater and participant limit must be greater than 0',
+          title: 'Invalid Reward Amount',
+          description: 'Reward per person must be greater than 0 SOL',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (isNaN(participants) || participants <= 0) {
+        toast({
+          title: 'Invalid Participant Limit',
+          description: 'Participant limit must be at least 1',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check for Phantom wallet early
+      const { solana } = window as any;
+      if (!solana?.isPhantom) {
+        toast({
+          title: 'Phantom Wallet Not Found',
+          description: 'Please install Phantom wallet from phantom.app to create bounties',
           variant: 'destructive',
         });
         return;
@@ -218,6 +266,11 @@ const Submit = () => {
       let bountyTransactionSignature = null;
       
       if (formData.createBounty) {
+        toast({
+          title: 'Step 1: Checking Wallet',
+          description: 'Verifying wallet connection...',
+        });
+
         // Fetch user's wallet address
         const { data: walletData, error: walletError } = await supabase
           .from('profile_wallets')
@@ -226,13 +279,12 @@ const Submit = () => {
           .maybeSingle();
 
         if (walletError || !walletData?.wallet_address) {
-          throw new Error('Please connect your wallet in your profile before creating a bounty');
+          throw new Error('Wallet not connected. Please connect your wallet in your profile before creating a bounty.');
         }
 
-        // Charge the wallet for bounty + platform fee
         toast({
-          title: 'Preparing Payment',
-          description: 'Please approve the transaction in your wallet...',
+          title: 'Step 2: Preparing Transaction',
+          description: `Preparing to charge ${bountyCalc.total.toFixed(3)} SOL...`,
         });
 
         const { data: chargeData, error: chargeError } = await supabase.functions.invoke(
@@ -246,19 +298,44 @@ const Submit = () => {
           }
         );
 
-        if (chargeError || !chargeData?.success) {
-          throw new Error(chargeData?.error || 'Failed to process bounty payment');
+        if (chargeError) {
+          console.error('Transaction preparation error:', chargeError);
+          throw new Error(`Failed to prepare transaction: ${chargeError.message || 'Unknown error'}`);
+        }
+
+        if (!chargeData?.success) {
+          throw new Error(chargeData?.error || 'Transaction preparation failed');
         }
 
         // Get Phantom wallet to sign the transaction
         const { solana } = window as any;
         if (!solana?.isPhantom) {
-          throw new Error('Please install Phantom wallet to create a bounty');
+          throw new Error('Phantom wallet not detected. Please ensure Phantom is installed and try again.');
         }
+
+        // Check if Phantom is connected
+        if (!solana.isConnected) {
+          toast({
+            title: 'Connecting Wallet',
+            description: 'Please approve the wallet connection...',
+          });
+          
+          try {
+            await solana.connect();
+          } catch (connectError: any) {
+            console.error('Wallet connection error:', connectError);
+            throw new Error('Wallet connection rejected. Please connect your wallet and try again.');
+          }
+        }
+
+        toast({
+          title: 'Step 3: Approve Payment',
+          description: 'Please approve the transaction in Phantom wallet...',
+        });
 
         try {
           // Import web3 dynamically to avoid bundling issues
-          const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
+          const { Transaction, Connection } = await import('@solana/web3.js');
           
           // Decode and sign the transaction
           const transactionBuffer = Uint8Array.from(
@@ -267,8 +344,19 @@ const Submit = () => {
           );
           const transaction = Transaction.from(transactionBuffer);
           
-          const signed = await solana.signTransaction(transaction);
+          // Sign with timeout
+          const signPromise = solana.signTransaction(transaction);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Wallet approval timeout. Please try again.')), 60000)
+          );
           
+          const signed = await Promise.race([signPromise, timeoutPromise]) as any;
+          
+          toast({
+            title: 'Step 4: Confirming on Blockchain',
+            description: 'Sending transaction to Solana network...',
+          });
+
           // Send the signed transaction
           const connection = new Connection(
             'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
@@ -276,14 +364,35 @@ const Submit = () => {
           );
           
           const signature = await connection.sendRawTransaction(signed.serialize());
+          
+          toast({
+            title: 'Step 5: Waiting for Confirmation',
+            description: 'This may take a few moments...',
+          });
+
           await connection.confirmTransaction(signature, 'confirmed');
+
+          toast({
+            title: 'Payment Confirmed! ✓',
+            description: `Bounty funded with ${bountyCalc.total.toFixed(3)} SOL`,
+          });
 
           console.log('Bounty payment successful:', signature);
           bountyTransactionSignature = signature;
 
-        } catch (walletError) {
+        } catch (walletError: any) {
           console.error('Wallet transaction error:', walletError);
-          throw new Error('Payment was cancelled or failed. Please try again.');
+          
+          // Provide specific error messages
+          if (walletError.message?.includes('User rejected')) {
+            throw new Error('Transaction was rejected in Phantom wallet. Please approve the transaction to create your bounty.');
+          } else if (walletError.message?.includes('timeout')) {
+            throw new Error('Wallet approval timeout. Please try again and approve the transaction promptly.');
+          } else if (walletError.message?.includes('Insufficient')) {
+            throw new Error(`Insufficient balance. You need ${bountyCalc.total.toFixed(3)} SOL plus transaction fees.`);
+          } else {
+            throw new Error(`Payment failed: ${walletError.message || 'Unknown error'}. Please try again.`);
+          }
         }
       }
 
@@ -375,11 +484,11 @@ const Submit = () => {
       setTimeout(() => {
         navigate('/');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting stream:', error);
       toast({
         title: 'Submission Failed',
-        description: 'Failed to submit stream. Please try again.',
+        description: error.message || 'Failed to submit stream. Please try again.',
         variant: 'destructive',
       });
     } finally {
