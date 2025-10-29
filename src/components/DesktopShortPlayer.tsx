@@ -75,8 +75,8 @@ export function DesktopShortPlayer({
     if (!video) return;
 
     if (isActive) {
-      // Only play if we have access or it's not premium
-      if (hasAccess || !isPremium || isOwner) {
+      // Only play if we have access or it's not premium or in preview mode
+      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
         video.muted = isMuted;
         const playPromise = video.play();
         
@@ -117,7 +117,7 @@ export function DesktopShortPlayer({
         video.muted = true;
       }
     };
-  }, [isActive, isMuted, short.like_count, setLikeCount]);
+  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
 
   // Handle video loop
   useEffect(() => {
@@ -328,7 +328,8 @@ export function DesktopShortPlayer({
           className="w-full h-full object-contain cursor-pointer"
           loop
           playsInline
-          preload={isActive ? "auto" : "metadata"}
+          muted
+          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
           onClick={handleVideoClick}
           aria-label="Short video player"
         />

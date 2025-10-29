@@ -76,8 +76,8 @@ export function MobileShortPlayer({
     if (!video) return;
 
     if (isActive) {
-      // Only play if we have access or it's not premium
-      if (hasAccess || !isPremium || isOwner) {
+      // Only play if we have access or it's not premium or in preview mode
+      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
         video.muted = isMuted;
         const playPromise = video.play();
         
@@ -117,7 +117,7 @@ export function MobileShortPlayer({
         video.muted = true;
       }
     };
-  }, [isActive, isMuted, short.like_count, setLikeCount]);
+  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
 
   // Handle video loop
   useEffect(() => {
@@ -337,7 +337,8 @@ export function MobileShortPlayer({
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
           playsInline
           loop
-          preload={isActive ? "auto" : "none"}
+          muted
+          preload={(isActive || isPreviewMode) ? "auto" : "none"}
           onTouchEnd={handleTouchEnd}
         />
       )}
