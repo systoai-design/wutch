@@ -49,14 +49,14 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
       video.play()
         .then(() => {
           setIsPlaying(true);
-          // Stop after 10 seconds
+          // Stop after 3 seconds (matching YouTube)
           timeoutRef.current = setTimeout(() => {
             if (video) {
               video.pause();
               video.currentTime = 0;
               setIsPlaying(false);
             }
-          }, 10000);
+          }, 3000);
         })
         .catch(() => {
           // Ignore autoplay failures
@@ -119,7 +119,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             ref={videoRef}
             src={short.video_url}
             className="w-full h-full object-cover"
-            preload="metadata"
+            preload="auto"
             playsInline
             muted
             loop={false}
