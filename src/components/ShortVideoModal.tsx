@@ -223,7 +223,7 @@ export function ShortVideoModal({
       <DialogContent className="max-w-[95vw] md:max-w-4xl h-[95vh] p-0 bg-black border-none">
         <DialogTitle className="sr-only">{short?.title || 'Short video'}</DialogTitle>
         <DialogDescription className="sr-only">
-          Short video by @{short?.profiles?.username || 'anonymous'}
+          Short video by @{short?.profiles?.username || 'unknown'}
         </DialogDescription>
         <div 
           className="relative w-full h-full flex items-center justify-center bg-black"
@@ -466,7 +466,7 @@ export function ShortVideoModal({
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-base truncate drop-shadow-lg">
-                  @{short.profiles?.username || 'anonymous'}
+                  @{short.profiles?.username || 'unknown'}
                 </p>
               </div>
               <Button

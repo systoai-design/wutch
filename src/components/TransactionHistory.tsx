@@ -128,8 +128,8 @@ export function TransactionHistory() {
                   const direction = getTransactionDirection(tx);
                   const amount = direction === 'in' ? tx.creator_amount : tx.gross_amount;
                   const otherParty = direction === 'in' 
-                    ? (tx.buyer_display_name || tx.buyer_username || 'Anonymous')
-                    : (tx.seller_display_name || tx.seller_username || 'Unknown');
+                    ? (tx.buyer_display_name || tx.buyer_username || 'Unknown User')
+                    : (tx.seller_display_name || tx.seller_username || 'Unknown User');
 
                   return (
                     <div

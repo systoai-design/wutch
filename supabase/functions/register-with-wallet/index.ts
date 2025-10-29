@@ -12,7 +12,7 @@ interface RegisterRequest {
   signature: string;
   message: string;
   username: string;
-  displayName?: string;
+  displayName: string;
 }
 
 Deno.serve(async (req) => {
@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
     console.log('Registration attempt for wallet:', walletAddress);
 
     // Validate required fields
-    if (!walletAddress || !signature || !message) {
+    if (!walletAddress || !signature || !message || !displayName?.trim()) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields. Display name is mandatory.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -79,6 +79,21 @@ Deno.serve(async (req) => {
     if (existingUsername) {
       return new Response(
         JSON.stringify({ error: 'Username is already taken' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if display name is already taken
+    const trimmedDisplayName = displayName.trim();
+    const { data: existingDisplayName } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('display_name', trimmedDisplayName)
+      .single();
+
+    if (existingDisplayName) {
+      return new Response(
+        JSON.stringify({ error: 'Display name is already taken' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -167,7 +182,7 @@ Deno.serve(async (req) => {
       user_metadata: {
         wallet_address: walletAddress,
         username: finalUsername,
-        display_name: displayName || finalUsername,
+        display_name: trimmedDisplayName,
         wallet_only: true,
       },
     });
@@ -187,7 +202,7 @@ Deno.serve(async (req) => {
       .from('profiles')
       .update({
         username: finalUsername,
-        display_name: displayName || finalUsername,
+        display_name: trimmedDisplayName,
         public_wallet_address: walletAddress,
       })
       .eq('id', userId)
@@ -204,7 +219,7 @@ Deno.serve(async (req) => {
           {
             id: userId,
             username: finalUsername,
-            display_name: displayName || finalUsername,
+            display_name: trimmedDisplayName,
             public_wallet_address: walletAddress,
           },
           { onConflict: 'id' }

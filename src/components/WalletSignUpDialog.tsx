@@ -28,6 +28,7 @@ export const WalletSignUpDialog = ({
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
+  const [displayNameError, setDisplayNameError] = useState("");
 
   const checkUsernameAvailability = async (usernameToCheck: string) => {
     if (!usernameToCheck || usernameToCheck.length < 3) {
@@ -54,10 +55,39 @@ export const WalletSignUpDialog = ({
     }
   };
 
+  const checkDisplayNameAvailability = async (nameToCheck: string) => {
+    if (!nameToCheck || nameToCheck.trim().length === 0) {
+      setDisplayNameError("Display name is required");
+      return;
+    }
+
+    if (nameToCheck.trim().length > 50) {
+      setDisplayNameError("Display name must be less than 50 characters");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("display_name", nameToCheck.trim())
+      .maybeSingle();
+
+    if (data) {
+      setDisplayNameError("Display name is already taken");
+    } else {
+      setDisplayNameError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (usernameError) {
+    if (usernameError || displayNameError) {
+      return;
+    }
+
+    if (!displayName.trim()) {
+      setDisplayNameError("Display name is required");
       return;
     }
 
@@ -159,14 +189,24 @@ export const WalletSignUpDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="displayName">Display Name (Optional)</Label>
+            <Label htmlFor="displayName">Display Name</Label>
             <Input
               id="displayName"
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                checkDisplayNameAvailability(e.target.value);
+              }}
               placeholder="John Doe"
               maxLength={50}
+              required
             />
+            {displayNameError && (
+              <p className="text-xs text-destructive">{displayNameError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This is your public display name. Must be unique.
+            </p>
           </div>
 
           <div className="flex gap-2">
@@ -181,7 +221,7 @@ export const WalletSignUpDialog = ({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !!usernameError}
+              disabled={isLoading || !!usernameError || !!displayNameError || !displayName.trim()}
               className="flex-1"
             >
               {isLoading ? (
@@ -197,7 +237,7 @@ export const WalletSignUpDialog = ({
         </form>
 
         <p className="text-xs text-center text-muted-foreground">
-          You can add an email address later in your profile settings
+          Both username and display name must be unique. You can add an email address later in your profile settings.
         </p>
       </DialogContent>
     </Dialog>

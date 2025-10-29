@@ -171,7 +171,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate flex items-center gap-1">
-                {short.profiles?.display_name || short.profiles?.username || 'Anonymous'}
+                {short.profiles?.display_name || short.profiles?.username || 'Unknown'}
                 <UserBadges
                   userId={short.user_id}
                   verificationType={short.profiles?.verification_type as 'blue' | 'red' | 'none' | null}

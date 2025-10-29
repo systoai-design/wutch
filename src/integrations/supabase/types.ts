@@ -1383,7 +1383,7 @@ export type Database = {
           bio: string | null
           content_violation_count: number | null
           created_at: string | null
-          display_name: string | null
+          display_name: string
           follower_count: number | null
           id: string
           is_verified: boolean | null
@@ -1414,7 +1414,7 @@ export type Database = {
           bio?: string | null
           content_violation_count?: number | null
           created_at?: string | null
-          display_name?: string | null
+          display_name: string
           follower_count?: number | null
           id: string
           is_verified?: boolean | null
@@ -1445,7 +1445,7 @@ export type Database = {
           bio?: string | null
           content_violation_count?: number | null
           created_at?: string | null
-          display_name?: string | null
+          display_name?: string
           follower_count?: number | null
           id?: string
           is_verified?: boolean | null
