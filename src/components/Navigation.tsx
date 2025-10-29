@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Moon, Sun, User, LogOut, Plus, Shield, ShieldCheck, Flag } from 'lucide-react';
+import { Search, Menu, Moon, Sun, User, LogOut, Plus, Shield, ShieldCheck, Flag, Bell, Wallet, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -79,13 +80,14 @@ const Navigation = () => {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md transition-all duration-300">
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={toggle}
             className="hidden md:inline-flex min-h-[44px] min-w-[44px]"
+            aria-label="Toggle sidebar"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -93,7 +95,8 @@ const Navigation = () => {
             variant="ghost" 
             size="icon" 
             onClick={toggleMobile}
-            className="md:hidden min-h-[44px] min-w-[44px] -ml-2"
+            className="md:hidden min-h-[44px] min-w-[44px]"
+            aria-label="Toggle sidebar"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -102,19 +105,19 @@ const Navigation = () => {
               src={wutchLogoSm}
               srcSet={`${wutchLogoSm} 1x, ${wutchLogo} 2x`}
               alt="Wutch" 
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition-transform group-hover:scale-110"
+              className="h-10 w-10 md:h-9 md:w-9 rounded-xl transition-transform group-hover:scale-110"
               style={{ backgroundColor: 'transparent' }}
-              width="36"
-              height="36"
+              width="40"
+              height="40"
               loading="eager"
             />
-            <span className="font-bold text-base sm:text-lg hidden xs:inline text-white">
+            <span className="font-bold text-base sm:text-lg hidden xs:inline">
               Wutch
             </span>
           </Link>
         </div>
 
-        <div className="flex-1 max-w-2xl mx-3 sm:mx-4 hidden md:flex">
+        <div className="flex-1 max-w-2xl mx-4 hidden md:flex">
           <div className="relative w-full">
             <Input
               type="text"
@@ -129,13 +132,14 @@ const Navigation = () => {
               size="icon"
               onClick={handleSearch}
               className="absolute right-0 top-0 h-full min-h-[44px] min-w-[44px]"
+              aria-label="Search"
             >
               <Search className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-2">
+        <div className="flex items-center gap-2">
           {/* Search icon - mobile only */}
           <Button
             variant="ghost"
@@ -147,21 +151,24 @@ const Navigation = () => {
             <Search className="h-5 w-5" />
           </Button>
 
-          {/* Wallet Connect - visible on mobile and desktop */}
-          <div className="block">
+          {/* Wallet Connect - hidden on mobile, visible on tablet+ */}
+          <div className="hidden md:block">
             <WalletConnect />
           </div>
 
-          {/* Notification Bell */}
-          {!isGuest && <NotificationBell />}
+          {/* Notification Bell - hidden on mobile, visible on tablet+ */}
+          {!isGuest && (
+            <div className="hidden md:block">
+              <NotificationBell />
+            </div>
+          )}
 
-          {/* X402 Badge */}
+          {/* X402 Badge - desktop only */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link to="/x402-explained" className="inline-flex items-center">
-                  <X402Badge size="sm" showText className="hidden sm:inline-flex" />
-                  <X402Badge size="sm" showText={false} className="sm:hidden" />
+                <Link to="/x402-explained" className="hidden lg:inline-flex items-center">
+                  <X402Badge size="sm" showText />
                 </Link>
               </TooltipTrigger>
               <TooltipContent>
@@ -170,19 +177,19 @@ const Navigation = () => {
             </Tooltip>
           </TooltipProvider>
 
-          {/* PumpFun Icon */}
+          {/* PumpFun Icon - desktop only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => window.open('https://pump.fun/', '_blank')}
-            className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
+            className="hidden lg:inline-flex min-h-[44px] min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
             <img 
               src={pumpFunLogoSm} 
               srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
               alt="PumpFun" 
-              className="h-4 w-4 sm:h-5 sm:w-5" 
+              className="h-5 w-5" 
               style={{ backgroundColor: 'transparent' }}
               width="20" 
               height="20" 
@@ -191,19 +198,19 @@ const Navigation = () => {
             />
           </Button>
 
-          {/* Twitter/X Icon */}
+          {/* Twitter/X Icon - desktop only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
-            className="inline-flex h-9 w-9 sm:h-11 sm:w-11 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] touch-manipulation"
+            className="hidden lg:inline-flex min-h-[44px] min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
             <img 
               src={xLogoSm} 
               srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
               alt="X" 
-              className="h-4 w-4 sm:h-5 sm:w-5" 
+              className="h-5 w-5" 
               style={{ backgroundColor: 'transparent' }}
               width="20" 
               height="20" 
@@ -212,24 +219,25 @@ const Navigation = () => {
             />
           </Button>
 
-          {/* Create Button */}
+          {/* Create Button - desktop only */}
           {!isGuest && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/submit')}
-              className="hidden sm:inline-flex gap-2 min-h-[44px]"
+              className="hidden lg:inline-flex gap-2 min-h-[44px]"
             >
               <Plus className="h-5 w-5" />
               <span>Create</span>
             </Button>
           )}
           
+          {/* Theme Toggle - desktop only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="hidden sm:inline-flex transition-transform hover:scale-110 min-h-[44px] min-w-[44px]"
+            className="hidden lg:inline-flex transition-transform hover:scale-110 min-h-[44px] min-w-[44px]"
             aria-label="Toggle theme"
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -250,26 +258,29 @@ const Navigation = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[200px] bg-background z-50">
-              {/* Mobile-only theme toggle */}
-              <DropdownMenuItem 
-                onClick={toggleTheme}
-                className="cursor-pointer py-3 min-h-[44px] sm:hidden"
-              >
-                {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-                {isDark ? 'Light Mode' : 'Dark Mode'}
-              </DropdownMenuItem>
-              
+            <DropdownMenuContent align="end" className="min-w-[220px] bg-background z-50">
               {isGuest ? (
-                <DropdownMenuItem 
-                  onClick={() => openAuthDialog('signup')} 
-                  className="cursor-pointer py-3 min-h-[44px]"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Sign Up / Login
-                </DropdownMenuItem>
+                <>
+                  {/* Theme toggle for guest */}
+                  <DropdownMenuItem 
+                    onClick={toggleTheme}
+                    className="cursor-pointer py-3 min-h-[44px] lg:hidden"
+                  >
+                    {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                    {isDark ? 'Light Mode' : 'Dark Mode'}
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem 
+                    onClick={() => openAuthDialog('signup')} 
+                    className="cursor-pointer py-3 min-h-[44px]"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Sign Up / Login
+                  </DropdownMenuItem>
+                </>
               ) : (
                 <>
+                  {/* User Info Section */}
                   <div className="px-2 py-2 border-b">
                     <p className="text-sm font-medium leading-none flex items-center gap-1.5">
                       {userProfile?.display_name || userProfile?.username || 'User'}
@@ -283,10 +294,102 @@ const Navigation = () => {
                       @{userProfile?.username}
                     </p>
                   </div>
-                  <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
-                    <Link to="/profile">Profile</Link>
+
+                  {/* Theme Toggle - Mobile/Tablet only */}
+                  <DropdownMenuItem 
+                    onClick={toggleTheme}
+                    className="cursor-pointer py-3 min-h-[44px] lg:hidden"
+                  >
+                    {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                    {isDark ? 'Light Mode' : 'Dark Mode'}
                   </DropdownMenuItem>
+
+                  {/* Notifications - Mobile only */}
+                  <DropdownMenuItem 
+                    asChild
+                    className="cursor-pointer py-3 min-h-[44px] md:hidden"
+                  >
+                    <div onClick={(e) => {
+                      e.preventDefault();
+                      document.querySelector('[aria-label="Notifications"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                    }}>
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </div>
+                  </DropdownMenuItem>
+
+                  {/* Wallet - Mobile only */}
+                  <DropdownMenuItem 
+                    asChild
+                    className="cursor-pointer py-3 min-h-[44px] md:hidden"
+                  >
+                    <div onClick={(e) => {
+                      e.preventDefault();
+                      document.querySelector('[aria-label="Connect Wallet"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                    }}>
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Wallet
+                    </div>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="md:hidden" />
+
+                  {/* Main Actions */}
+                  <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
+                    <Link to="/profile">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {/* Create Content - Mobile/Tablet only */}
+                  <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px] lg:hidden">
+                    <Link to="/submit">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Content
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {/* X402 - Mobile/Tablet only */}
+                  <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px] lg:hidden">
+                    <Link to="/x402-explained">
+                      <Zap className="h-4 w-4 mr-2" />
+                      X402 Protocol
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="lg:hidden" />
+
+                  {/* External Links - Mobile/Tablet only */}
+                  <DropdownMenuItem 
+                    onClick={() => window.open('https://pump.fun/', '_blank')}
+                    className="cursor-pointer py-3 min-h-[44px] lg:hidden"
+                  >
+                    <img 
+                      src={pumpFunLogoSm} 
+                      alt="PumpFun" 
+                      className="h-4 w-4 mr-2" 
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                    PumpFun
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem 
+                    onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
+                    className="cursor-pointer py-3 min-h-[44px] lg:hidden"
+                  >
+                    <img 
+                      src={xLogoSm} 
+                      alt="X" 
+                      className="h-4 w-4 mr-2" 
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                    Follow on X
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
                   
+                  {/* Admin/Moderator Actions */}
                   {isModerator && (
                     <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
                       <Link to="/admin/reports">
@@ -310,9 +413,11 @@ const Navigation = () => {
                           Roles
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                     </>
                   )}
                   
+                  {/* Sign Out */}
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer py-3 min-h-[44px]">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
