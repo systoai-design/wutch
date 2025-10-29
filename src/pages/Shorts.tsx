@@ -207,26 +207,39 @@ const Shorts = () => {
   };
 
   const scrollToShort = useCallback((direction: 'up' | 'down') => {
-    if (!desktopScrollRef.current || isScrollingRef.current) return;
+    if (!desktopScrollRef.current) return;
 
     const now = Date.now();
-    if (now - lastScrollTime.current < 100) return; // Debounce 100ms (faster response)
+    if (now - lastScrollTime.current < 50) return; // Debounce 50ms
 
-    isScrollingRef.current = true;
     lastScrollTime.current = now;
 
     const nextIndex = direction === 'down' 
       ? Math.min(activeShortIndex + 1, shorts.length - 1)
       : Math.max(activeShortIndex - 1, 0);
 
+    // Prevent scrolling if already at boundary
+    if (nextIndex === activeShortIndex) return;
+
+    isScrollingRef.current = true;
+
     const targetElement = desktopScrollRef.current.children[nextIndex] as HTMLElement;
     if (targetElement) {
+      // Use scrollIntoView for reliable scrolling
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Fallback: also set scrollTop directly
+      setTimeout(() => {
+        if (desktopScrollRef.current) {
+          desktopScrollRef.current.scrollTop = targetElement.offsetTop;
+        }
+      }, 10);
     }
 
+    // Clear lock after animation completes
     setTimeout(() => {
       isScrollingRef.current = false;
-    }, 300); // Reduced from 500ms to 300ms
+    }, 600);
   }, [activeShortIndex, shorts.length]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
