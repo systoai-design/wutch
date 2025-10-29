@@ -44,6 +44,11 @@
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
+# Cache videos aggressively with byte-range support
+/storage/v1/object/public/wutch-videos/*
+  Cache-Control: public, max-age=31536000, immutable
+  Accept-Ranges: bytes
+
 # Cache manifest and other config files for 1 day
 /manifest.json
   Cache-Control: public, max-age=86400

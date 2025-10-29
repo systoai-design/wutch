@@ -367,7 +367,7 @@ export const WutchVideoPlayer = ({
         className="w-full h-full object-contain max-h-[100dvh]"
         onClick={handleClick}
         playsInline
-        preload="metadata"
+        preload="auto"
       />
 
       {/* Loading overlay */}
