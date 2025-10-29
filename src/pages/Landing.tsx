@@ -464,7 +464,7 @@ const Landing = () => {
                   label={`Total Paid Out${isLoadingSolPrice ? '' : ` (${stats.totalRewards.toFixed(4)} SOL)`}`}
                   delay="0.4s"
                   isNumber={true}
-                  decimals={2}
+                  decimals={stats.totalRewards * solPrice < 10 ? 4 : 2}
                 />
             <StatCard 
               value={`${stats.activeEarners.toLocaleString()}+`}
