@@ -207,7 +207,8 @@ const Shorts = () => {
   };
 
   const scrollToShort = useCallback((direction: 'up' | 'down') => {
-    if (!desktopScrollRef.current) return;
+    const container = desktopScrollRef.current;
+    if (!container) return;
 
     const now = Date.now();
     if (now - lastScrollTime.current < 50) return; // Debounce 50ms
@@ -223,16 +224,17 @@ const Shorts = () => {
 
     isScrollingRef.current = true;
 
-    const targetElement = desktopScrollRef.current.children[nextIndex] as HTMLElement;
+    // Query only the short items to avoid non-content children like <style>
+    const items = container.querySelectorAll<HTMLElement>('.desktop-short-item');
+    const targetElement = items[nextIndex];
+
     if (targetElement) {
       // Use scrollIntoView for reliable scrolling
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       
-      // Fallback: also set scrollTop directly
+      // Fallback: also set scrollTop directly to the target
       setTimeout(() => {
-        if (desktopScrollRef.current) {
-          desktopScrollRef.current.scrollTop = targetElement.offsetTop;
-        }
+        container.scrollTo({ top: targetElement.offsetTop, behavior: 'smooth' });
       }, 10);
     }
 
