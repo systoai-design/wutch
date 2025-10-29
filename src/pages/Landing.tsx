@@ -331,8 +331,8 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur-md transition-all duration-300">
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-1.5 sm:gap-3 group touch-manipulation">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-3 group touch-manipulation shrink-0">
             <img 
               src={wutchLogo} 
               alt="Wutch Logo" 
@@ -346,73 +346,73 @@ const Landing = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
             <button
               onClick={() => scrollToSection('how-it-works')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               How It Works
             </button>
             <button
               onClick={() => scrollToSection('share-campaigns')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Share Campaigns
             </button>
             <button
               onClick={() => scrollToSection('bounties')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Bounties
             </button>
             <button
               onClick={() => scrollToSection('leaderboard')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Leaderboard
             </button>
             <button
               onClick={() => scrollToSection('creator-rewards')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Creator Rewards
             </button>
             <button
               onClick={() => scrollToSection('features')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Features
             </button>
           </nav>
 
-          <div className="flex items-center gap-1 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => window.open('https://pump.fun/', '_blank')}
               aria-label="Visit PumpFun"
-              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-10 w-10"
             >
-              <img src={pumpFunLogo} alt="PumpFun" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
+              <img src={pumpFunLogo} alt="PumpFun" className="h-5 w-5" width="20" height="20" loading="lazy" decoding="async" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
               aria-label="Follow us on X"
-              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-10 w-10"
             >
-              <img src={xLogo} alt="X" className="h-4 w-4 sm:h-5 sm:w-5" width="20" height="20" loading="lazy" decoding="async" />
+              <img src={xLogo} alt="X" className="h-5 w-5" width="20" height="20" loading="lazy" decoding="async" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               asChild
-              className="transition-transform hover:scale-110 h-9 sm:h-11 px-2 sm:px-3"
+              className="transition-transform hover:scale-110 h-10 px-3 hidden sm:inline-flex"
             >
-              <Link to="/x402-explained" aria-label="Learn about X402">
-                <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                <span className="text-xs sm:text-sm font-medium">X402</span>
+              <Link to="/x402-explained" aria-label="Learn about X402" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm font-medium">X402</span>
               </Link>
             </Button>
             <Button
@@ -420,15 +420,15 @@ const Landing = () => {
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="transition-transform hover:scale-110 h-9 w-9 sm:h-11 sm:w-11"
+              className="transition-transform hover:scale-110 h-10 w-10"
             >
               {isDark ? (
-                <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Sun className="h-5 w-5" />
               ) : (
-                <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Moon className="h-5 w-5" />
               )}
             </Button>
-            <Button asChild size="default" className="transition-all hover:scale-105 text-sm sm:text-base h-9 sm:h-11 px-3 sm:px-6 touch-manipulation">
+            <Button asChild size="default" className="transition-all hover:scale-105 h-10 px-4 sm:px-6 touch-manipulation">
               <Link to="/app">Launch App</Link>
             </Button>
           </div>
