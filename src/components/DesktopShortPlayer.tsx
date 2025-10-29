@@ -78,14 +78,20 @@ export function DesktopShortPlayer({
       // Only play if we have access or it's not premium
       if (hasAccess || !isPremium || isOwner) {
         video.muted = isMuted;
+        setIsPlaying(true); // Immediately show pause button
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.log('[Short] Autoplay prevented:', error);
+            setIsPlaying(false); // Reset if play fails
             // On first interaction anywhere, try again
             const retryOnGesture = () => {
-              video.play().catch(e => console.log('[Short] Retry failed:', e));
+              setIsPlaying(true);
+              video.play().catch(e => {
+                console.log('[Short] Retry failed:', e);
+                setIsPlaying(false);
+              });
               window.removeEventListener('pointerdown', retryOnGesture);
               window.removeEventListener('touchstart', retryOnGesture);
             };
@@ -131,22 +137,27 @@ export function DesktopShortPlayer({
     return () => video.removeEventListener('ended', handleEnded);
   }, [isActive]);
 
-  // Controls auto-hide
+  // Controls auto-hide - show on mouse move, hide after 3s
   useEffect(() => {
-    if (showControls) {
+    const handleMouseMove = () => {
+      setShowControls(true);
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
       }, 3000);
-    }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
     };
-  }, [showControls]);
+  }, []);
 
   // Update isPlaying state
   useEffect(() => {
@@ -456,7 +467,7 @@ export function DesktopShortPlayer({
       </div>
 
       {/* Bottom Info Panel - Mobile Style with Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pb-8 z-10">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6 pb-8 z-10">
         <div className="flex items-start gap-3 mb-3">
           {/* Avatar */}
           <Avatar 

@@ -79,14 +79,20 @@ export function MobileShortPlayer({
       // Only play if we have access or it's not premium
       if (hasAccess || !isPremium || isOwner) {
         video.muted = isMuted;
+        setIsPlaying(true); // Immediately show pause button
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.log('[Short] Autoplay prevented:', error);
+            setIsPlaying(false); // Reset if play fails
             // On first interaction anywhere, try again
             const retryOnGesture = () => {
-              video.play().catch(e => console.log('[Short] Retry failed:', e));
+              setIsPlaying(true);
+              video.play().catch(e => {
+                console.log('[Short] Retry failed:', e);
+                setIsPlaying(false);
+              });
               window.removeEventListener('pointerdown', retryOnGesture);
               window.removeEventListener('touchstart', retryOnGesture);
             };
@@ -376,7 +382,7 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
-        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-24 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
@@ -442,7 +448,7 @@ export function MobileShortPlayer({
           onClick={onToggleMute}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${
+          <div className={`p-3 rounded-full shadow-xl backdrop-blur-sm border-2 border-white/20 ${
             isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
           }`}>
             {isMuted ? (
@@ -458,7 +464,7 @@ export function MobileShortPlayer({
           onClick={toggleLike}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className={`p-2.5 rounded-full shadow-lg backdrop-blur-sm ${isLiked ? 'bg-primary/90 scale-105' : 'bg-black/50'}`}>
+          <div className={`p-3 rounded-full shadow-xl backdrop-blur-sm border-2 border-white/20 ${isLiked ? 'bg-primary/90 scale-105' : 'bg-black/60'}`}>
             <Heart
               className={`h-6 w-6 ${isLiked ? 'fill-white text-white' : 'text-white'}`}
             />
@@ -479,7 +485,7 @@ export function MobileShortPlayer({
           }}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-2.5 rounded-full bg-black/50 shadow-lg backdrop-blur-sm">
+          <div className="p-3 rounded-full bg-black/60 shadow-xl backdrop-blur-sm border-2 border-white/20">
             <DollarSign className="h-6 w-6 text-white" />
           </div>
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
@@ -492,7 +498,7 @@ export function MobileShortPlayer({
           onClick={onOpenComments}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-2.5 rounded-full bg-black/50 hover:bg-black/60 shadow-lg backdrop-blur-sm">
+          <div className="p-3 rounded-full bg-black/60 hover:bg-black/70 shadow-xl backdrop-blur-sm border-2 border-white/20">
             <MessageCircle className="h-6 w-6 text-white" />
           </div>
           <span className="text-white text-xs font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">

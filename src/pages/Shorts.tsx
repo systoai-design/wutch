@@ -210,7 +210,7 @@ const Shorts = () => {
     if (!desktopScrollRef.current || isScrollingRef.current) return;
 
     const now = Date.now();
-    if (now - lastScrollTime.current < 300) return; // Debounce 300ms
+    if (now - lastScrollTime.current < 150) return; // Debounce 150ms (faster response)
 
     isScrollingRef.current = true;
     lastScrollTime.current = now;
@@ -226,7 +226,7 @@ const Shorts = () => {
 
     setTimeout(() => {
       isScrollingRef.current = false;
-    }, 500);
+    }, 300); // Reduced from 500ms to 300ms
   }, [activeShortIndex, shorts.length]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
