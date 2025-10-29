@@ -454,7 +454,7 @@ const Landing = () => {
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed px-2" style={{ animationDelay: '0.3s' }}>
-            Powered by X402 protocol for instant blockchain payments. Wutch rewards you with SOLANA for watching streams, creating content, claiming bounties, and sharing campaigns. Join the platform where everyone earns crypto in real-time.
+            Powered by X402 protocol for instant blockchain payments.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6 animate-fade-in-up px-2" style={{ animationDelay: '0.4s' }}>
