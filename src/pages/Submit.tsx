@@ -287,9 +287,19 @@ const Submit = () => {
           description: `Preparing to charge ${bountyCalc.total.toFixed(3)} SOL...`,
         });
 
+        // Validate session and get auth token
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          throw new Error('Authentication required. Please refresh the page and try again.');
+        }
+
         const { data: chargeData, error: chargeError } = await supabase.functions.invoke(
           'charge-bounty-wallet',
           {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: {
               amount: bountyCalc.total,
               fromWalletAddress: walletData.wallet_address,
@@ -300,6 +310,12 @@ const Submit = () => {
 
         if (chargeError) {
           console.error('Transaction preparation error:', chargeError);
+          
+          // Handle specific error types
+          if (chargeError?.message?.includes('Invalid or expired token') || chargeError?.message?.includes('401')) {
+            throw new Error('Your session has expired. Please refresh the page and try again.');
+          }
+          
           throw new Error(`Failed to prepare transaction: ${chargeError.message || 'Unknown error'}`);
         }
 
