@@ -8,16 +8,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Video, Sparkles, Loader2, Lock } from 'lucide-react';
+import { Upload, X, Video, Sparkles, Loader2, Lock, Plus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { CATEGORY_NAMES } from '@/constants/categories';
+
+interface Chapter {
+  time: number;
+  title: string;
+}
 
 export const WutchVideoUpload = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,11 +44,35 @@ export const WutchVideoUpload = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  
+  // Chapter support
+  const [chapters, setChapters] = useState<Chapter[]>([{ time: 0, title: '' }]);
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Validate video codec
+  const validateVideoCodec = async (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        const canPlay = video.canPlayType(file.type);
+        URL.revokeObjectURL(video.src);
+        resolve(canPlay === 'probably' || canPlay === 'maybe');
+      };
+      
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        resolve(false);
+      };
+      
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024 * 1024) { // 2GB limit
+      if (file.size > 2 * 1024 * 1024 * 1024) {
         toast({
           title: 'File too large',
           description: 'Video must be under 2GB',
@@ -59,15 +90,31 @@ export const WutchVideoUpload = () => {
         return;
       }
 
+      // Validate codec
+      const isValid = await validateVideoCodec(file);
+      if (!isValid) {
+        toast({
+          title: 'Codec not supported',
+          description: 'Your browser may not support this video format. Try converting to MP4 (H.264)',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setVideoFile(file);
       setVideoPreview(URL.createObjectURL(file));
+      
+      toast({
+        title: 'Video loaded',
+        description: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      });
     }
   };
 
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         toast({
           title: 'File too large',
           description: 'Thumbnail must be under 5MB',
@@ -120,7 +167,6 @@ export const WutchVideoUpload = () => {
       setGeneratedImage(data.imageUrl);
       setThumbnailPreview(data.imageUrl);
       
-      // Convert base64 to File object for upload
       const response = await fetch(data.imageUrl);
       const blob = await response.blob();
       const file = new File([blob], 'generated-thumbnail.png', { type: 'image/png' });
@@ -139,6 +185,76 @@ export const WutchVideoUpload = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Chapter management
+  const addChapter = () => {
+    setChapters([...chapters, { time: 0, title: '' }]);
+  };
+
+  const updateChapter = (index: number, field: 'time' | 'title', value: string | number) => {
+    const updated = [...chapters];
+    if (field === 'time') {
+      updated[index][field] = typeof value === 'number' ? value : parseTimeInput(value as string);
+    } else {
+      updated[index][field] = value as string;
+    }
+    // Sort by time
+    updated.sort((a, b) => a.time - b.time);
+    setChapters(updated);
+  };
+
+  const removeChapter = (index: number) => {
+    if (chapters.length > 1) {
+      setChapters(chapters.filter((_, i) => i !== index));
+    }
+  };
+
+  const parseTimeInput = (input: string): number => {
+    const parts = input.split(':').map(p => parseInt(p) || 0);
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    } else if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    return parseInt(input) || 0;
+  };
+
+  const formatTimeInput = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Auto-detect chapters from description
+  const detectChaptersFromDescription = () => {
+    const timeRegex = /(\d{1,2}):(\d{2})\s+(.+)/gm;
+    const detected: Chapter[] = [];
+    let match;
+    
+    while ((match = timeRegex.exec(formData.description)) !== null) {
+      const minutes = parseInt(match[1]);
+      const seconds = parseInt(match[2]);
+      const title = match[3].trim();
+      detected.push({ 
+        time: minutes * 60 + seconds, 
+        title 
+      });
+    }
+    
+    if (detected.length > 0) {
+      setChapters(detected);
+      toast({
+        title: 'Chapters detected!',
+        description: `Found ${detected.length} chapters in your description`,
+      });
+    } else {
+      toast({
+        title: 'No chapters found',
+        description: 'Use format like "0:00 Introduction" in your description',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -173,21 +289,25 @@ export const WutchVideoUpload = () => {
     }
 
     setIsSubmitting(true);
+    setUploadProgress(0);
 
     try {
       // Upload video
       const videoPath = `${user.id}/${Date.now()}-${videoFile.name}`;
+      
       const { error: videoError } = await supabase.storage
         .from('wutch-videos')
         .upload(videoPath, videoFile);
 
       if (videoError) throw videoError;
+      
+      setUploadProgress(100);
 
       const { data: { publicUrl: videoUrl } } = supabase.storage
         .from('wutch-videos')
         .getPublicUrl(videoPath);
 
-      // Call content moderation API (tier-based)
+      // Content moderation
       const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
         'moderate-content',
         {
@@ -206,36 +326,25 @@ export const WutchVideoUpload = () => {
         throw new Error('Content moderation failed. Please try again.');
       }
 
-      // Handle skipped moderation for trusted users
       if (moderationData.skipped) {
-        console.log('Moderation skipped:', moderationData.reason);
         toast({
           title: '✅ Instant Publish',
           description: 'Your content is going live immediately!',
         });
-      } else {
-        toast({
-          title: 'Checking content safety...',
-          description: 'This will only take a moment',
-        });
       }
 
-      // Only block if actual violation (not if skipped)
       if (moderationData.moderation.isViolation && !moderationData.skipped) {
-        console.error('Content violation detected:', moderationData.moderation);
         await supabase.storage.from('wutch-videos').remove([videoPath]);
         throw new Error(
-          `Content rejected: ${moderationData.moderation.violationCategories.join(', ')}. ` +
-          `${moderationData.moderation.reasoning}`
+          `Content rejected: ${moderationData.moderation.violationCategories.join(', ')}`
         );
       }
 
-      // Generate thumbnail from video if not provided
+      // Generate thumbnail if not provided
       let thumbnailUrl = null;
       let thumbnailToUpload = thumbnailFile;
       
       if (!thumbnailToUpload) {
-        // Generate thumbnail from first frame of video
         const video = document.createElement('video');
         video.preload = 'metadata';
         video.muted = true;
@@ -246,7 +355,7 @@ export const WutchVideoUpload = () => {
         
         thumbnailToUpload = await new Promise<File>((resolve, reject) => {
           video.onloadeddata = () => {
-            video.currentTime = 1; // Capture at 1 second
+            video.currentTime = 1;
           };
           
           video.onseeked = () => {
@@ -279,7 +388,6 @@ export const WutchVideoUpload = () => {
         });
       }
       
-      // Upload thumbnail
       if (thumbnailToUpload) {
         const thumbnailPath = `${user.id}/${Date.now()}-${thumbnailToUpload.name}`;
         const { error: thumbnailError } = await supabase.storage
@@ -300,10 +408,13 @@ export const WutchVideoUpload = () => {
       await new Promise(resolve => { video.onloadedmetadata = resolve; });
       const duration = Math.floor(video.duration);
 
-      // Create database record with approved moderation status
+      // Filter valid chapters
+      const validChapters = chapters.filter(ch => ch.title.trim() !== '');
+
+      // Create database record
       const { data, error } = await supabase
         .from('wutch_videos')
-        .insert({
+        .insert([{
           user_id: user.id,
           title: formData.title,
           description: formData.description,
@@ -320,28 +431,31 @@ export const WutchVideoUpload = () => {
           x402_price: formData.is_premium ? formData.x402_price : null,
           x402_asset: 'SOL',
           x402_network: 'solana',
-        })
+          chapters: validChapters.length > 0 ? validChapters as any : null,
+          transcoding_status: 'pending',
+          original_file_size: videoFile.size,
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-    // Store moderation record with tier info
-    await supabase
-      .from('content_moderation')
-      .insert({
-        content_type: 'wutch_video',
-        content_id: data.id,
-        user_id: user.id,
-        status: moderationData.skipped ? 'skipped' : 'approved',
-        skipped_reason: moderationData.reason || null,
-        user_tier: moderationData.userTier || 'unknown',
-        moderation_labels: moderationData.moderation,
-      });
+      // Store moderation record
+      await supabase
+        .from('content_moderation')
+        .insert({
+          content_type: 'wutch_video',
+          content_id: data.id,
+          user_id: user.id,
+          status: moderationData.skipped ? 'skipped' : 'approved',
+          skipped_reason: moderationData.reason || null,
+          user_tier: moderationData.userTier || 'unknown',
+          moderation_labels: moderationData.moderation,
+        });
 
       toast({
         title: 'Success!',
-        description: 'Your video has been uploaded',
+        description: 'Your video is being processed for optimal streaming',
       });
 
       navigate(`/wutch/${data.id}`);
@@ -354,6 +468,7 @@ export const WutchVideoUpload = () => {
       });
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -382,6 +497,7 @@ export const WutchVideoUpload = () => {
           >
             <Video className="h-12 w-12 text-muted-foreground mb-2" />
             <span className="text-sm text-muted-foreground">Click to upload video (Max 2GB)</span>
+            <span className="text-xs text-muted-foreground mt-1">Optimized for web playback</span>
             <input
               id="video"
               type="file"
@@ -390,6 +506,17 @@ export const WutchVideoUpload = () => {
               onChange={handleVideoChange}
             />
           </label>
+        )}
+        
+        {/* Upload Progress */}
+        {isSubmitting && uploadProgress > 0 && (
+          <div className="space-y-2">
+            <Progress value={uploadProgress} />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Uploading... {uploadProgress}%</span>
+              <span>{(videoFile!.size / (1024 * 1024)).toFixed(2)} MB</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -417,6 +544,7 @@ export const WutchVideoUpload = () => {
             </>
           )}
         </Button>
+        
         {thumbnailPreview ? (
           <div className="relative w-full max-w-sm">
             <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full rounded-lg border border-border" />
@@ -479,9 +607,69 @@ export const WutchVideoUpload = () => {
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Describe your video"
+          placeholder="Describe your video&#10;&#10;Tip: Add timestamps for chapters (e.g., 0:00 Introduction, 5:30 Main Content)"
           rows={4}
         />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={detectChaptersFromDescription}
+        >
+          Auto-detect Chapters from Description
+        </Button>
+      </div>
+
+      {/* Video Chapters */}
+      <div className="space-y-4 border rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Video Chapters (Optional)</Label>
+            <p className="text-sm text-muted-foreground mt-1">
+              Break your video into sections to help viewers navigate
+            </p>
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={addChapter}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Chapter
+          </Button>
+        </div>
+        
+        <div className="space-y-2">
+          {chapters.map((chapter, index) => (
+            <div key={index} className="flex gap-2 items-start">
+              <div className="flex-1 grid grid-cols-[120px_1fr] gap-2">
+                <Input
+                  type="text"
+                  placeholder="0:00"
+                  value={formatTimeInput(chapter.time)}
+                  onChange={(e) => updateChapter(index, 'time', e.target.value)}
+                />
+                <Input
+                  placeholder="Chapter title"
+                  value={chapter.title}
+                  onChange={(e) => updateChapter(index, 'title', e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+              {chapters.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeChapter(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Category */}
@@ -602,9 +790,16 @@ export const WutchVideoUpload = () => {
       {/* Submit */}
       <div className="flex gap-4">
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Uploading...' : 'Upload Video'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Processing...'}
+            </>
+          ) : (
+            'Upload Video'
+          )}
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+        <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
           Cancel
         </Button>
       </div>

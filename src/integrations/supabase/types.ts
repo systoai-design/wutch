@@ -2574,15 +2574,20 @@ export type Database = {
       }
       wutch_videos: {
         Row: {
+          available_qualities: Json | null
           category: string | null
+          chapters: Json | null
+          chapters_vtt_url: string | null
           created_at: string | null
           description: string | null
           duration: number | null
+          hls_playlist_url: string | null
           id: string
           is_premium: boolean | null
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
+          original_file_size: number | null
           promotional_link: string | null
           promotional_link_text: string | null
           status: string | null
@@ -2590,6 +2595,11 @@ export type Database = {
           thumbnail_url: string | null
           title: string
           total_donations: number | null
+          transcoded_file_sizes: Json | null
+          transcoding_completed_at: string | null
+          transcoding_error: string | null
+          transcoding_started_at: string | null
+          transcoding_status: string | null
           updated_at: string | null
           user_id: string
           video_url: string
@@ -2599,15 +2609,20 @@ export type Database = {
           x402_price: number | null
         }
         Insert: {
+          available_qualities?: Json | null
           category?: string | null
+          chapters?: Json | null
+          chapters_vtt_url?: string | null
           created_at?: string | null
           description?: string | null
           duration?: number | null
+          hls_playlist_url?: string | null
           id?: string
           is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
+          original_file_size?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           status?: string | null
@@ -2615,6 +2630,11 @@ export type Database = {
           thumbnail_url?: string | null
           title: string
           total_donations?: number | null
+          transcoded_file_sizes?: Json | null
+          transcoding_completed_at?: string | null
+          transcoding_error?: string | null
+          transcoding_started_at?: string | null
+          transcoding_status?: string | null
           updated_at?: string | null
           user_id: string
           video_url: string
@@ -2624,15 +2644,20 @@ export type Database = {
           x402_price?: number | null
         }
         Update: {
+          available_qualities?: Json | null
           category?: string | null
+          chapters?: Json | null
+          chapters_vtt_url?: string | null
           created_at?: string | null
           description?: string | null
           duration?: number | null
+          hls_playlist_url?: string | null
           id?: string
           is_premium?: boolean | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
+          original_file_size?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           status?: string | null
@@ -2640,6 +2665,11 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           total_donations?: number | null
+          transcoded_file_sizes?: Json | null
+          transcoding_completed_at?: string | null
+          transcoding_error?: string | null
+          transcoding_started_at?: string | null
+          transcoding_status?: string | null
           updated_at?: string | null
           user_id?: string
           video_url?: string

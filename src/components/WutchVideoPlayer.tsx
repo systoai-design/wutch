@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, Settings, AlertCircle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { VideoPlayerSettings } from '@/components/VideoPlayerSettings';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Hls from 'hls.js';
+
+interface Chapter {
+  time: number;
+  title: string;
+}
 
 interface WutchVideoPlayerProps {
   videoUrl: string;
@@ -13,12 +21,23 @@ interface WutchVideoPlayerProps {
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
   hasAccess?: boolean;
+  chapters?: Chapter[];
 }
 
-export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate, className, hasAccess = true }: WutchVideoPlayerProps) => {
+export const WutchVideoPlayer = ({ 
+  videoUrl, 
+  videoId, 
+  thumbnailUrl, 
+  onTimeUpdate, 
+  className, 
+  hasAccess = true,
+  chapters = []
+}: WutchVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const isMobile = useIsMobile();
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -29,31 +48,186 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
   const [isHoveringVolume, setIsHoveringVolume] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Stage 1: Loading & buffering states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Stage 2: Chapter states
+  const [currentChapter, setCurrentChapter] = useState(0);
+  const [showChapters, setShowChapters] = useState(false);
+  
+  // Stage 3: HLS states
+  const [availableQualities, setAvailableQualities] = useState<number[]>([]);
+  const [selectedQuality, setSelectedQuality] = useState<number | 'auto'>('auto');
+  const [isHLS, setIsHLS] = useState(false);
 
+  // Initialize video player with HLS support
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleLoadedMetadata = () => setDuration(video.duration);
+    const isHLSUrl = videoUrl.includes('.m3u8');
+    setIsHLS(isHLSUrl);
+
+    if (isHLSUrl) {
+      // HLS streaming
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          backBufferLength: 90,
+        });
+        
+        hlsRef.current = hls;
+        hls.loadSource(videoUrl);
+        hls.attachMedia(video);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          console.log('HLS manifest loaded');
+          const levels = hls.levels.map(l => l.height);
+          setAvailableQualities(levels);
+          setIsLoading(false);
+        });
+        
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.error('HLS error:', data);
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                setError('Network error - check your connection');
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                setError('Media error - trying to recover');
+                hls.recoverMediaError();
+                break;
+              default:
+                setError('Failed to load video stream');
+                break;
+            }
+          }
+        });
+        
+        return () => {
+          hls.destroy();
+        };
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS support (Safari)
+        video.src = videoUrl;
+        setIsLoading(false);
+      } else {
+        setError('Your browser does not support HLS streaming');
+      }
+    } else {
+      // Regular MP4 video
+      video.src = videoUrl;
+    }
+  }, [videoUrl]);
+
+  // Stage 1: Enhanced event listeners
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      setIsLoading(false);
+    };
+    
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
       onTimeUpdate?.(video.currentTime);
     };
+    
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    
+    const handleWaiting = () => setIsBuffering(true);
+    const handleCanPlay = () => {
+      setIsBuffering(false);
+      setIsLoading(false);
+    };
+    
+    const handleProgress = () => {
+      if (video.buffered.length > 0) {
+        const buffered = video.buffered.end(video.buffered.length - 1);
+        const progress = (buffered / video.duration) * 100;
+        setLoadProgress(progress);
+      }
+    };
+    
+    const handleError = () => {
+      const error = video.error;
+      let message = 'Failed to load video';
+      
+      if (error) {
+        switch (error.code) {
+          case 1: message = 'Video loading was aborted'; break;
+          case 2: message = 'Network error occurred'; break;
+          case 3: message = 'Video format not supported'; break;
+          case 4: message = 'Video source not found'; break;
+        }
+      }
+      
+      setError(message);
+      setIsLoading(false);
+      console.error('Video error:', error);
+    };
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('progress', handleProgress);
+    video.addEventListener('error', handleError);
 
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('error', handleError);
     };
   }, [onTimeUpdate]);
+
+  // Stage 2: Track current chapter
+  useEffect(() => {
+    if (chapters.length > 0) {
+      // Find last chapter that started before current time
+      let chapterIndex = 0;
+      for (let i = chapters.length - 1; i >= 0; i--) {
+        if (chapters[i].time <= currentTime) {
+          chapterIndex = i;
+          break;
+        }
+      }
+      if (chapterIndex !== currentChapter) {
+        setCurrentChapter(chapterIndex);
+      }
+    }
+  }, [currentTime, chapters]);
+
+  // Stage 3: Quality switching
+  const changeQuality = useCallback((quality: number | 'auto') => {
+    if (hlsRef.current && quality !== 'auto') {
+      const levelIndex = hlsRef.current.levels.findIndex(l => l.height === quality);
+      if (levelIndex !== -1) {
+        hlsRef.current.currentLevel = levelIndex;
+        setSelectedQuality(quality);
+      }
+    } else if (hlsRef.current) {
+      hlsRef.current.currentLevel = -1; // Auto
+      setSelectedQuality('auto');
+    }
+  }, []);
 
   // Apply playback rate
   useEffect(() => {
@@ -67,7 +241,10 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play();
+        videoRef.current.play().catch(err => {
+          console.error('Play error:', err);
+          setError('Failed to play video');
+        });
       }
     }
   };
@@ -106,12 +283,18 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     }
   };
 
+  const jumpToChapter = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      setShowChapters(false);
+    }
+  };
+
   const handleInteraction = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    // Auto-hide controls after 3 seconds
     controlsTimeoutRef.current = setTimeout(() => {
       if (isPlaying) {
         setShowControls(false);
@@ -161,7 +344,7 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Don't render video if no access (security: prevents URL exposure)
+  // Don't render video if no access
   if (!hasAccess) {
     return (
       <div className={cn("relative bg-black rounded-lg overflow-hidden flex items-center justify-center", className)}>
@@ -180,15 +363,62 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
     >
       <video
         ref={videoRef}
-        src={videoUrl}
         poster={thumbnailUrl}
         className="w-full h-full object-contain max-h-[100dvh]"
         onClick={handleClick}
         playsInline
+        preload="metadata"
       />
 
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
+          <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
+          <p className="text-white text-sm">Loading video...</p>
+        </div>
+      )}
+
+      {/* Buffering overlay */}
+      {isBuffering && !isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <Loader2 className="h-16 w-16 text-white animate-spin" />
+        </div>
+      )}
+
+      {/* Error overlay */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-40 p-6">
+          <Alert variant="destructive" className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="mt-2">
+              {error}
+            </AlertDescription>
+            <Button 
+              onClick={() => {
+                setError(null);
+                window.location.reload();
+              }}
+              variant="outline"
+              size="sm"
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </Alert>
+        </div>
+      )}
+
+      {/* Current chapter overlay */}
+      {chapters.length > 0 && currentChapter < chapters.length && !isLoading && !error && (
+        <div className="absolute top-4 left-4 bg-black/70 px-3 py-1.5 rounded-lg backdrop-blur-sm z-20">
+          <div className="text-white text-sm font-medium">
+            {chapters[currentChapter].title}
+          </div>
+        </div>
+      )}
+
       {/* Center play/pause overlay */}
-      {!isPlaying && (
+      {!isPlaying && !isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
           <Button
             size="icon"
@@ -201,13 +431,41 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
         </div>
       )}
 
-      {/* Thin progress bar at bottom (always visible) */}
+      {/* Buffered progress bar */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-30">
         <div 
-          className="h-full bg-primary transition-all"
+          className="h-full bg-white/30 transition-all"
+          style={{ width: `${loadProgress}%` }}
+        />
+        <div 
+          className="h-full bg-primary transition-all absolute top-0 left-0"
           style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
         />
       </div>
+
+      {/* Chapters panel */}
+      {showChapters && chapters.length > 0 && (
+        <div className="absolute right-4 bottom-20 bg-black/95 rounded-lg p-3 max-h-64 overflow-y-auto w-72 z-40 backdrop-blur-sm">
+          <h4 className="text-sm font-semibold mb-2 text-white">Chapters</h4>
+          <div className="space-y-1">
+            {chapters.map((chapter, index) => (
+              <button
+                key={index}
+                onClick={() => jumpToChapter(chapter.time)}
+                className={cn(
+                  "w-full text-left px-2 py-1.5 rounded text-sm transition-colors",
+                  currentChapter === index 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                )}
+              >
+                <div className="font-medium">{formatTime(chapter.time)}</div>
+                <div className="text-xs opacity-80 truncate">{chapter.title}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Controls overlay */}
       <div
@@ -216,10 +474,9 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
           showControls ? "opacity-100" : "opacity-0"
         )}
       >
-
         {/* Bottom controls */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 space-y-3 pointer-events-auto">
-          {/* Interactive progress bar */}
+          {/* Interactive progress bar with chapter markers */}
           <div 
             className="relative group/progress cursor-pointer"
             onClick={(e) => {
@@ -228,9 +485,18 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
               handleSeek([pos * duration]);
             }}
           >
-            <div className="h-1 bg-white/30 rounded-full overflow-hidden group-hover/progress:h-1.5 transition-all">
+            <div className="h-1 bg-white/30 rounded-full overflow-hidden group-hover/progress:h-1.5 transition-all relative">
+              {/* Chapter markers */}
+              {chapters.map((chapter, index) => (
+                <div
+                  key={index}
+                  className="absolute top-0 bottom-0 w-0.5 bg-white/40 hover:bg-white transition-colors cursor-pointer z-10"
+                  style={{ left: `${(chapter.time / duration) * 100}%` }}
+                  title={chapter.title}
+                />
+              ))}
               <div 
-                className="h-full bg-primary"
+                className="h-full bg-primary relative z-20"
                 style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
               />
             </div>
@@ -283,7 +549,44 @@ export const WutchVideoPlayer = ({ videoUrl, videoId, thumbnailUrl, onTimeUpdate
 
             <div className="flex-1" />
 
-            {/* Settings */}
+            {/* Chapters button */}
+            {chapters.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-white hover:text-white hover:bg-white/20 text-xs"
+                onClick={() => setShowChapters(!showChapters)}
+              >
+                Chapters ({chapters.length})
+              </Button>
+            )}
+
+            {/* Quality selector for HLS */}
+            {isHLS && availableQualities.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 h-9">
+                    <Settings className="h-4 w-4 mr-1" />
+                    {selectedQuality === 'auto' ? 'Auto' : `${selectedQuality}p`}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => changeQuality('auto')}>
+                    Auto (recommended)
+                  </DropdownMenuItem>
+                  {availableQualities.map(quality => (
+                    <DropdownMenuItem 
+                      key={quality} 
+                      onClick={() => changeQuality(quality)}
+                    >
+                      {quality}p
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Playback speed */}
             <VideoPlayerSettings 
               playbackRate={playbackRate}
               onPlaybackRateChange={setPlaybackRate}
