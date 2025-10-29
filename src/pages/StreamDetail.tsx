@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { shareStreamToTwitter } from '@/utils/shareUtils';
 import { parseContentUrl, generateContentUrl } from '@/utils/urlHelpers';
 import { makeAbsoluteUrl } from '@/utils/appUrl';
+import { LinkifiedText } from '@/components/LinkifiedText';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { VerificationBadge } from '@/components/VerificationBadge';
@@ -472,7 +473,9 @@ const StreamDetail = () => {
                   <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
                 </TabsList>
                 <TabsContent value="description" className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
-                  <p className="text-foreground text-sm sm:text-base">{stream.description}</p>
+                  <p className="text-foreground text-sm sm:text-base">
+                    <LinkifiedText text={stream.description || ''} />
+                  </p>
                   
                   {stream.promotional_link && (
                     <Button className="gap-2 w-full" size={isMobile ? "default" : "lg"} asChild>

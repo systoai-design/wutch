@@ -13,6 +13,8 @@ import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { useNavigate } from 'react-router-dom';
+import DonationModal from '@/components/DonationModal';
+import { LinkifiedText } from '@/components/LinkifiedText';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -470,7 +472,7 @@ export function DesktopShortPlayer({
           )}
           {short.description && (
             <p className="text-sm text-gray-200 line-clamp-3 leading-relaxed">
-              {short.description}
+              <LinkifiedText text={short.description} />
             </p>
           )}
         </div>

@@ -24,6 +24,7 @@ import { CreateSharingCampaign } from '@/components/CreateSharingCampaign';
 import { ShareAndEarn } from '@/components/ShareAndEarn';
 import { shareWutchVideoToTwitter } from '@/utils/shareUtils';
 import { makeAbsoluteUrl } from '@/utils/appUrl';
+import { LinkifiedText } from '@/components/LinkifiedText';
 
 const WutchVideoDetail = () => {
   const params = useParams<{ id: string }>();
@@ -491,7 +492,9 @@ const WutchVideoDetail = () => {
               {/* Description & Category */}
               {video.description && (
                 <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-sm whitespace-pre-wrap">{video.description}</p>
+                  <p className="text-sm">
+                    <LinkifiedText text={video.description} />
+                  </p>
                   {video.category && (
                     <Badge variant="secondary" className="mt-2">
                       {video.category}
