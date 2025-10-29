@@ -75,10 +75,7 @@ export function DesktopShortPlayer({
     if (!video) return;
 
     if (isActive) {
-      video.muted = isMuted;
-      // Try to play - don't force mute if it fails
-      video.play().catch(error => console.log('Autoplay prevented:', error));
-      setIsPlaying(true);
+      // Don't set isPlaying eagerly - let event listeners handle it
       // Fetch like count when video becomes active
       if (short.like_count !== undefined) {
         setLikeCount(short.like_count);
