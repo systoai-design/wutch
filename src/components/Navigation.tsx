@@ -21,8 +21,7 @@ import wutchLogo from '@/assets/wutch-logo.png';
 import wutchLogoSm from '@/assets/wutch-logo-sm.png';
 import xLogo from '@/assets/x-logo.png';
 import xLogoSm from '@/assets/x-logo-sm.png';
-import pumpFunLogo from '@/assets/pumpfun-logo.png';
-import pumpFunLogoSm from '@/assets/pumpfun-logo-sm.png';
+import pumpFunIcon from '@/assets/pumpfun-icon.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
@@ -186,8 +185,7 @@ const Navigation = () => {
             aria-label="Visit PumpFun"
           >
             <img 
-              src={pumpFunLogoSm} 
-              srcSet={`${pumpFunLogoSm} 1x, ${pumpFunLogo} 2x`}
+              src={pumpFunIcon} 
               alt="PumpFun" 
               className="h-5 w-5" 
               style={{ backgroundColor: 'transparent' }}
@@ -361,18 +359,18 @@ const Navigation = () => {
                   <DropdownMenuSeparator className="lg:hidden" />
 
                   {/* External Links - Mobile/Tablet only */}
-                  <DropdownMenuItem 
-                    onClick={() => window.open('https://pump.fun/', '_blank')}
-                    className="cursor-pointer py-3 min-h-[44px] lg:hidden"
-                  >
-                    <img 
-                      src={pumpFunLogoSm} 
-                      alt="PumpFun" 
-                      className="h-4 w-4 mr-2" 
-                      style={{ backgroundColor: 'transparent' }}
-                    />
-                    PumpFun
-                  </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => window.open('https://pump.fun/', '_blank')}
+              className="cursor-pointer py-3 min-h-[44px] lg:hidden"
+            >
+              <img 
+                src={pumpFunIcon} 
+                alt="PumpFun" 
+                className="h-4 w-4 mr-2" 
+                style={{ backgroundColor: 'transparent' }}
+              />
+              PumpFun
+            </DropdownMenuItem>
 
                   <DropdownMenuItem 
                     onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
