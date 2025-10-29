@@ -1,6 +1,6 @@
 // Service Worker for Wutch - Mobile Performance Optimization
-const CACHE_NAME = 'wutch-cache-v1';
-const RUNTIME_CACHE = 'wutch-runtime-v1';
+const CACHE_NAME = 'wutch-cache-v2';
+const RUNTIME_CACHE = 'wutch-runtime-v2';
 
 // Assets to precache
 const PRECACHE_URLS = [
@@ -35,6 +35,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Network-first for HTML documents (always fresh content)
+  if (event.request.destination === 'document' || event.request.url.endsWith('.html') || event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
