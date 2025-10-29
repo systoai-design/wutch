@@ -53,7 +53,6 @@ const Submit = () => {
     x402_price: 0.001,
     // Bounty fields
     createBounty: false,
-    bountyWalletAddress: 'FFkRbqaArL1BVrUvAptPEg8kwTMu3WPLW37U2i8KieQn',
     rewardPerPerson: '',
     participantLimit: '',
     secretWord: '',
@@ -180,15 +179,6 @@ const Submit = () => {
         return;
       }
 
-      if (!formData.bountyWalletAddress || formData.bountyWalletAddress.trim().length === 0) {
-        toast({
-          title: 'Deposit Wallet Required',
-          description: 'Please provide your wallet address to deposit the bounty funds',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       const reward = parseFloat(formData.rewardPerPerson);
       const participants = parseInt(formData.participantLimit);
       
@@ -264,78 +254,22 @@ const Submit = () => {
 
       // Process bounty payment FIRST if bounty is enabled
       let bountyTransactionSignature = null;
+      const ESCROW_WALLET = 'DzrB51hp4RoR8ctsbKeuyJHe4KXr24cGewyTucBZezrF';
       
       if (formData.createBounty) {
         toast({
           title: 'Step 1: Checking Wallet',
-          description: 'Verifying wallet connection...',
+          description: 'Connecting to Phantom wallet...',
         });
 
-        // Fetch user's wallet address
-        const { data: walletData, error: walletError } = await supabase
-          .from('profile_wallets')
-          .select('wallet_address')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (walletError || !walletData?.wallet_address) {
-          throw new Error('Wallet not connected. Please connect your wallet in your profile before creating a bounty.');
-        }
-
-        toast({
-          title: 'Step 2: Preparing Transaction',
-          description: `Preparing to charge ${bountyCalc.total.toFixed(3)} SOL...`,
-        });
-
-        // Validate session and get auth token
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !session) {
-          throw new Error('Authentication required. Please refresh the page and try again.');
-        }
-
-        const { data: chargeData, error: chargeError } = await supabase.functions.invoke(
-          'charge-bounty-wallet',
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: {
-              amount: bountyCalc.total,
-              fromWalletAddress: walletData.wallet_address,
-              toWalletAddress: formData.bountyWalletAddress,
-            },
-          }
-        );
-
-        if (chargeError) {
-          console.error('Transaction preparation error:', chargeError);
-          
-          // Handle specific error types
-          if (chargeError?.message?.includes('Invalid or expired token') || chargeError?.message?.includes('401')) {
-            throw new Error('Your session has expired. Please refresh the page and try again.');
-          }
-          
-          throw new Error(`Failed to prepare transaction: ${chargeError.message || 'Unknown error'}`);
-        }
-
-        if (!chargeData?.success) {
-          throw new Error(chargeData?.error || 'Transaction preparation failed');
-        }
-
-        // Get Phantom wallet to sign the transaction
+        // Get Phantom wallet
         const { solana } = window as any;
         if (!solana?.isPhantom) {
           throw new Error('Phantom wallet not detected. Please ensure Phantom is installed and try again.');
         }
 
-        // Check if Phantom is connected
+        // Connect if needed
         if (!solana.isConnected) {
-          toast({
-            title: 'Connecting Wallet',
-            description: 'Please approve the wallet connection...',
-          });
-          
           try {
             await solana.connect();
           } catch (connectError: any) {
@@ -345,44 +279,66 @@ const Submit = () => {
         }
 
         toast({
-          title: 'Step 3: Approve Payment',
+          title: 'Step 2: Checking Balance',
+          description: 'Verifying wallet funds...',
+        });
+
+        // Import Solana web3
+        const { Connection, SystemProgram, Transaction, LAMPORTS_PER_SOL, PublicKey } = await import('@solana/web3.js');
+        
+        const connection = new Connection(
+          'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
+          'confirmed'
+        );
+
+        // Check balance
+        const balance = await connection.getBalance(solana.publicKey);
+        const balanceInSOL = balance / LAMPORTS_PER_SOL;
+
+        if (balanceInSOL < bountyCalc.total) {
+          throw new Error(
+            `Insufficient balance. You need ${bountyCalc.total.toFixed(4)} SOL but only have ${balanceInSOL.toFixed(4)} SOL. Please add SOL to your wallet.`
+          );
+        }
+
+        toast({
+          title: 'Step 3: Preparing Deposit',
+          description: `Preparing ${bountyCalc.total.toFixed(4)} SOL deposit to escrow...`,
+        });
+
+        // Create transaction to escrow wallet
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: solana.publicKey,
+            toPubkey: new PublicKey(ESCROW_WALLET),
+            lamports: Math.floor(bountyCalc.total * LAMPORTS_PER_SOL),
+          })
+        );
+
+        // Get recent blockhash
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = solana.publicKey;
+
+        toast({
+          title: 'Step 4: Approve Payment',
           description: 'Please approve the transaction in Phantom wallet...',
         });
 
         try {
-          // Import web3 dynamically to avoid bundling issues
-          const { Transaction, Connection } = await import('@solana/web3.js');
-          
-          // Decode and sign the transaction
-          const transactionBuffer = Uint8Array.from(
-            atob(chargeData.transaction),
-            c => c.charCodeAt(0)
-          );
-          const transaction = Transaction.from(transactionBuffer);
-          
-          // Sign with timeout
-          const signPromise = solana.signTransaction(transaction);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Wallet approval timeout. Please try again.')), 60000)
-          );
-          
-          const signed = await Promise.race([signPromise, timeoutPromise]) as any;
+          // Sign transaction
+          const signed = await solana.signTransaction(transaction);
           
           toast({
-            title: 'Step 4: Confirming on Blockchain',
+            title: 'Step 5: Confirming on Blockchain',
             description: 'Sending transaction to Solana network...',
           });
 
-          // Send the signed transaction
-          const connection = new Connection(
-            'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
-            'confirmed'
-          );
-          
+          // Send and confirm
           const signature = await connection.sendRawTransaction(signed.serialize());
           
           toast({
-            title: 'Step 5: Waiting for Confirmation',
+            title: 'Step 6: Waiting for Confirmation',
             description: 'This may take a few moments...',
           });
 
@@ -891,16 +847,6 @@ const Submit = () => {
                         Reveal this word during your stream for viewers to claim the bounty
                       </p>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bountyWallet">Bounty Deposit Wallet</Label>
-                    <Input
-                      id="bountyWallet"
-                      value={formData.bountyWalletAddress}
-                      onChange={(e) => setFormData({ ...formData, bountyWalletAddress: e.target.value })}
-                      className="font-mono text-sm"
-                    />
                   </div>
 
                   {formData.rewardPerPerson && formData.participantLimit && (
