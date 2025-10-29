@@ -210,7 +210,7 @@ const Shorts = () => {
     if (!desktopScrollRef.current || isScrollingRef.current) return;
 
     const now = Date.now();
-    if (now - lastScrollTime.current < 150) return; // Debounce 150ms (faster response)
+    if (now - lastScrollTime.current < 100) return; // Debounce 100ms (faster response)
 
     isScrollingRef.current = true;
     lastScrollTime.current = now;

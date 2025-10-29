@@ -78,16 +78,14 @@ export function DesktopShortPlayer({
       // Only play if we have access or it's not premium
       if (hasAccess || !isPremium || isOwner) {
         video.muted = isMuted;
-        setIsPlaying(true); // Immediately show pause button
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.log('[Short] Autoplay prevented:', error);
-            setIsPlaying(false); // Reset if play fails
+            setIsPlaying(false);
             // On first interaction anywhere, try again
             const retryOnGesture = () => {
-              setIsPlaying(true);
               video.play().catch(e => {
                 console.log('[Short] Retry failed:', e);
                 setIsPlaying(false);
@@ -222,7 +220,14 @@ export function DesktopShortPlayer({
   }, [isMuted, volume]);
 
   const handleVideoClick = () => {
+    // Toggle play/pause on click
+    togglePlayPause();
+    // Also show controls briefly
     setShowControls(true);
+    // Unmute on first click if video is playing muted
+    if (isMuted && videoRef.current && !videoRef.current.paused) {
+      onToggleMute();
+    }
   };
 
   const togglePlayPause = (e?: React.MouseEvent) => {
@@ -388,11 +393,11 @@ export function DesktopShortPlayer({
           <Button
             size="icon"
             onClick={handleLikeClick}
-            className={`h-14 w-14 rounded-full transition-all ${
+            className={`h-14 w-14 rounded-full transition-all hover:scale-110 ${
               isLiked 
                 ? 'bg-primary/90 hover:bg-primary scale-110' 
-                : 'bg-black/50 hover:bg-black/70'
-            } text-white border-2 border-white/20 shadow-lg`}
+                : 'bg-black/60 hover:bg-black/70'
+            } text-white border-2 border-white/30 shadow-2xl`}
           >
             <Heart className={`h-7 w-7 ${isLiked ? 'fill-current' : ''}`} />
           </Button>
@@ -409,7 +414,7 @@ export function DesktopShortPlayer({
               e.stopPropagation();
               onOpenComments();
             }}
-            className="h-14 w-14 rounded-full bg-black/50 hover:bg-black/70 text-white border-2 border-white/20 shadow-lg"
+            className="h-14 w-14 rounded-full bg-black/60 hover:bg-black/70 text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
           >
             <MessageCircle className="h-7 w-7" />
           </Button>
@@ -425,7 +430,7 @@ export function DesktopShortPlayer({
             e.stopPropagation();
             onShare();
           }}
-          className="h-14 w-14 rounded-full bg-black/50 hover:bg-black/70 text-white border-2 border-white/20 shadow-lg"
+          className="h-14 w-14 rounded-full bg-black/60 hover:bg-black/70 text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
         >
           <Share2 className="h-7 w-7" />
         </Button>
@@ -442,7 +447,7 @@ export function DesktopShortPlayer({
                 onOpenDonation();
               }
             }}
-            className="h-14 w-14 rounded-full bg-primary/90 hover:bg-primary text-white border-2 border-white/20 shadow-lg"
+            className="h-14 w-14 rounded-full bg-primary/90 hover:bg-primary text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
           >
             <DollarSign className="h-7 w-7" />
           </Button>
@@ -459,7 +464,7 @@ export function DesktopShortPlayer({
               e.stopPropagation();
               window.open(short.promotional_link!, '_blank');
             }}
-            className="h-14 w-14 rounded-full bg-accent/90 hover:bg-accent text-white border-2 border-white/20 shadow-lg"
+            className="h-14 w-14 rounded-full bg-accent/90 hover:bg-accent text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
           >
             <ExternalLink className="h-7 w-7" />
           </Button>
@@ -467,7 +472,7 @@ export function DesktopShortPlayer({
       </div>
 
       {/* Bottom Info Panel - Mobile Style with Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6 pb-8 z-10">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-6 pb-8 z-10">
         <div className="flex items-start gap-3 mb-3">
           {/* Avatar */}
           <Avatar 
