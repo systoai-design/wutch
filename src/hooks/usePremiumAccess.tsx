@@ -59,10 +59,11 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
         
         // Try to extract JSON from error message first (format: "Edge function returned 402: Error, {json}")
         if (accessError.message && typeof accessError.message === 'string') {
-          const jsonMatch = accessError.message.match(/\{[^}]+\}/);
-          if (jsonMatch) {
+          // Find the JSON object in the error message - look for the first { and parse from there
+          const jsonStart = accessError.message.indexOf('{');
+          if (jsonStart !== -1) {
             try {
-              errorData = JSON.parse(jsonMatch[0]);
+              errorData = JSON.parse(accessError.message.substring(jsonStart));
             } catch (e) {
               console.error('Failed to parse JSON from error message:', e);
             }
