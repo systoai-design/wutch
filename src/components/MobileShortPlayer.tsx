@@ -77,24 +77,26 @@ export function MobileShortPlayer({
 
     if (isActive) {
       video.muted = isMuted;
+      // Try to play - don't force mute if it fails
       video.play().catch((error) => {
-        console.log('Autoplay prevented, trying muted:', error);
-        video.muted = true;
-        video.play().catch(e => console.log('Muted autoplay failed:', e));
+        console.log('Autoplay prevented:', error);
       });
       setIsPlaying(true);
       if (short.like_count !== undefined) {
         setLikeCount(short.like_count);
       }
     } else {
+      // Immediately pause, reset, and mute inactive videos
       video.pause();
       video.currentTime = 0;
+      video.muted = true;
       setIsPlaying(false);
     }
 
     return () => {
       if (video) {
         video.pause();
+        video.muted = true;
       }
     };
   }, [isActive, isMuted, short.like_count, setLikeCount]);

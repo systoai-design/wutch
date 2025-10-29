@@ -95,6 +95,13 @@ const Shorts = () => {
     hasInitializedRef.current = true;
   }, [shorts, location, isMobile]);
 
+  // Force first short to be active immediately when shorts load
+  useEffect(() => {
+    if (shorts.length > 0 && activeShortIndex === 0 && !hasInitializedRef.current) {
+      setActiveShortIndex(0);
+    }
+  }, [shorts.length, activeShortIndex]);
+
   // Reset initialization flag when location changes (for navigation from home)
   useEffect(() => {
     hasInitializedRef.current = false;
@@ -122,7 +129,7 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 50);
+            }, 100);
           }
         });
       },
@@ -168,7 +175,7 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 50);
+            }, 100);
           }
         });
       },

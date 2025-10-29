@@ -29,24 +29,25 @@ export function useAutoPlayShort({
       }
       
       video.muted = isMuted;
+      // Try to play - don't force mute if it fails
       video.play().catch((error) => {
-        console.log('Autoplay prevented, trying muted:', error);
-        video.muted = true;
-        video.play().catch(e => console.log('Muted autoplay failed:', e));
+        console.log('Autoplay prevented:', error);
       });
       
       hasPlayedRef.current = true;
     } else {
-      // Immediately pause and reset when inactive
+      // Immediately pause, reset, and mute inactive videos
       video.pause();
       video.currentTime = 0;
+      video.muted = true;
       hasPlayedRef.current = false;
     }
 
     return () => {
-      // Cleanup: ensure video is paused
+      // Cleanup: ensure video is paused and muted
       if (video) {
         video.pause();
+        video.muted = true;
       }
     };
   }, [isActive, isMuted, onBecomeActive]);

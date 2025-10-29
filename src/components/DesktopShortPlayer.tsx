@@ -76,6 +76,7 @@ export function DesktopShortPlayer({
 
     if (isActive) {
       video.muted = isMuted;
+      // Try to play - don't force mute if it fails
       video.play().catch(error => console.log('Autoplay prevented:', error));
       setIsPlaying(true);
       // Fetch like count when video becomes active
@@ -83,14 +84,17 @@ export function DesktopShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
+      // Immediately pause, reset, and mute inactive videos
       video.pause();
       video.currentTime = 0;
+      video.muted = true;
       setIsPlaying(false);
     }
 
     return () => {
       if (video) {
         video.pause();
+        video.muted = true;
       }
     };
   }, [isActive, isMuted, short.like_count, setLikeCount]);
