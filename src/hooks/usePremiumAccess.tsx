@@ -54,34 +54,55 @@ export const usePremiumAccess = ({ contentType, contentId }: UsePremiumAccessPro
 
       if (accessError) {
         // Supabase Functions throws FunctionsHttpError for non-2xx responses
-        // For 402 Payment Required, response body is in error.context
-        if (accessError.context) {
+        // For 402 Payment Required, response body is in error message or context
+        let errorData = null;
+        
+        // Try to extract JSON from error message first (format: "Edge function returned 402: Error, {json}")
+        if (accessError.message && typeof accessError.message === 'string') {
+          const jsonMatch = accessError.message.match(/\{[^}]+\}/);
+          if (jsonMatch) {
+            try {
+              errorData = JSON.parse(jsonMatch[0]);
+            } catch (e) {
+              console.error('Failed to parse JSON from error message:', e);
+            }
+          }
+        }
+        
+        // Fallback: Try to parse from context
+        if (!errorData && accessError.context) {
           try {
-            const errorData = await accessError.context.json();
-            
-            // Check if this is a 402-style payment-required response
-            if (errorData.isPremium !== undefined || errorData.price !== undefined) {
-              // This is a 402 response with payment details
-              setHasAccess(errorData.hasAccess || false);
-              setIsPremium(errorData.isPremium || true);
-              setIsOwner(errorData.isOwner || false);
-              setPrice(errorData.price);
-              setAsset(errorData.asset || 'SOL');
-              setNetwork(errorData.network || 'solana');
-              // Guarantee at least 3 seconds preview
-              const pd = errorData.previewDuration ?? 3;
-              setPreviewDuration(pd > 0 ? pd : 3);
-              setCreatorWallet(errorData.creatorWallet || null);
-              // Don't throw - this is expected behavior for premium content
-              setIsLoading(false);
-              return;
+            // Check if context is already parsed
+            if (typeof accessError.context === 'object' && accessError.context.json) {
+              errorData = await accessError.context.json();
+            } else if (typeof accessError.context === 'object') {
+              errorData = accessError.context;
             }
           } catch (parseError) {
             console.error('Failed to parse error context:', parseError);
           }
         }
         
+        // Check if this is a 402-style payment-required response
+        if (errorData && (errorData.isPremium !== undefined || errorData.price !== undefined)) {
+          // This is a 402 response with payment details
+          setHasAccess(errorData.hasAccess || false);
+          setIsPremium(errorData.isPremium || true);
+          setIsOwner(errorData.isOwner || false);
+          setPrice(errorData.price);
+          setAsset(errorData.asset || 'SOL');
+          setNetwork(errorData.network || 'solana');
+          // Guarantee at least 3 seconds preview
+          const pd = errorData.previewDuration ?? 3;
+          setPreviewDuration(pd > 0 ? pd : 3);
+          setCreatorWallet(errorData.creatorWallet || null);
+          // Don't throw - this is expected behavior for premium content
+          setIsLoading(false);
+          return;
+        }
+        
         // If we get here, it's an actual error, not a payment-required response
+        console.error('Non-premium access error:', accessError);
         throw accessError;
       } else if (data) {
         // Always set premium status correctly
