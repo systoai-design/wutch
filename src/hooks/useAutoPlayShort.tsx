@@ -17,55 +17,55 @@ export function useAutoPlayShort({
 }: UseAutoPlayShortOptions) {
   const hasPlayedRef = useRef(false);
 
+  // Direct playback control based on isActive prop
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-          // Video is 50%+ visible
-          if (onBecomeActive) {
-            onBecomeActive();
-          }
-          
-          // Auto-play with smart audio handling
-          video.muted = isMuted;
-          video.play().catch((error) => {
-            // Browser blocked autoplay - force mute and retry
-            console.log('Autoplay prevented, trying with mute:', error);
-            video.muted = true;
-            video.play().then(() => {
-              // Once playing, respect user's mute preference
-              setTimeout(() => {
-                if (!isMuted) {
-                  video.muted = false;
-                  console.log('Auto-unmuted video after autoplay recovery');
-                }
-              }, 150);
-            }).catch(e => console.log('Autoplay failed even with mute:', e));
-          });
-          
-          hasPlayedRef.current = true;
-        } else {
-          // Video left viewport - pause and reset
-          video.pause();
-          video.currentTime = 0;
-          hasPlayedRef.current = false;
-        }
-      },
-      {
-        threshold: 0.5, // Trigger when 50% visible
-        rootMargin: '0px'
+    if (isActive) {
+      // Immediately play when active
+      if (onBecomeActive) {
+        onBecomeActive();
       }
-    );
-
-    observer.observe(video);
+      
+      video.muted = isMuted;
+      video.play().catch((error) => {
+        console.log('Autoplay prevented, trying muted:', error);
+        video.muted = true;
+        video.play().catch(e => console.log('Muted autoplay failed:', e));
+      });
+      
+      hasPlayedRef.current = true;
+    } else {
+      // Immediately pause and reset when inactive
+      video.pause();
+      video.currentTime = 0;
+      hasPlayedRef.current = false;
+    }
 
     return () => {
-      observer.disconnect();
+      // Cleanup: ensure video is paused
+      if (video) {
+        video.pause();
+      }
     };
-  }, [videoRef, shortId, isMuted, onBecomeActive]);
+  }, [isActive, isMuted, onBecomeActive]);
+
+  // Handle video loop
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleEnded = () => {
+      if (isActive) {
+        video.currentTime = 0;
+        video.play().catch(e => console.log('Loop play failed:', e));
+      }
+    };
+
+    video.addEventListener('ended', handleEnded);
+    return () => video.removeEventListener('ended', handleEnded);
+  }, [isActive]);
 
   // Preload management
   useEffect(() => {

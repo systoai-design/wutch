@@ -295,9 +295,12 @@ const Submit = () => {
         const balance = await connection.getBalance(solana.publicKey);
         const balanceInSOL = balance / LAMPORTS_PER_SOL;
 
-        if (balanceInSOL < bountyCalc.total) {
+        const FEE_BUFFER = 0.001; // Buffer for network fees
+        const requiredBalance = bountyCalc.total + FEE_BUFFER;
+
+        if (balanceInSOL < requiredBalance) {
           throw new Error(
-            `Insufficient balance. You need ${bountyCalc.total.toFixed(4)} SOL but only have ${balanceInSOL.toFixed(4)} SOL. Please add SOL to your wallet.`
+            `Insufficient balance. You need ${bountyCalc.total.toFixed(4)} SOL + ~${FEE_BUFFER} SOL for network fees (total: ${requiredBalance.toFixed(4)} SOL) but only have ${balanceInSOL.toFixed(4)} SOL. Please add more SOL to your wallet.`
           );
         }
 
@@ -361,7 +364,7 @@ const Submit = () => {
           } else if (walletError.message?.includes('timeout')) {
             throw new Error('Wallet approval timeout. Please try again and approve the transaction promptly.');
           } else if (walletError.message?.includes('Insufficient')) {
-            throw new Error(`Insufficient balance. You need ${bountyCalc.total.toFixed(3)} SOL plus transaction fees.`);
+            throw new Error(`Insufficient balance. You need ${bountyCalc.total.toFixed(3)} SOL plus ~0.001 SOL for network fees. Please add more SOL to your wallet.`);
           } else {
             throw new Error(`Payment failed: ${walletError.message || 'Unknown error'}. Please try again.`);
           }
@@ -861,9 +864,17 @@ const Submit = () => {
                           <span className="text-muted-foreground">Platform Fee (5%):</span>
                           <span>{bountyCalc.fee.toFixed(3)} SOL</span>
                         </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>Network Fee (estimated):</span>
+                          <span>~0.001 SOL</span>
+                        </div>
                         <div className="flex justify-between font-semibold text-base pt-2 border-t">
                           <span>Total Deposit Required:</span>
                           <span className="text-primary">{bountyCalc.total.toFixed(3)} SOL</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-amber-600">
+                          <span>+ Network fees:</span>
+                          <span>~0.001 SOL</span>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">

@@ -104,6 +104,8 @@ const Shorts = () => {
   useEffect(() => {
     if (isMobile || !desktopScrollRef.current) return;
 
+    let observerTimeout: NodeJS.Timeout;
+
     const observer = new IntersectionObserver(
       (entries) => {
         // Don't update if we're deep-linking
@@ -112,7 +114,15 @@ const Shorts = () => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
-            setActiveShortIndex(index);
+            
+            // Debounce to prevent rapid changes
+            if (observerTimeout) {
+              clearTimeout(observerTimeout);
+            }
+            
+            observerTimeout = setTimeout(() => {
+              setActiveShortIndex(index);
+            }, 50);
           }
         });
       },
@@ -125,7 +135,10 @@ const Shorts = () => {
     const shortElements = desktopScrollRef.current.querySelectorAll('.desktop-short-item');
     shortElements.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    return () => {
+      if (observerTimeout) clearTimeout(observerTimeout);
+      observer.disconnect();
+    };
   }, [isMobile, shorts.length]);
 
   // Save mute preference
@@ -137,6 +150,8 @@ const Shorts = () => {
   useEffect(() => {
     if (!isMobile || !containerRef.current) return;
 
+    let observerTimeout: NodeJS.Timeout;
+
     const observer = new IntersectionObserver(
       (entries) => {
         // Don't update if we're deep-linking
@@ -145,7 +160,15 @@ const Shorts = () => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
-            setActiveShortIndex(index);
+            
+            // Debounce to prevent rapid changes
+            if (observerTimeout) {
+              clearTimeout(observerTimeout);
+            }
+            
+            observerTimeout = setTimeout(() => {
+              setActiveShortIndex(index);
+            }, 50);
           }
         });
       },
@@ -158,7 +181,10 @@ const Shorts = () => {
     const shortElements = containerRef.current.querySelectorAll('.mobile-short-item');
     shortElements.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    return () => {
+      if (observerTimeout) clearTimeout(observerTimeout);
+      observer.disconnect();
+    };
   }, [isMobile, shorts.length]);
 
   useEffect(() => {

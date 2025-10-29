@@ -70,19 +70,50 @@ export function MobileShortPlayer({
   // Track views when active
   useVideoView(short.id, isActive);
 
-  // Auto-play management
-  useAutoPlayShort({
-    videoRef,
-    shortId: short.id,
-    isActive,
-    isMuted,
-    onBecomeActive: () => {
-      // Fetch like count when video becomes active
+  // Direct playback control based on isActive prop
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      video.muted = isMuted;
+      video.play().catch((error) => {
+        console.log('Autoplay prevented, trying muted:', error);
+        video.muted = true;
+        video.play().catch(e => console.log('Muted autoplay failed:', e));
+      });
+      setIsPlaying(true);
       if (short.like_count !== undefined) {
         setLikeCount(short.like_count);
       }
+    } else {
+      video.pause();
+      video.currentTime = 0;
+      setIsPlaying(false);
     }
-  });
+
+    return () => {
+      if (video) {
+        video.pause();
+      }
+    };
+  }, [isActive, isMuted, short.like_count, setLikeCount]);
+
+  // Handle video loop
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleEnded = () => {
+      if (isActive) {
+        video.currentTime = 0;
+        video.play().catch(e => console.log('Loop play failed:', e));
+      }
+    };
+
+    video.addEventListener('ended', handleEnded);
+    return () => video.removeEventListener('ended', handleEnded);
+  }, [isActive]);
 
   // Update isPlaying state
   useEffect(() => {

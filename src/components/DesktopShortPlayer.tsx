@@ -87,7 +87,29 @@ export function DesktopShortPlayer({
       video.currentTime = 0;
       setIsPlaying(false);
     }
+
+    return () => {
+      if (video) {
+        video.pause();
+      }
+    };
   }, [isActive, isMuted, short.like_count, setLikeCount]);
+
+  // Handle video loop
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleEnded = () => {
+      if (isActive) {
+        video.currentTime = 0;
+        video.play().catch(e => console.log('Loop play failed:', e));
+      }
+    };
+
+    video.addEventListener('ended', handleEnded);
+    return () => video.removeEventListener('ended', handleEnded);
+  }, [isActive]);
 
   // Controls auto-hide
   useEffect(() => {
