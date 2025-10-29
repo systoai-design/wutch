@@ -47,87 +47,8 @@ const Shorts = () => {
   const desktopScrollRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const isScrollingRef = useRef(false);
-  const autoplayBlockedRef = useRef(false);
-  const gestureListenersAttachedRef = useRef(false);
 
   const { data: shorts = [], isLoading } = useShortsQuery();
-
-  // Helper: Get active video element
-  const getActiveVideo = useCallback((): HTMLVideoElement | null => {
-    const scrollContainer = isMobile ? containerRef.current : desktopScrollRef.current;
-    if (!scrollContainer) return null;
-    
-    const activeElement = scrollContainer.querySelector(`[data-index="${activeShortIndex}"]`);
-    if (!activeElement) return null;
-    
-    return activeElement.querySelector('video');
-  }, [isMobile, activeShortIndex]);
-
-  // Helper: Pause all videos except active one
-  const pauseAllExcept = useCallback((exceptIndex: number) => {
-    const scrollContainer = isMobile ? containerRef.current : desktopScrollRef.current;
-    if (!scrollContainer) return;
-    
-    const allVideos = scrollContainer.querySelectorAll('video');
-    allVideos.forEach((video, idx) => {
-      if (idx !== exceptIndex) {
-        video.pause();
-        video.currentTime = 0;
-        video.muted = true;
-      }
-    });
-  }, [isMobile]);
-
-  // Helper: Attempt to play current video with autoplay policy handling
-  const attemptPlayCurrent = useCallback(async () => {
-    const video = getActiveVideo();
-    if (!video) return;
-
-    video.muted = isMuted;
-    
-    try {
-      await video.play();
-      console.log('[Shorts] Playing video unmuted:', !isMuted);
-      autoplayBlockedRef.current = false;
-    } catch (error) {
-      if (error instanceof Error && error.name === 'NotAllowedError') {
-        console.log('[Shorts] Autoplay blocked by browser, waiting for user gesture');
-        autoplayBlockedRef.current = true;
-        
-        // Attach one-time gesture listeners if not already attached
-        if (!gestureListenersAttachedRef.current) {
-          gestureListenersAttachedRef.current = true;
-          
-          const retryPlay = async () => {
-            console.log('[Shorts] User gesture detected, retrying play');
-            gestureListenersAttachedRef.current = false;
-            window.removeEventListener('pointerdown', retryPlay);
-            window.removeEventListener('touchstart', retryPlay);
-            window.removeEventListener('keydown', retryPlay);
-            window.removeEventListener('wheel', retryPlay);
-            
-            await attemptPlayCurrent();
-          };
-          
-          window.addEventListener('pointerdown', retryPlay, { once: true });
-          window.addEventListener('touchstart', retryPlay, { once: true });
-          window.addEventListener('keydown', retryPlay, { once: true });
-          window.addEventListener('wheel', retryPlay, { once: true });
-        }
-      } else {
-        console.log('[Shorts] Autoplay failed:', error);
-      }
-    }
-  }, [getActiveVideo, isMuted]);
-
-  // Centralized playback control: pause all others, play current
-  useEffect(() => {
-    if (shorts.length === 0) return;
-    
-    console.log('[Shorts] Active index changed to:', activeShortIndex);
-    pauseAllExcept(activeShortIndex);
-    attemptPlayCurrent();
-  }, [activeShortIndex, isMuted, shorts.length, pauseAllExcept, attemptPlayCurrent]);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {

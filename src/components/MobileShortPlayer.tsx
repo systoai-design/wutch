@@ -76,12 +76,31 @@ export function MobileShortPlayer({
     if (!video) return;
 
     if (isActive) {
-      // Don't set isPlaying eagerly - let event listeners handle it
+      // Only play if we have access or it's not premium
+      if (hasAccess || !isPremium || isOwner) {
+        video.muted = isMuted;
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log('[Short] Autoplay prevented:', error);
+            // On first interaction anywhere, try again
+            const retryOnGesture = () => {
+              video.play().catch(e => console.log('[Short] Retry failed:', e));
+              window.removeEventListener('pointerdown', retryOnGesture);
+              window.removeEventListener('touchstart', retryOnGesture);
+            };
+            window.addEventListener('pointerdown', retryOnGesture, { once: true });
+            window.addEventListener('touchstart', retryOnGesture, { once: true });
+          });
+        }
+      }
+      
       if (short.like_count !== undefined) {
         setLikeCount(short.like_count);
       }
     } else {
-      // Immediately pause, reset, and mute inactive videos
+      // Immediately and synchronously stop inactive videos
       video.pause();
       video.currentTime = 0;
       video.muted = true;
