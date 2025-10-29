@@ -21,7 +21,10 @@ import wutchLogo from '@/assets/wutch-logo.png';
 import wutchLogoSm from '@/assets/wutch-logo-sm.png';
 import xLogo from '@/assets/x-logo.png';
 import xLogoSm from '@/assets/x-logo-sm.png';
+import xLogoWebP from '@/assets/x-logo.webp';
+import xLogoSmWebP from '@/assets/x-logo-sm.webp';
 import pumpFunIcon from '@/assets/pumpfun-icon.png';
+import pumpFunIconWebP from '@/assets/pumpfun-icon.webp';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationBell } from './NotificationBell';
@@ -184,16 +187,20 @@ const Navigation = () => {
             className="hidden lg:inline-flex min-h-[44px] min-w-[44px] touch-manipulation"
             aria-label="Visit PumpFun"
           >
-            <img 
-              src={pumpFunIcon} 
-              alt="PumpFun" 
-              className="h-5 w-5" 
-              style={{ backgroundColor: 'transparent' }}
-              width="20" 
-              height="20" 
-              loading="lazy" 
-              decoding="async" 
-            />
+            <picture>
+              <source srcSet={pumpFunIconWebP} type="image/webp" />
+              <img 
+                src={pumpFunIcon} 
+                alt="PumpFun" 
+                className="h-5 w-5" 
+                style={{ backgroundColor: 'transparent' }}
+                width="20" 
+                height="20" 
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+              />
+            </picture>
           </Button>
 
           {/* Twitter/X Icon - desktop only */}
@@ -204,17 +211,24 @@ const Navigation = () => {
             className="hidden lg:inline-flex min-h-[44px] min-w-[44px] touch-manipulation"
             aria-label="Follow us on X"
           >
-            <img 
-              src={xLogoSm} 
-              srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
-              alt="X" 
-              className="h-5 w-5" 
-              style={{ backgroundColor: 'transparent' }}
-              width="20" 
-              height="20" 
-              loading="lazy" 
-              decoding="async" 
-            />
+            <picture>
+              <source 
+                srcSet={`${xLogoSmWebP} 1x, ${xLogoWebP} 2x`}
+                type="image/webp" 
+              />
+              <img 
+                src={xLogoSm} 
+                srcSet={`${xLogoSm} 1x, ${xLogo} 2x`}
+                alt="X" 
+                className="h-5 w-5" 
+                style={{ backgroundColor: 'transparent' }}
+                width="20" 
+                height="20" 
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+              />
+            </picture>
           </Button>
 
           {/* Create Button - desktop only */}
@@ -363,12 +377,19 @@ const Navigation = () => {
               onClick={() => window.open('https://pump.fun/', '_blank')}
               className="cursor-pointer py-3 min-h-[44px] lg:hidden"
             >
-              <img 
-                src={pumpFunIcon} 
-                alt="PumpFun" 
-                className="h-4 w-4 mr-2" 
-                style={{ backgroundColor: 'transparent' }}
-              />
+              <picture>
+                <source srcSet={pumpFunIconWebP} type="image/webp" />
+                <img 
+                  src={pumpFunIcon} 
+                  alt="PumpFun" 
+                  className="h-4 w-4 mr-2" 
+                  style={{ backgroundColor: 'transparent' }}
+                  width="16"
+                  height="16"
+                  loading="eager"
+                  decoding="async"
+                />
+              </picture>
               PumpFun
             </DropdownMenuItem>
 
@@ -376,12 +397,19 @@ const Navigation = () => {
                     onClick={() => window.open('https://x.com/wutchdotfun', '_blank')}
                     className="cursor-pointer py-3 min-h-[44px] lg:hidden"
                   >
-                    <img 
-                      src={xLogoSm} 
-                      alt="X" 
-                      className="h-4 w-4 mr-2" 
-                      style={{ backgroundColor: 'transparent' }}
-                    />
+                    <picture>
+                      <source srcSet={xLogoSmWebP} type="image/webp" />
+                      <img 
+                        src={xLogoSm} 
+                        alt="X" 
+                        className="h-4 w-4 mr-2" 
+                        style={{ backgroundColor: 'transparent' }}
+                        width="16"
+                        height="16"
+                        loading="eager"
+                        decoding="async"
+                      />
+                    </picture>
                     Follow on X
                   </DropdownMenuItem>
 
