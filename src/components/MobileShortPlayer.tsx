@@ -145,12 +145,15 @@ export function MobileShortPlayer({
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    
+    // Initial sync
+    setIsPlaying(!video.paused);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [hasAccess, isPreviewMode]);
 
   // Sync mute state and volume
   useEffect(() => {
@@ -340,6 +343,8 @@ export function MobileShortPlayer({
           muted
           preload={(isActive || isPreviewMode) ? "auto" : "none"}
           onTouchEnd={handleTouchEnd}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         />
       )}
 

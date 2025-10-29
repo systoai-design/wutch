@@ -167,12 +167,15 @@ export function DesktopShortPlayer({
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    
+    // Initial sync
+    setIsPlaying(!video.paused);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [hasAccess, isPreviewMode]);
 
   // Preview mode logic
   useEffect(() => {
@@ -331,12 +334,14 @@ export function DesktopShortPlayer({
           muted
           preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
           onClick={handleVideoClick}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
           aria-label="Short video player"
         />
       )}
 
-      {/* Play/Pause Overlay - shows when controls are visible or video is paused */}
-      {(showControls || !isPlaying) && (
+      {/* Play/Pause Overlay - shows only when video is paused */}
+      {!isPlaying && (
         <div 
           className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 cursor-pointer z-10"
           onClick={togglePlayPause}
