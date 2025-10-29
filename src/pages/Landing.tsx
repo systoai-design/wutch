@@ -406,6 +406,17 @@ const Landing = () => {
             </Button>
             <Button
               variant="ghost"
+              size="sm"
+              asChild
+              className="transition-transform hover:scale-110 h-9 sm:h-11 px-2 sm:px-3"
+            >
+              <Link to="/x402-explained" aria-label="Learn about X402">
+                <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm font-medium">X402</span>
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
