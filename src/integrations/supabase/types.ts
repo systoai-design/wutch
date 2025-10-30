@@ -3301,6 +3301,7 @@ export type Database = {
           current_size: number
           queue_id: string
           title: string
+          user_id: string
           video_id: string
           video_url: string
         }[]
