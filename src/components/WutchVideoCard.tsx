@@ -112,9 +112,9 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {/* Thumbnail/Video */}
-        <div className="relative aspect-video overflow-hidden rounded-xl bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500">
+        <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500">
           {/* Thumbnail - always visible unless playing */}
           {video.thumbnail_url && (
             <img
@@ -181,7 +181,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
 
           {/* Details */}
           <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
               {video.title}
             </h3>
             

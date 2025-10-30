@@ -421,23 +421,12 @@ const Home = () => {
                     </Button>
                   </Link>
                 </div>
-                {/* Carousel container with semi-rounded corners */}
-                <div className="carousel-container">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      dragFree: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent className="-ml-2 sm:-ml-3">
-                      {wutchVideos.slice(0, 12).map((video, index) => (
-                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%] animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
-                          <WutchVideoCard video={video} />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {wutchVideos.slice(0, 12).map((video, index) => (
+                    <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
+                      <WutchVideoCard video={video} />
+                    </div>
+                  ))}
                 </div>
               </section>
             )}
