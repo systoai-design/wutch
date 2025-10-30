@@ -14,7 +14,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { useNavigate } from 'react-router-dom';
 import DonationModal from '@/components/DonationModal';
-import { LinkifiedText } from '@/components/LinkifiedText';
+import { ExpandableDescription } from '@/components/ExpandableDescription';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -535,9 +535,11 @@ export function DesktopShortPlayer({
             <h3 className="font-bold text-lg leading-tight">{short.title}</h3>
           )}
           {short.description && (
-            <p className="text-sm text-gray-200 line-clamp-3 leading-relaxed">
-              <LinkifiedText text={short.description} />
-            </p>
+            <ExpandableDescription 
+              text={short.description}
+              maxLines={3}
+              className="text-sm text-gray-200"
+            />
           )}
         </div>
       </div>

@@ -16,7 +16,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { cn } from '@/lib/utils';
 import DonationModal from '@/components/DonationModal';
-import { LinkifiedText } from '@/components/LinkifiedText';
+import { ExpandableDescription } from '@/components/ExpandableDescription';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -445,9 +445,11 @@ export function MobileShortPlayer({
         <div className="space-y-1">
           <h3 className="text-white font-semibold text-base line-clamp-2">{short.title}</h3>
           {short.description && (
-            <p className="text-white/90 text-sm line-clamp-3">
-              <LinkifiedText text={short.description} />
-            </p>
+            <ExpandableDescription 
+              text={short.description}
+              maxLines={3}
+              className="text-white/90 text-sm"
+            />
           )}
         </div>
       </div>
