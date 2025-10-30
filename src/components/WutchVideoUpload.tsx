@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { CATEGORY_NAMES } from '@/constants/categories';
 import { validateFilename } from '@/utils/fileValidation';
+import { optimizeVideoForWeb, isWebCodecsSupported, formatFileSize } from '@/utils/videoOptimization';
 
 interface Chapter {
   time: number;
@@ -26,6 +27,13 @@ export const WutchVideoUpload = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Video optimization state
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState(0);
+  const [originalSize, setOriginalSize] = useState(0);
+  const [optimizedSize, setOptimizedSize] = useState(0);
+  const [webCodecsSupported, setWebCodecsSupported] = useState(true);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -48,6 +56,15 @@ export const WutchVideoUpload = () => {
   
   // Chapter support
   const [chapters, setChapters] = useState<Chapter[]>([{ time: 0, title: '' }]);
+
+  // Check browser support for video optimization
+  useEffect(() => {
+    const hasWebCodecs = isWebCodecsSupported();
+    setWebCodecsSupported(hasWebCodecs);
+    if (!hasWebCodecs) {
+      console.warn('WebCodecs API not supported - video optimization will be skipped');
+    }
+  }, []);
 
   // Validate video codec
   const validateVideoCodec = async (file: File): Promise<boolean> => {
@@ -73,10 +90,10 @@ export const WutchVideoUpload = () => {
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024 * 1024) {
+      if (file.size > 3 * 1024 * 1024 * 1024) {
         toast({
           title: 'File too large',
-          description: 'Video must be under 2GB',
+          description: 'Video must be under 3GB',
           variant: 'destructive',
         });
         return;
@@ -121,13 +138,50 @@ export const WutchVideoUpload = () => {
         return;
       }
 
-      setVideoFile(file);
+      setOriginalSize(file.size);
       setVideoPreview(URL.createObjectURL(file));
-      
-      toast({
-        title: 'Video loaded',
-        description: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-      });
+
+      // Try to optimize the video
+      if (webCodecsSupported) {
+        try {
+          setIsOptimizing(true);
+          const optimized = await optimizeVideoForWeb(file, {
+            maxBitrate: 2500000,
+            targetWidth: 1920,
+            targetHeight: 1080,
+            targetFPS: 30,
+            onProgress: (percent) => setOptimizationProgress(percent),
+          });
+          
+          setVideoFile(optimized);
+          setOptimizedSize(optimized.size);
+          const savings = ((1 - optimized.size / file.size) * 100).toFixed(0);
+          
+          toast({
+            title: '✅ Video optimized!',
+            description: `Reduced by ${savings}% (${formatFileSize(file.size)} → ${formatFileSize(optimized.size)})`,
+          });
+        } catch (error) {
+          console.warn('Optimization failed, using original:', error);
+          setVideoFile(file);
+          setOptimizedSize(file.size);
+          toast({
+            title: 'Using original video',
+            description: 'Optimization not available, proceeding with upload',
+          });
+        } finally {
+          setIsOptimizing(false);
+          setOptimizationProgress(0);
+        }
+      } else {
+        // No optimization support, use original
+        setVideoFile(file);
+        setOptimizedSize(file.size);
+        toast({
+          title: 'Video loaded',
+          description: `${formatFileSize(file.size)} - Ready to upload`,
+        });
+      }
     }
   };
 
@@ -528,6 +582,19 @@ export const WutchVideoUpload = () => {
             >
               <X className="h-4 w-4" />
             </Button>
+            
+            {/* Optimization Progress Overlay */}
+            {isOptimizing && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 rounded-lg">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+                <div className="text-white text-center space-y-2 px-4">
+                  <p className="font-semibold">Optimizing video for web...</p>
+                  <Progress value={optimizationProgress} className="w-48 bg-white/20" />
+                  <p className="text-sm text-white/70">{optimizationProgress}%</p>
+                  <p className="text-xs text-white/50">This will make your video load faster</p>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <label
@@ -535,8 +602,10 @@ export const WutchVideoUpload = () => {
             className="flex flex-col items-center justify-center aspect-video border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
           >
             <Video className="h-12 w-12 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">Click to upload video (Max 2GB)</span>
-            <span className="text-xs text-muted-foreground mt-1">Optimized for web playback</span>
+            <span className="text-sm text-muted-foreground">Click to upload video (Max 3GB)</span>
+            <span className="text-xs text-muted-foreground mt-1">
+              {webCodecsSupported ? 'Auto-optimized for instant playback' : 'Optimized for web playback'}
+            </span>
             <input
               id="video"
               type="file"
