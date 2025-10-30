@@ -43,37 +43,29 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
     const video = videoRef.current;
     if (!video || !short.video_url) return;
 
+    // Ensure video is loading
+    if (video.readyState < 2) {
+      video.load();
+    }
+
     video.currentTime = 0;
     
-    const attemptPlay = () => {
-      video.play()
-        .then(() => {
-          setIsPlaying(true);
-          // Stop after 3 seconds (matching YouTube)
-          timeoutRef.current = setTimeout(() => {
-            if (video) {
-              video.pause();
-              video.currentTime = 0;
-              setIsPlaying(false);
-            }
-          }, 3000);
-        })
-        .catch(() => {
-          // Ignore autoplay failures
-        });
-    };
-
-    // Wait for video to be ready before playing
-    if (video.readyState >= 2) {
-      // HAVE_CURRENT_DATA or greater
-      attemptPlay();
-    } else {
-      const handleCanPlay = () => {
-        attemptPlay();
-        video.removeEventListener('loadeddata', handleCanPlay);
-      };
-      video.addEventListener('loadeddata', handleCanPlay);
-    }
+    // Simple play attempt with error handling
+    video.play()
+      .then(() => {
+        setIsPlaying(true);
+        // Stop after 3 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (video) {
+            video.pause();
+            video.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }, 3000);
+      })
+      .catch((error) => {
+        console.log('[ShortCard] Preview play failed:', error);
+      });
   };
 
   const handleMouseLeave = () => {
@@ -119,7 +111,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             ref={videoRef}
             src={short.video_url}
             className="w-full h-full object-cover"
-            preload="auto"
+            preload="metadata"
             playsInline
             muted
             loop={false}

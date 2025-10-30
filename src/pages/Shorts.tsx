@@ -87,7 +87,7 @@ const Shorts = () => {
           // Reset deep-linking flag after scroll completes
           setTimeout(() => {
             isDeepLinkingRef.current = false;
-          }, 500);
+          }, 2000);
         }, scrollTimeout);
       }
     }
@@ -106,6 +106,21 @@ const Shorts = () => {
   useEffect(() => {
     hasInitializedRef.current = false;
   }, [location.pathname, location.search]);
+
+  // Sync URL with active short
+  useEffect(() => {
+    if (shorts.length === 0 || isDeepLinkingRef.current) return;
+    
+    const activeShort = shorts[activeShortIndex];
+    if (activeShort) {
+      const newUrl = generateContentUrl('shorts', {
+        id: activeShort.id,
+        title: activeShort.title,
+        profiles: { username: activeShort.profiles?.username || 'user' }
+      });
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [activeShortIndex, shorts]);
 
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
