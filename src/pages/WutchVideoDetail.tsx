@@ -159,7 +159,7 @@ const WutchVideoDetail = () => {
         .neq('id', id)
         .eq('status', 'published')
         .eq('category', videoData.category || '')
-        .limit(10);
+        .limit(20);
 
       // Fallback: If no category-specific videos found, fetch popular suggested videos
       if (!relatedData || relatedData.length === 0) {
@@ -170,7 +170,7 @@ const WutchVideoDetail = () => {
           .neq('user_id', videoData.user_id)
           .eq('status', 'published')
           .order('view_count', { ascending: false })
-          .limit(10);
+          .limit(20);
         
         relatedData = suggestedData;
       }
@@ -333,10 +333,6 @@ const WutchVideoDetail = () => {
 
   return (
     <>
-      {/* Preload video for faster loading */}
-      {video && !showPaywall && (
-        <link rel="preload" as="video" href={video.video_url} type="video/mp4" />
-      )}
       <div className="min-h-screen pb-20 lg:pb-6 bg-background">
       <div className="max-w-screen-2xl mx-auto p-4 md:p-6">
         <div className="grid lg:grid-cols-[1fr_380px] gap-6">
@@ -546,6 +542,11 @@ const WutchVideoDetail = () => {
 
                 {/* Related Videos */}
                 <div className="space-y-2">
+                  <div className="px-2 pb-2 border-b border-border">
+                    <h3 className="font-semibold text-sm text-muted-foreground">
+                      Suggested videos
+                    </h3>
+                  </div>
                   {relatedVideos.length > 0 ? (
                     relatedVideos.map((video) => (
                       <WutchVideoCardCompact key={video.id} video={video} />
@@ -571,6 +572,11 @@ const WutchVideoDetail = () => {
               </TabsContent>
               
               <TabsContent value="related" className="space-y-2 mt-4">
+                <div className="px-2 pb-2 border-b border-border">
+                  <h3 className="font-semibold text-sm text-muted-foreground">
+                    Suggested videos
+                  </h3>
+                </div>
                 {relatedVideos.length > 0 ? (
                   relatedVideos.map((video) => (
                     <WutchVideoCardCompact key={video.id} video={video} />
