@@ -13,22 +13,51 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create service role client for admin checks
+    const supabaseServiceRole = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Verify JWT and admin role
+    // Verify JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseServiceRole.auth.getUser(token);
 
     if (authError || !user) {
       throw new Error('Unauthorized');
     }
+
+    // Check if user is admin
+    const { data: roleData, error: roleError } = await supabaseServiceRole
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Admin privileges required' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Create user-context client for RPC calls (so auth.uid() works in DB functions)
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    });
 
     const body = await req.json();
     const { action } = body;
@@ -36,7 +65,7 @@ serve(async (req) => {
     switch (action) {
       case 'populate_queue': {
         // Populate the optimization queue with unoptimized videos
-        const { data, error } = await supabase.rpc('populate_video_optimization_queue');
+        const { data, error } = await supabaseUser.rpc('populate_video_optimization_queue');
         
         if (error) throw error;
 
@@ -52,7 +81,7 @@ serve(async (req) => {
 
       case 'get_queue_status': {
         // Get current queue statistics
-        const { data: stats, error: statsError } = await supabase
+        const { data: stats, error: statsError } = await supabaseServiceRole
           .from('video_optimization_queue')
           .select('status')
           .then(async ({ data, error }) => {
@@ -65,7 +94,7 @@ serve(async (req) => {
             const total = data?.length || 0;
 
             // Get total size savings
-            const { data: logs } = await supabase
+            const { data: logs } = await supabaseServiceRole
               .from('video_optimization_log')
               .select('original_size, optimized_size')
               .eq('status', 'completed');
@@ -100,7 +129,7 @@ serve(async (req) => {
 
       case 'get_next_video': {
         // Get next video to optimize
-        const { data, error } = await supabase.rpc('get_next_video_to_optimize');
+        const { data, error } = await supabaseUser.rpc('get_next_video_to_optimize');
         
         if (error) throw error;
 
@@ -120,7 +149,7 @@ serve(async (req) => {
       case 'mark_complete': {
         const { queueId, optimizedUrl, originalSize, optimizedSize, processingTimeMs } = body;
         
-        const { error } = await supabase.rpc('mark_video_optimization_complete', {
+        const { error } = await supabaseUser.rpc('mark_video_optimization_complete', {
           p_queue_id: queueId,
           p_optimized_url: optimizedUrl,
           p_original_size: originalSize,
@@ -139,7 +168,7 @@ serve(async (req) => {
       case 'mark_failed': {
         const { queueId, errorMessage } = body;
         
-        const { error } = await supabase.rpc('mark_video_optimization_failed', {
+        const { error } = await supabaseUser.rpc('mark_video_optimization_failed', {
           p_queue_id: queueId,
           p_error_message: errorMessage
         });
