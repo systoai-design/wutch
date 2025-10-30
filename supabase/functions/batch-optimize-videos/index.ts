@@ -30,7 +30,8 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { data: action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
 
     switch (action) {
       case 'populate_queue': {
@@ -117,7 +118,7 @@ serve(async (req) => {
       }
 
       case 'mark_complete': {
-        const { queueId, optimizedUrl, originalSize, optimizedSize, processingTimeMs } = await req.json();
+        const { queueId, optimizedUrl, originalSize, optimizedSize, processingTimeMs } = body;
         
         const { error } = await supabase.rpc('mark_video_optimization_complete', {
           p_queue_id: queueId,
@@ -136,7 +137,7 @@ serve(async (req) => {
       }
 
       case 'mark_failed': {
-        const { queueId, errorMessage } = await req.json();
+        const { queueId, errorMessage } = body;
         
         const { error } = await supabase.rpc('mark_video_optimization_failed', {
           p_queue_id: queueId,
