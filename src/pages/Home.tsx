@@ -184,15 +184,8 @@ const Home = () => {
         (profilesResult.data || []).map(p => [p.id, p])
       );
 
-      // Calculate trending score for wutch videos
-      const now = Date.now();
-      const wutchWithScore = wutchData.map((video) => {
-        const ageInDays = (now - new Date(video.created_at || '').getTime()) / (1000 * 60 * 60 * 24);
-        const recencyBonus = Math.max(0, 100 - ageInDays * 10);
-        const trendingScore = 
-          (video.view_count || 0) * 0.7 + 
-          (video.like_count || 0) * 0.2 + 
-          recencyBonus * 0.1;
+      // Map wutch videos with profiles
+      const wutchWithProfiles = wutchData.map((video) => {
         const profile = profilesMap.get(video.user_id);
         return { 
           ...video,
@@ -201,9 +194,8 @@ const Home = () => {
             display_name: profile.display_name,
             avatar_url: profile.avatar_url
           } : undefined,
-          trending_score: trendingScore 
         };
-      }).sort((a, b) => (b.trending_score || 0) - (a.trending_score || 0));
+      });
 
       const upcomingData = upcomingResult.data;
       
@@ -256,7 +248,7 @@ const Home = () => {
 
       setLiveStreams(sortedLive);
       setShorts(shortsData || []);
-      setWutchVideos(wutchWithScore);
+      setWutchVideos(wutchWithProfiles);
       setUpcomingStreams(sortedUpcoming);
       setEndedStreams(sortedEnded);
     } catch (error) {

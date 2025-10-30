@@ -10,6 +10,22 @@ interface TrendingInput {
   commentCount?: number;
 }
 
+/**
+ * Get session seed that changes every hour
+ */
+function getSessionSeed(): number {
+  const now = new Date();
+  return now.getHours() + now.getDate() * 24;
+}
+
+/**
+ * Seeded random number generator for consistent "randomness" per session
+ */
+function seededRandom(seed: number, index: number): number {
+  const x = Math.sin(seed + index) * 10000;
+  return x - Math.floor(x);
+}
+
 export function calculateTrendingScore(content: TrendingInput): number {
   const views = content.view_count || 0;
   const likes = content.like_count || 0;
@@ -38,7 +54,91 @@ export function calculateTrendingScore(content: TrendingInput): number {
 }
 
 /**
- * Sort content array by trending score
+ * Add randomization factor to score for variety
+ */
+export function calculateTrendingScoreWithRandomness(
+  content: TrendingInput,
+  index: number
+): number {
+  const baseScore = calculateTrendingScore(content);
+  const seed = getSessionSeed();
+  const randomFactor = seededRandom(seed, index);
+  
+  // Add 0-30% random variance to the score
+  const variance = baseScore * 0.3 * randomFactor;
+  
+  return baseScore + variance;
+}
+
+/**
+ * Sort content array by trending score with weighted randomization
+ * Groups content into tiers and randomizes within each tier
+ */
+export function sortByTrendingWithVariety<T extends TrendingInput>(content: T[]): T[] {
+  if (content.length === 0) return content;
+
+  // Calculate scores for all content
+  const withScores = content.map((item, index) => ({
+    item,
+    baseScore: calculateTrendingScore(item),
+    randomizedScore: calculateTrendingScoreWithRandomness(item, index)
+  }));
+  
+  // Define score tiers dynamically
+  const sortedByBase = [...withScores].sort((a, b) => b.baseScore - a.baseScore);
+  const top20Index = Math.floor(sortedByBase.length * 0.2);
+  const top60Index = Math.floor(sortedByBase.length * 0.6);
+  
+  const tierThresholds = {
+    trending: sortedByBase[top20Index]?.baseScore || 0,
+    rising: sortedByBase[top60Index]?.baseScore || 0,
+  };
+  
+  // Assign tiers
+  const tiered = withScores.map(item => ({
+    ...item,
+    tier: item.baseScore >= tierThresholds.trending ? 'hot' :
+          item.baseScore >= tierThresholds.rising ? 'trending' : 'rising'
+  }));
+  
+  // Sort by tier first, then by randomized score within tier
+  return tiered
+    .sort((a, b) => {
+      const tierOrder = { hot: 0, trending: 1, rising: 2 };
+      const tierDiff = tierOrder[a.tier] - tierOrder[b.tier];
+      if (tierDiff !== 0) return tierDiff;
+      
+      return b.randomizedScore - a.randomizedScore;
+    })
+    .map(item => item.item);
+}
+
+/**
+ * Simple randomization with bias toward quality
+ */
+export function shuffleWithBias<T extends TrendingInput>(
+  content: T[],
+  biasFactor: number = 0.5
+): T[] {
+  const seed = getSessionSeed();
+  
+  return [...content]
+    .map((item, index) => ({
+      item,
+      score: calculateTrendingScore(item),
+      random: seededRandom(seed, index)
+    }))
+    .sort((a, b) => {
+      // Blend score and randomness
+      const scoreA = a.score * biasFactor + a.random * 1000 * (1 - biasFactor);
+      const scoreB = b.score * biasFactor + b.random * 1000 * (1 - biasFactor);
+      return scoreB - scoreA;
+    })
+    .map(item => item.item);
+}
+
+/**
+ * Sort content array by trending score (legacy)
  */
 export function sortByTrending<T extends TrendingInput>(content: T[]): T[] {
   return [...content].sort((a, b) => {
