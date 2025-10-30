@@ -2453,6 +2453,107 @@ export type Database = {
           },
         ]
       }
+      video_optimization_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          optimized_size: number | null
+          original_duration: number | null
+          original_size: number | null
+          processing_time_ms: number | null
+          queue_id: string | null
+          status: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          optimized_size?: number | null
+          original_duration?: number | null
+          original_size?: number | null
+          processing_time_ms?: number | null
+          queue_id?: string | null
+          status: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          optimized_size?: number | null
+          original_duration?: number | null
+          original_size?: number | null
+          processing_time_ms?: number | null
+          queue_id?: string | null
+          status?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_optimization_log_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "video_optimization_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_optimization_log_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "wutch_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_optimization_queue: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          max_retries: number | null
+          priority: number | null
+          retry_count: number | null
+          started_at: string | null
+          status: string
+          video_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          max_retries?: number | null
+          priority?: number | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string
+          video_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          max_retries?: number | null
+          priority?: number | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_optimization_queue_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: true
+            referencedRelation: "wutch_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       view_earnings: {
         Row: {
           content_id: string
@@ -3194,6 +3295,16 @@ export type Database = {
           verification_type: string
         }[]
       }
+      get_next_video_to_optimize: {
+        Args: never
+        Returns: {
+          current_size: number
+          queue_id: string
+          title: string
+          video_id: string
+          video_url: string
+        }[]
+      }
       get_platform_earnings_stats: {
         Args: never
         Returns: {
@@ -3293,6 +3404,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_video_optimization_complete: {
+        Args: {
+          p_optimized_size: number
+          p_optimized_url: string
+          p_original_size: number
+          p_processing_time_ms: number
+          p_queue_id: string
+        }
+        Returns: undefined
+      }
+      mark_video_optimization_failed: {
+        Args: { p_error_message: string; p_queue_id: string }
+        Returns: undefined
+      }
+      populate_video_optimization_queue: { Args: never; Returns: number }
       process_payout: {
         Args: { p_payout_id: string; p_transaction_signature: string }
         Returns: undefined
