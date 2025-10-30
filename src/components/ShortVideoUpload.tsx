@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Video, ExternalLink, Lock } from 'lucide-react';
+import { Upload, Video, ExternalLink, Lock, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +20,8 @@ export const ShortVideoUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>('');
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -29,6 +31,14 @@ export const ShortVideoUpload = () => {
     x402_price: 0.001,
     preview_duration: 3,
   });
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+    };
+  }, [videoPreview, thumbnailPreview]);
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,15 +91,61 @@ export const ShortVideoUpload = () => {
       }
       
       setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
     };
     video.src = URL.createObjectURL(file);
   };
 
+  const removeVideo = () => {
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoFile(null);
+    setVideoPreview('');
+  };
+
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setThumbnailFile(file);
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid File',
+        description: 'Please upload an image file',
+        variant: 'destructive',
+      });
+      return;
     }
+
+    // Validate filename
+    const filenameValidation = validateFilename(file.name);
+    if (!filenameValidation.isValid) {
+      toast({
+        title: 'Invalid filename',
+        description: (
+          <div className="space-y-2">
+            <p>{filenameValidation.error}</p>
+            <p className="text-xs pt-2 border-t border-border">
+              <strong>Example valid name:</strong><br />
+              {filenameValidation.suggestion}
+            </p>
+          </div>
+        ),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
+
+  const removeThumbnail = () => {
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailFile(null);
+    setThumbnailPreview('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -335,46 +391,84 @@ export const ShortVideoUpload = () => {
           <Label htmlFor="video">
             Video File (9:16 aspect ratio) <span className="text-destructive">*</span>
           </Label>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-            <input
-              id="video"
-              type="file"
-              accept="video/*"
-              onChange={handleVideoChange}
-              className="hidden"
-            />
-            <label htmlFor="video" className="cursor-pointer">
-              <Video className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {videoFile ? videoFile.name : 'Click to upload video'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Vertical format (9:16) required
-              </p>
-            </label>
-          </div>
+          {videoPreview ? (
+            <div className="relative aspect-[9/16] max-w-sm mx-auto bg-muted rounded-lg overflow-hidden">
+              <video 
+                src={videoPreview} 
+                controls 
+                className="w-full h-full object-contain"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                className="absolute top-2 right-2"
+                onClick={removeVideo}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+              <input
+                id="video"
+                type="file"
+                accept="video/*"
+                onChange={handleVideoChange}
+                className="hidden"
+              />
+              <label htmlFor="video" className="cursor-pointer">
+                <Video className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload video
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Vertical format (9:16) required
+                </p>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-            <input
-              id="thumbnail"
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              className="hidden"
-            />
-            <label htmlFor="thumbnail" className="cursor-pointer">
-              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {thumbnailFile ? thumbnailFile.name : 'Click to upload thumbnail'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG up to 10MB
-              </p>
-            </label>
-          </div>
+          {thumbnailPreview ? (
+            <div className="relative aspect-[9/16] max-w-sm mx-auto bg-muted rounded-lg overflow-hidden">
+              <img 
+                src={thumbnailPreview} 
+                alt="Thumbnail preview"
+                className="w-full h-full object-contain"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                className="absolute top-2 right-2"
+                onClick={removeThumbnail}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+              <input
+                id="thumbnail"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+                className="hidden"
+              />
+              <label htmlFor="thumbnail" className="cursor-pointer">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload thumbnail
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG up to 10MB
+                </p>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
