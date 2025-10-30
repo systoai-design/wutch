@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink, Lock, Loader2 } from 'lucide-react';
+import { Eye, Heart, Share2, Timer, AlertCircle, ExternalLink, Lock, Loader2, StopCircle } from 'lucide-react';
 import StreamCard from '@/components/StreamCard';
 import WatchTimeIndicator from '@/components/WatchTimeIndicator';
 import ClaimBounty from '@/components/ClaimBounty';
@@ -223,6 +223,28 @@ const StreamDetail = () => {
     }
   };
 
+  const handleEndStream = async () => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from('livestreams')
+        .update({
+          status: 'ended',
+          is_live: false,
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Stream ended successfully');
+      fetchStreamData();
+    } catch (error: any) {
+      toast.error('Failed to end stream: ' + error.message);
+    }
+  };
+
   return (
     <>
       <GuestPromptDialog
@@ -279,7 +301,18 @@ const StreamDetail = () => {
 
           {/* Owner Controls */}
           {isOwner && (
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {stream.status === 'live' && (
+                <Button
+                  onClick={handleEndStream}
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <StopCircle className="h-4 w-4" />
+                  End Stream
+                </Button>
+              )}
               <EditStreamDialog stream={stream} onUpdate={fetchStreamData} />
             </div>
           )}

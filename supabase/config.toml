@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.add-email-to-wallet-account]
 verify_jwt = true
+
+[functions.cleanup-ended-streams]
+verify_jwt = false

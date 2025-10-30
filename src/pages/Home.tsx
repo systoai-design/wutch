@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/carousel";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
+import { useStreamCleanup } from '@/hooks/useStreamCleanup';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type LivestreamWithBounty = Livestream & {
@@ -46,6 +47,7 @@ type WutchVideo = Pick<Database['public']['Tables']['wutch_videos']['Row'],
 };
 
 const Home = () => {
+  useStreamCleanup(); // Auto-cleanup ended streams
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -408,27 +410,34 @@ const Home = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Live Now Section */}
-            {liveStreams.length > 0 && (
+            {/* Wutch Videos Section - MOVED TO TOP */}
+            {wutchVideos.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                    Live Now
-                    <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-normal text-muted-foreground">
-                      ({liveStreams.length})
-                    </span>
-                  </h2>
+                  <h2 className="text-xl sm:text-2xl font-bold">Trending Wutch Videos</h2>
+                  <Link to="/wutch">
+                    <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
+                      View All <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {liveStreams.slice(0, 9).map((stream, index) => (
-                    <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-                      <StreamCard
-                        stream={stream} 
-                        hasBounty={stream.has_active_bounty} 
-                        hasShareCampaign={stream.has_active_share_campaign}
-                      />
-                    </div>
-                  ))}
+                {/* Carousel container with semi-rounded corners */}
+                <div className="carousel-container">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      dragFree: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 sm:-ml-3">
+                      {wutchVideos.slice(0, 12).map((video, index) => (
+                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%] animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
+                          <WutchVideoCard video={video} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
                 </div>
               </section>
             )}
@@ -465,34 +474,27 @@ const Home = () => {
               </section>
             )}
 
-            {/* Wutch Videos Section */}
-            {wutchVideos.length > 0 && (
+            {/* Live Now Section */}
+            {liveStreams.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold">Trending Wutch Videos</h2>
-                  <Link to="/wutch">
-                    <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
-                      View All <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    Live Now
+                    <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-normal text-muted-foreground">
+                      ({liveStreams.length})
+                    </span>
+                  </h2>
                 </div>
-                {/* Carousel container with semi-rounded corners */}
-                <div className="carousel-container">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      dragFree: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent className="-ml-2 sm:-ml-3">
-                      {wutchVideos.slice(0, 12).map((video, index) => (
-                        <CarouselItem key={video.id} className="pl-2 sm:pl-3 basis-[85%] xs:basis-[70%] sm:basis-[50%] md:basis-[40%] lg:basis-[33%] xl:basis-[25%] animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
-                          <WutchVideoCard video={video} />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {liveStreams.slice(0, 9).map((stream, index) => (
+                    <div key={stream.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                      <StreamCard
+                        stream={stream} 
+                        hasBounty={stream.has_active_bounty} 
+                        hasShareCampaign={stream.has_active_share_campaign}
+                      />
+                    </div>
+                  ))}
                 </div>
               </section>
             )}

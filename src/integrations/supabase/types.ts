@@ -837,6 +837,7 @@ export type Database = {
       }
       livestreams: {
         Row: {
+          auto_end_at: string | null
           category: string | null
           created_at: string | null
           description: string | null
@@ -844,6 +845,7 @@ export type Database = {
           id: string
           is_live: boolean | null
           is_premium: boolean | null
+          last_health_check: string | null
           like_count: number | null
           moderation_id: string | null
           moderation_status: string | null
@@ -852,6 +854,7 @@ export type Database = {
           pump_fun_url: string
           started_at: string | null
           status: Database["public"]["Enums"]["livestream_status"] | null
+          stream_duration_hours: number | null
           tags: string[] | null
           thumbnail_url: string | null
           title: string
@@ -864,6 +867,7 @@ export type Database = {
           x402_price: number | null
         }
         Insert: {
+          auto_end_at?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -871,6 +875,7 @@ export type Database = {
           id?: string
           is_live?: boolean | null
           is_premium?: boolean | null
+          last_health_check?: string | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -879,6 +884,7 @@ export type Database = {
           pump_fun_url: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["livestream_status"] | null
+          stream_duration_hours?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
           title: string
@@ -891,6 +897,7 @@ export type Database = {
           x402_price?: number | null
         }
         Update: {
+          auto_end_at?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -898,6 +905,7 @@ export type Database = {
           id?: string
           is_live?: boolean | null
           is_premium?: boolean | null
+          last_health_check?: string | null
           like_count?: number | null
           moderation_id?: string | null
           moderation_status?: string | null
@@ -906,6 +914,7 @@ export type Database = {
           pump_fun_url?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["livestream_status"] | null
+          stream_duration_hours?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
           title?: string
