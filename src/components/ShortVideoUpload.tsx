@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { validatePromotionalLink, sanitizeUrl } from '@/utils/urlValidation';
+import { validateFilename } from '@/utils/fileValidation';
 
 export const ShortVideoUpload = () => {
   const { toast } = useToast();
@@ -38,6 +39,25 @@ export const ShortVideoUpload = () => {
       toast({
         title: 'Invalid File',
         description: 'Please upload a video file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate filename
+    const filenameValidation = validateFilename(file.name);
+    if (!filenameValidation.isValid) {
+      toast({
+        title: 'Invalid filename',
+        description: (
+          <div className="space-y-2">
+            <p>{filenameValidation.error}</p>
+            <p className="text-xs pt-2 border-t border-border">
+              <strong>Example valid name:</strong><br />
+              {filenameValidation.suggestion}
+            </p>
+          </div>
+        ),
         variant: 'destructive',
       });
       return;

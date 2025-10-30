@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { CATEGORY_NAMES } from '@/constants/categories';
+import { validateFilename } from '@/utils/fileValidation';
 
 interface Chapter {
   time: number;
@@ -90,6 +91,25 @@ export const WutchVideoUpload = () => {
         return;
       }
 
+      // Validate filename
+      const filenameValidation = validateFilename(file.name);
+      if (!filenameValidation.isValid) {
+        toast({
+          title: 'Invalid filename',
+          description: (
+            <div className="space-y-2">
+              <p>{filenameValidation.error}</p>
+              <p className="text-xs pt-2 border-t border-border">
+                <strong>Example valid name:</strong><br />
+                {filenameValidation.suggestion}
+              </p>
+            </div>
+          ),
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Validate codec
       const isValid = await validateVideoCodec(file);
       if (!isValid) {
@@ -118,6 +138,25 @@ export const WutchVideoUpload = () => {
         toast({
           title: 'File too large',
           description: 'Thumbnail must be under 5MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validate filename
+      const filenameValidation = validateFilename(file.name);
+      if (!filenameValidation.isValid) {
+        toast({
+          title: 'Invalid filename',
+          description: (
+            <div className="space-y-2">
+              <p>{filenameValidation.error}</p>
+              <p className="text-xs pt-2 border-t border-border">
+                <strong>Example valid name:</strong><br />
+                {filenameValidation.suggestion}
+              </p>
+            </div>
+          ),
           variant: 'destructive',
         });
         return;
