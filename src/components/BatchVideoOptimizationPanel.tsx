@@ -1,11 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, Clock, PlayCircle, StopCircle, RefreshCw } from 'lucide-react';
 import { useBatchVideoOptimization } from '@/hooks/useBatchVideoOptimization';
+import { cn } from '@/lib/utils';
 
 export const BatchVideoOptimizationPanel = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const {
     isRunning,
     stats,
@@ -17,9 +22,22 @@ export const BatchVideoOptimizationPanel = () => {
     stopBatchOptimization
   } = useBatchVideoOptimization();
 
-  useEffect(() => {
-    fetchStats();
+  const handleFetchStats = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await fetchStats();
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch stats');
+      console.error('Error fetching stats:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [fetchStats]);
+
+  useEffect(() => {
+    handleFetchStats();
+  }, [handleFetchStats]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -42,8 +60,26 @@ export const BatchVideoOptimizationPanel = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-3 text-muted-foreground">Loading stats...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Grid */}
-        {stats && (
+        {!isLoading && !error && stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -124,8 +160,8 @@ export const BatchVideoOptimizationPanel = () => {
             </Button>
           )}
 
-          <Button onClick={fetchStats} variant="ghost" disabled={isRunning}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button onClick={handleFetchStats} variant="ghost" disabled={isRunning || isLoading}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
             Refresh Stats
           </Button>
         </div>
