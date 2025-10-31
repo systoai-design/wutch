@@ -63,6 +63,25 @@ export const WutchVideoPlayer = ({
   const [availableQualities, setAvailableQualities] = useState<number[]>([]);
   const [selectedQuality, setSelectedQuality] = useState<number | 'auto'>('auto');
   const [isHLS, setIsHLS] = useState(false);
+  
+  // Thumbnail validation
+  const [validPoster, setValidPoster] = useState<string | null>(null);
+
+  // Validate thumbnail URL before using as poster
+  useEffect(() => {
+    if (!thumbnailUrl) {
+      setValidPoster(null);
+      return;
+    }
+    
+    const img = new Image();
+    img.onload = () => setValidPoster(thumbnailUrl);
+    img.onerror = () => {
+      console.warn('Thumbnail failed to load:', thumbnailUrl);
+      setValidPoster(null);
+    };
+    img.src = thumbnailUrl;
+  }, [thumbnailUrl]);
 
   // Initialize video player with HLS support
   useEffect(() => {
@@ -363,7 +382,7 @@ export const WutchVideoPlayer = ({
     >
       <video
         ref={videoRef}
-        poster={thumbnailUrl}
+        poster={validPoster || undefined}
         className="w-full h-full object-contain max-h-[100dvh]"
         onClick={handleClick}
         playsInline

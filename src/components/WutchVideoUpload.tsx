@@ -438,47 +438,74 @@ export const WutchVideoUpload = () => {
       let thumbnailToUpload = thumbnailFile;
       
       if (!thumbnailToUpload) {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.muted = true;
-        video.playsInline = true;
-        
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        thumbnailToUpload = await new Promise<File>((resolve, reject) => {
-          video.onloadeddata = () => {
-            video.currentTime = 1;
-          };
+        try {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          video.muted = true;
+          video.playsInline = true;
           
-          video.onseeked = () => {
-            if (ctx) {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            throw new Error('Canvas context not available');
+          }
+          
+          thumbnailToUpload = await new Promise<File>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              URL.revokeObjectURL(video.src);
+              reject(new Error('Thumbnail generation timeout'));
+            }, 5000);
+            
+            video.onloadedmetadata = () => {
+              clearTimeout(timeout);
+              // Use 10% into video or 1 second, whichever is smaller
+              const seekTime = Math.min(1, video.duration * 0.1);
+              video.currentTime = seekTime;
+            };
+            
+            video.onseeked = () => {
+              clearTimeout(timeout);
+              
+              // Verify video has valid dimensions
+              if (video.videoWidth === 0 || video.videoHeight === 0) {
+                URL.revokeObjectURL(video.src);
+                reject(new Error('Invalid video dimensions'));
+                return;
+              }
+              
               canvas.width = video.videoWidth;
               canvas.height = video.videoHeight;
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
               
               canvas.toBlob((blob) => {
-                if (blob) {
+                URL.revokeObjectURL(video.src);
+                
+                if (blob && blob.size > 0) {
                   const file = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
                   resolve(file);
                 } else {
-                  reject(new Error('Failed to generate thumbnail'));
+                  reject(new Error('Failed to generate thumbnail blob'));
                 }
               }, 'image/jpeg', 0.85);
-            } else {
-              reject(new Error('Canvas context not available'));
-            }
+            };
             
-            URL.revokeObjectURL(video.src);
-          };
-          
-          video.onerror = () => {
-            URL.revokeObjectURL(video.src);
-            reject(new Error('Failed to load video for thumbnail'));
-          };
-          
-          video.src = URL.createObjectURL(videoFile);
-        });
+            video.onerror = () => {
+              clearTimeout(timeout);
+              URL.revokeObjectURL(video.src);
+              reject(new Error('Failed to load video for thumbnail'));
+            };
+            
+            video.src = URL.createObjectURL(videoFile);
+          });
+        } catch (error) {
+          console.warn('Thumbnail auto-generation failed:', error);
+          thumbnailToUpload = null;
+          toast({
+            title: 'Thumbnail generation failed',
+            description: 'Video will upload without a thumbnail. You can add one later.',
+          });
+        }
       }
       
       if (thumbnailToUpload) {
@@ -630,7 +657,9 @@ export const WutchVideoUpload = () => {
 
       {/* Thumbnail Upload */}
       <div className="space-y-3">
-        <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+        <Label htmlFor="thumbnail">
+          Thumbnail <span className="text-xs text-muted-foreground">(Auto-generated if not provided)</span>
+        </Label>
         
         <Button
           type="button"
