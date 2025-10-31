@@ -143,9 +143,9 @@ export function MobileShortPlayer({
 
       // Only play if we have access or it's in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        // Set mute state
-        video.muted = isMuted;
-        video.volume = isMuted ? 0 : volume;
+        // Always start muted for mobile autoplay policy
+        video.muted = true;
+        video.volume = 0;
 
         // Attempt to play
         const playPromise = video.play();
@@ -282,10 +282,10 @@ export function MobileShortPlayer({
     }
   }, [isMuted, onToggleMute]);
 
-  let lastTap = 0;
+  const lastTapRef = useRef(0);
   const handleTouchEnd = (e: React.TouchEvent) => {
     const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTap;
+    const tapLength = currentTime - lastTapRef.current;
     
     if (tapLength < 300 && tapLength > 0) {
       e.preventDefault();
@@ -294,7 +294,7 @@ export function MobileShortPlayer({
       handleVideoClick();
     }
     
-    lastTap = currentTime;
+    lastTapRef.current = currentTime;
   };
 
   const handleDelete = async () => {
@@ -370,6 +370,7 @@ export function MobileShortPlayer({
           playsInline
           loop
           preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
+          poster={short.thumbnail_url || undefined}
           onTouchEnd={handleTouchEnd}
         />
       )}

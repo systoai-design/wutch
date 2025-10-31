@@ -40,7 +40,8 @@ const Shorts = () => {
   const [activeShortIndex, setActiveShortIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(() => {
     const saved = localStorage.getItem('shorts-muted');
-    return saved === null ? false : saved === 'true';
+    // Default to true so first load autoplays muted on mobile
+    return saved === null ? true : saved === 'true';
   });
   const hasInitializedRef = useRef(false);
   const isDeepLinkingRef = useRef(false);
@@ -167,6 +168,11 @@ const Shorts = () => {
       window.history.replaceState({}, '', newUrl);
     }
   }, [activeShortIndex, shorts]);
+
+  // When active short changes, hard-stop everyone; active item will re-play
+  useEffect(() => {
+    stopAllVideos();
+  }, [activeShortIndex, stopAllVideos]);
 
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
