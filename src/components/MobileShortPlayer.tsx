@@ -103,10 +103,11 @@ export function MobileShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // Immediately and synchronously stop inactive videos
+      // CRITICAL: Immediately and synchronously stop inactive videos
       video.pause();
       video.currentTime = 0;
       video.muted = true;
+      video.volume = 0;
       setIsPlaying(false);
     }
 
@@ -334,6 +335,7 @@ export function MobileShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
+          key={`${short.id}-${isActive}`}
           ref={videoRef}
           src={short.video_url}
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
