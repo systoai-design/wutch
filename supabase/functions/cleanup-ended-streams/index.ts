@@ -21,16 +21,18 @@ Deno.serve(async (req) => {
     
     console.log('Running stream cleanup at:', now);
     
-    // Find streams that should have ended (auto_end_at is in the past)
+    // Find streams that should have ended (auto_end_at is in the past and not null)
     const { data: staleLivestreams, error: fetchError } = await supabaseClient
       .from('livestreams')
       .select('id, title, started_at, user_id, auto_end_at')
       .eq('status', 'live')
-      .lt('auto_end_at', now);
+      .not('auto_end_at', 'is', null)
+      .lt('auto_end_at', now)
+      .limit(100); // Limit to prevent timeout
 
     if (fetchError) {
       console.error('Error fetching stale streams:', fetchError);
-      throw fetchError;
+      throw new Error(`Database query failed: ${fetchError.message}`);
     }
 
     if (!staleLivestreams || staleLivestreams.length === 0) {
@@ -48,6 +50,7 @@ Deno.serve(async (req) => {
     console.log(`Found ${staleLivestreams.length} stale streams to clean up`);
 
     // Update stale streams to 'ended' status
+    const streamIds = staleLivestreams.map(s => s.id);
     const { error: updateError } = await supabaseClient
       .from('livestreams')
       .update({
@@ -56,11 +59,11 @@ Deno.serve(async (req) => {
         ended_at: now,
         last_health_check: now
       })
-      .in('id', staleLivestreams.map(s => s.id));
+      .in('id', streamIds);
 
     if (updateError) {
       console.error('Error updating stale streams:', updateError);
-      throw updateError;
+      throw new Error(`Failed to update streams: ${updateError.message}`);
     }
 
     console.log(`Successfully cleaned up ${staleLivestreams.length} stale streams:`, 
@@ -79,8 +82,16 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in cleanup-ended-streams:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    
+    console.error('Full error details:', errorDetails);
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        success: false,
+        cleaned: 0
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
