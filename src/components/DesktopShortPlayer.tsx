@@ -77,25 +77,34 @@ export function DesktopShortPlayer({
     if (isActive) {
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        video.muted = isMuted;
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('[Short] Autoplay prevented:', error);
-            setIsPlaying(false);
-            // On first interaction anywhere, try again
-            const retryOnGesture = () => {
-              video.play().catch(e => {
-                console.log('[Short] Retry failed:', e);
-                setIsPlaying(false);
-              });
-              window.removeEventListener('pointerdown', retryOnGesture);
-              window.removeEventListener('touchstart', retryOnGesture);
-            };
-            window.addEventListener('pointerdown', retryOnGesture, { once: true });
-            window.addEventListener('touchstart', retryOnGesture, { once: true });
-          });
+          playPromise
+            .then(() => {
+              setIsPlaying(true);
+              // Set mute state AFTER play to avoid autoplay policy issues
+              video.muted = isMuted;
+            })
+            .catch(error => {
+              console.log('[Short] Autoplay prevented:', error);
+              setIsPlaying(false);
+              // On first interaction anywhere, try again
+              const retryOnGesture = () => {
+                video.play()
+                  .then(() => {
+                    video.muted = isMuted;
+                  })
+                  .catch(e => {
+                    console.log('[Short] Retry failed:', e);
+                    setIsPlaying(false);
+                  });
+                window.removeEventListener('pointerdown', retryOnGesture);
+                window.removeEventListener('touchstart', retryOnGesture);
+              };
+              window.addEventListener('pointerdown', retryOnGesture, { once: true });
+              window.addEventListener('touchstart', retryOnGesture, { once: true });
+            });
         }
       }
       
@@ -104,11 +113,18 @@ export function DesktopShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Immediately and synchronously stop inactive videos
+      // CRITICAL: Comprehensive cleanup for inactive videos
       video.pause();
       video.currentTime = 0;
-      video.muted = true;
       video.volume = 0;
+      video.muted = true;
+      
+      // Force stop by removing and re-adding src
+      const currentSrc = video.src;
+      video.removeAttribute('src');
+      video.load();
+      video.src = currentSrc;
+      
       setIsPlaying(false);
     }
 
@@ -327,7 +343,7 @@ export function DesktopShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
-          key={`${short.id}-${isActive}`}
+          key={short.id}
           ref={videoRef}
           src={short.video_url}
           className="w-full h-full object-contain cursor-pointer"

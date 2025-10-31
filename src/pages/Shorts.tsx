@@ -130,11 +130,11 @@ const Shorts = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Don't update if we're deep-linking
-        if (isDeepLinkingRef.current) return;
+        // Don't update if we're deep-linking or programmatically scrolling
+        if (isDeepLinkingRef.current || isScrollingRef.current) return;
         
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
             
             // Debounce to prevent rapid changes
@@ -144,12 +144,12 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 50);
+            }, 150);
           }
         });
       },
       {
-        threshold: 0.5,
+        threshold: 0.75,
         root: desktopScrollRef.current,
       }
     );
@@ -190,7 +190,7 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 50);
+            }, 100);
           }
         });
       },
@@ -246,11 +246,6 @@ const Shorts = () => {
     if (targetElement) {
       // Use scrollIntoView for reliable scrolling
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      
-      // Fallback: also set scrollTop directly to the target
-      setTimeout(() => {
-        container.scrollTo({ top: targetElement.offsetTop, behavior: 'smooth' });
-      }, 10);
     }
 
     // Clear lock after animation completes
