@@ -28,6 +28,7 @@ interface MobileShortPlayerProps {
   isActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
+  onRegisterVideo: (id: string, el: HTMLVideoElement | null) => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
   onOpenPayment: () => void;
@@ -39,6 +40,7 @@ export function MobileShortPlayer({
   isActive,
   isMuted,
   onToggleMute,
+  onRegisterVideo,
   onOpenComments,
   onOpenDonation,
   onOpenPayment,
@@ -352,18 +354,27 @@ export function MobileShortPlayer({
       {(hasAccess || isPreviewMode) && (
         <video
           key={short.id}
-          ref={videoRef}
+          ref={(el) => {
+            videoRef.current = el;
+            onRegisterVideo(short.id, el);
+          }}
           src={short.video_url}
-          className="mobile-short-video absolute inset-0 w-full h-full object-contain"
+          className="mobile-short-video absolute inset-0 w-full h-full object-cover"
           playsInline
           loop
-          muted
+          muted={isMuted}
           preload={isActive ? "auto" : "metadata"}
-          onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
       )}
+
+      {/* Tap anywhere overlay for play/pause */}
+      <div 
+        className="absolute inset-0 z-10"
+        onClick={handleVideoClick}
+        onTouchEnd={handleTouchEnd}
+      />
 
       {/* Controls Overlay - Shows on Tap */}
       <div
@@ -428,8 +439,8 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="min-w-0">
-            <div className="inline-flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
               <Link 
                 to={`/profile/${short.profiles?.username}`}
                 className="cursor-pointer hover:opacity-90 transition-opacity"
@@ -446,15 +457,15 @@ export function MobileShortPlayer({
                   variant={isFollowing ? "secondary" : "default"}
                   onClick={toggleFollow}
                   disabled={isFollowLoading}
-                  className="h-5 px-2 text-[11px] leading-none rounded-sm ml-1 shrink-0 active:scale-95 transition-transform"
+                  className="h-6 px-3 text-xs rounded-full bg-red-600 hover:bg-red-700 text-white shrink-0 active:scale-95 transition-transform"
                   aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
                 >
-                  {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
+                  {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
                 </Button>
               )}
             </div>
             {short.profiles?.display_name && (
-              <p className="text-white/80 text-xs mt-1 truncate block">{short.profiles.display_name}</p>
+              <p className="text-white/80 text-xs mt-0.5 truncate">{short.profiles.display_name}</p>
             )}
           </div>
         </div>
@@ -478,9 +489,7 @@ export function MobileShortPlayer({
           onClick={onToggleMute}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className={`p-3 rounded-full shadow-2xl backdrop-blur-sm border-2 border-white/30 ${
-            isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
-          }`}>
+          <div className="p-3 rounded-full shadow-2xl backdrop-blur-sm border-2 border-white/30 bg-red-500/90 hover:bg-red-600">
             {isMuted ? (
               <VolumeX className="h-6 w-6 text-white" />
             ) : (

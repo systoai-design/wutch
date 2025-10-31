@@ -55,7 +55,13 @@ export const ExpandableDescription = ({
     <div className="relative">
       <div
         ref={textRef}
-        className={`whitespace-pre-wrap leading-relaxed transition-all duration-300 ease-in-out ${className}`}
+        onClick={(e) => {
+          if (shouldTruncate) {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className={`whitespace-pre-wrap leading-relaxed transition-all duration-300 ease-in-out ${shouldTruncate ? 'cursor-pointer' : ''} ${className}`}
         style={{
           display: '-webkit-box',
           WebkitBoxOrient: 'vertical',

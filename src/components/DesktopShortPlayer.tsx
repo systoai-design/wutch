@@ -27,6 +27,7 @@ interface DesktopShortPlayerProps {
   isActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
+  onRegisterVideo: (id: string, el: HTMLVideoElement | null) => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
   onOpenPayment: () => void;
@@ -38,6 +39,7 @@ export function DesktopShortPlayer({
   isActive,
   isMuted,
   onToggleMute,
+  onRegisterVideo,
   onOpenComments,
   onOpenDonation,
   onOpenPayment,
@@ -344,12 +346,15 @@ export function DesktopShortPlayer({
       {(hasAccess || isPreviewMode) && (
         <video
           key={short.id}
-          ref={videoRef}
+          ref={(el) => {
+            videoRef.current = el;
+            onRegisterVideo(short.id, el);
+          }}
           src={short.video_url}
           className="w-full h-full object-contain cursor-pointer"
           loop
           playsInline
-          muted
+          muted={isMuted}
           preload={isActive ? "auto" : "metadata"}
           onClick={handleVideoClick}
           onPlay={() => setIsPlaying(true)}
@@ -400,11 +405,7 @@ export function DesktopShortPlayer({
             e.stopPropagation();
             onToggleMute();
           }}
-          className={`h-12 w-12 rounded-full transition-all ${
-            isMuted 
-              ? 'bg-red-500/90 hover:bg-red-600' 
-              : 'bg-green-500/90 hover:bg-green-600'
-          } text-white shadow-lg`}
+          className="h-12 w-12 rounded-full transition-all bg-red-500/90 hover:bg-red-600 text-white shadow-lg"
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </Button>

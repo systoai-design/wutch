@@ -47,8 +47,67 @@ const Shorts = () => {
   const desktopScrollRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const isScrollingRef = useRef(false);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const { data: shorts = [], isLoading } = useShortsQuery();
+
+  // Register video elements for centralized control
+  const handleRegisterVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
+    videoRefs.current[id] = el;
+    console.debug('[Shorts] Registered video:', id, el ? 'mounted' : 'unmounted');
+  }, []);
+
+  // Centralized playback control - pause all except active
+  useEffect(() => {
+    if (shorts.length === 0) return;
+
+    const activeShort = shorts[activeShortIndex];
+    console.debug('[Shorts] Active index changed to:', activeShortIndex, activeShort?.id);
+
+    // Stop all non-active videos
+    Object.entries(videoRefs.current).forEach(([id, video]) => {
+      if (video && id !== activeShort?.id) {
+        console.debug('[Shorts] Stopping video:', id);
+        video.pause();
+        video.currentTime = 0;
+        video.volume = 0;
+        video.muted = true;
+        
+        // Force stop
+        const src = video.src;
+        video.removeAttribute('src');
+        video.load();
+        video.src = src;
+      }
+    });
+
+    // Start the active video
+    if (activeShort) {
+      const activeVideo = videoRefs.current[activeShort.id];
+      if (activeVideo) {
+        console.debug('[Shorts] Starting video:', activeShort.id, 'isMuted:', isMuted);
+        activeVideo.muted = isMuted;
+        if (!isMuted) {
+          activeVideo.volume = 1;
+        }
+        activeVideo.play().catch(e => {
+          console.log('[Shorts] Play failed:', e);
+        });
+      }
+    }
+  }, [activeShortIndex, shorts, isMuted]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(videoRefs.current).forEach(video => {
+        if (video) {
+          video.pause();
+          video.muted = true;
+        }
+      });
+    };
+  }, []);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -385,6 +444,7 @@ const Shorts = () => {
                 isActive={index === activeShortIndex}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted(!isMuted)}
+                onRegisterVideo={handleRegisterVideo}
                 onOpenComments={() => {
                   setSelectedShort(short);
                   setIsCommentsOpen(true);
@@ -459,6 +519,7 @@ const Shorts = () => {
               isActive={index === activeShortIndex}
               isMuted={isMuted}
               onToggleMute={() => setIsMuted(!isMuted)}
+              onRegisterVideo={handleRegisterVideo}
               onOpenComments={() => {
                 setSelectedShort(short);
                 setIsCommentsOpen(true);
