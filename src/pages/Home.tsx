@@ -20,6 +20,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
 import { useStreamCleanup } from '@/hooks/useStreamCleanup';
+import { shuffleWithBias } from '@/utils/trendingScore';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 type LivestreamWithBounty = Livestream & {
@@ -248,11 +249,12 @@ const Home = () => {
         return 0;
       });
 
-      setLiveStreams(sortedLive);
-      setShorts(shortsData || []);
-      setWutchVideos(wutchWithProfiles);
-      setUpcomingStreams(sortedUpcoming);
-      setEndedStreams(sortedEnded);
+      // Apply randomization with quality bias to all content
+      setLiveStreams(shuffleWithBias(sortedLive, 0.5));
+      setShorts(shuffleWithBias(shortsData || [], 0.5));
+      setWutchVideos(shuffleWithBias(wutchWithProfiles, 0.5));
+      setUpcomingStreams(shuffleWithBias(sortedUpcoming, 0.5));
+      setEndedStreams(shuffleWithBias(sortedEnded, 0.5));
     } catch (error) {
       console.error('Error fetching streams:', error);
     } finally {

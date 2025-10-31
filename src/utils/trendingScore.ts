@@ -11,11 +11,10 @@ interface TrendingInput {
 }
 
 /**
- * Get session seed that changes every hour
+ * Get random seed that changes on every call for true randomization
  */
-function getSessionSeed(): number {
-  const now = new Date();
-  return now.getHours() + now.getDate() * 24;
+function getRandomSeed(): number {
+  return Math.random() * 1000000;
 }
 
 /**
@@ -61,7 +60,7 @@ export function calculateTrendingScoreWithRandomness(
   index: number
 ): number {
   const baseScore = calculateTrendingScore(content);
-  const seed = getSessionSeed();
+  const seed = getRandomSeed(); // Changed to truly random seed
   const randomFactor = seededRandom(seed, index);
   
   // Add 0-30% random variance to the score
@@ -120,7 +119,7 @@ export function shuffleWithBias<T extends TrendingInput>(
   content: T[],
   biasFactor: number = 0.5
 ): T[] {
-  const seed = getSessionSeed();
+  const seed = getRandomSeed(); // Changed to truly random seed
   
   return [...content]
     .map((item, index) => ({
