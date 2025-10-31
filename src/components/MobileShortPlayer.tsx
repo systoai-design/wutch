@@ -416,49 +416,58 @@ export function MobileShortPlayer({
           ref={videoRef}
           src={short.video_url}
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
-          muted
           playsInline
           loop
           autoPlay
-          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
+          preload={isActive ? "auto" : Math.abs(index - activeIndex) === 1 ? "metadata" : "none"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
       )}
 
-      {/* Center Play/Pause Button - Always visible when paused */}
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-20">
+      {/* Controls Overlay - Shows on Tap */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-black/50 backdrop-blur-md transition-all duration-300 pointer-events-none z-20",
+          showControls ? "opacity-100 animate-in fade-in" : "opacity-0"
+        )}
+      >
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+          {/* Play/Pause Button */}
           <Button
             size="icon"
             variant="ghost"
             className="h-24 w-24 rounded-full bg-black/70 hover:bg-black/80 backdrop-blur-md transition-all shadow-2xl active:scale-95"
             onClick={togglePlayPause}
           >
-            <Play className="h-12 w-12 text-white ml-1" />
+            {isPlaying ? (
+              <Pause className="h-12 w-12 text-white" />
+            ) : (
+              <Play className="h-12 w-12 text-white ml-1" />
+            )}
           </Button>
         </div>
-      )}
 
-      {/* Volume Slider - Shows on Tap */}
-      {showControls && !isMuted && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
-          <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm rounded-full px-4 py-3 animate-in fade-in">
-            <Volume2 className="h-5 w-5 text-white shrink-0" />
-            <Slider
-              value={[volume]}
-              max={1}
-              step={0.01}
-              onValueChange={handleVolumeChange}
-              className="w-32"
-            />
-            <span className="text-white text-sm font-medium min-w-[3ch]">
-              {Math.round(volume * 100)}%
-            </span>
+        {/* Volume Slider - Bottom Center */}
+        {!isMuted && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-auto">
+            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm rounded-full px-4 py-3">
+              <Volume2 className="h-5 w-5 text-white shrink-0" />
+              <Slider
+                value={[volume]}
+                max={1}
+                step={0.01}
+                onValueChange={handleVolumeChange}
+                className="w-32"
+              />
+              <span className="text-white text-sm font-medium min-w-[3ch]">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
