@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign, Lock, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -103,18 +103,51 @@ export function MobileShortPlayer({
     };
   }, [short.id, registerVideo, unregisterVideo]);
 
-  // Direct playback control based on isActive prop
+  // Consolidated video state management - single source of truth
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    let playPauseDebounce: NodeJS.Timeout;
+    
+    const handlePlay = () => {
+      clearTimeout(playPauseDebounce);
+      playPauseDebounce = setTimeout(() => setIsPlaying(true), 50);
+    };
+    
+    const handlePause = () => {
+      clearTimeout(playPauseDebounce);
+      playPauseDebounce = setTimeout(() => setIsPlaying(false), 50);
+    };
+
+    const handleEnded = () => {
+      if (isActive) {
+        video.currentTime = 0;
+        video.play().catch(e => console.log('Loop play failed:', e));
+      }
+    };
+
+    // Add event listeners
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
+
+    // Control playback based on isActive
     if (isActive) {
       console.log('[Short] Activating short:', short.id);
-      // Only play if we have access or it's not premium or in preview mode
-      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        // Do not reset on activation; just ensure mute state and try to play
-        video.muted = isMuted;
+      
+      // Set initial like count
+      if (short.like_count !== undefined) {
+        setLikeCount(short.like_count);
+      }
 
+      // Only play if we have access or it's in preview mode
+      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
+        // Set mute state
+        video.muted = isMuted;
+        video.volume = isMuted ? 0 : volume;
+
+        // Attempt to play
         const playPromise = video.play();
         if (playPromise !== undefined) {
           playPromise
@@ -124,98 +157,45 @@ export function MobileShortPlayer({
             .catch((error) => {
               console.log('[Short] Autoplay prevented:', error);
               setIsPlaying(false);
-              const retry = () => {
-                video.play().catch((e) => console.log('[Short] Retry failed:', e));
-              };
-              window.addEventListener('pointerdown', retry, { once: true });
-              window.addEventListener('touchstart', retry, { once: true });
             });
         }
       }
-
-      if (short.like_count !== undefined) {
-        setLikeCount(short.like_count);
-      }
     } else {
       console.log('[Short] Deactivating short:', short.id);
-      // Silence and reset inactive videos
+      // Immediately pause, reset, and mute inactive videos
       video.pause();
       video.currentTime = 0;
       video.muted = true;
+      video.volume = 0;
       setIsPlaying(false);
     }
 
     return () => {
+      clearTimeout(playPauseDebounce);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
+      
+      // Cleanup: ensure video is paused and muted
       if (video) {
         video.pause();
         video.muted = true;
+        video.volume = 0;
       }
     };
-  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode, short.id]);
+  }, [isActive, isMuted, volume, short.id, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
 
-  // Handle video loop
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleEnded = () => {
-      if (isActive) {
-        video.currentTime = 0;
-        video.play().catch(e => console.log('Loop play failed:', e));
-      }
-    };
-
-    video.addEventListener('ended', handleEnded);
-    return () => video.removeEventListener('ended', handleEnded);
-  }, [isActive]);
-
-  // Update isPlaying state
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    
-    // Initial sync
-    setIsPlaying(!video.paused);
-
-    return () => {
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-    };
-  }, [hasAccess, isPreviewMode]);
-
-  // Sync mute state and volume when user toggles during playback
+  // Handle mute/volume changes during active playback
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !isActive || video.paused) return;
 
-    // Only adjust if video is actively playing
     if (isMuted) {
       video.muted = true;
       video.volume = 0;
     } else {
-      // Try to unmute
       video.muted = false;
       video.volume = volume;
-      
-      // If unmute is blocked, wait for gesture
-      setTimeout(() => {
-        if (video.muted || video.volume === 0) {
-          const unmuteOnGesture = () => {
-            if (video) {
-              video.muted = false;
-              video.volume = volume;
-            }
-          };
-          window.addEventListener('pointerdown', unmuteOnGesture, { once: true });
-          window.addEventListener('touchstart', unmuteOnGesture, { once: true });
-        }
-      }, 100);
     }
   }, [isMuted, volume, isActive]);
 
@@ -273,40 +253,34 @@ export function MobileShortPlayer({
     }, 3000);
   };
 
-  const handleVideoClick = () => {
-    // Toggle play/pause on click
-    togglePlayPause();
-    // Also show controls briefly
-    handleShowControls();
-    // Unmute on first click if video is playing muted
-    if (isMuted && videoRef.current && !videoRef.current.paused) {
-      onToggleMute();
-    }
-  };
-
-  const handleDoubleTap = () => {
-    toggleLike();
-  };
-
-  const handleVolumeChange = (value: number[]) => {
-    const newVolume = value[0];
-    setVolume(newVolume);
-    if (newVolume === 0) {
-      onToggleMute();
-    } else if (isMuted) {
-      onToggleMute();
-    }
-  };
-
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        videoRef.current.play();
+        videoRef.current.play().catch(e => console.log('Play failed:', e));
       } else {
         videoRef.current.pause();
       }
     }
-  };
+  }, []);
+
+  const handleVideoClick = useCallback(() => {
+    togglePlayPause();
+    handleShowControls();
+  }, [togglePlayPause]);
+
+  const handleDoubleTap = useCallback(() => {
+    toggleLike();
+  }, [toggleLike]);
+
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    if (newVolume === 0 && !isMuted) {
+      onToggleMute();
+    } else if (newVolume > 0 && isMuted) {
+      onToggleMute();
+    }
+  }, [isMuted, onToggleMute]);
 
   let lastTap = 0;
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -393,14 +367,10 @@ export function MobileShortPlayer({
           ref={videoRef}
           src={short.video_url}
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
-          muted
           playsInline
           loop
-          autoPlay
           preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
           onTouchEnd={handleTouchEnd}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
         />
       )}
 
