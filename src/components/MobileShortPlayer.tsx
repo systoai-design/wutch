@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, P
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
 import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
@@ -28,7 +29,6 @@ interface MobileShortPlayerProps {
   isActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
-  onRegisterVideo: (id: string, el: HTMLVideoElement | null) => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
   onOpenPayment: () => void;
@@ -40,7 +40,6 @@ export function MobileShortPlayer({
   isActive,
   isMuted,
   onToggleMute,
-  onRegisterVideo,
   onOpenComments,
   onOpenDonation,
   onOpenPayment,
@@ -79,34 +78,25 @@ export function MobileShortPlayer({
     if (isActive) {
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
+        video.muted = isMuted;
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsPlaying(true);
-              // Set mute state AFTER play to avoid autoplay policy issues
-              video.muted = isMuted;
-            })
-            .catch(error => {
-              console.log('[Short] Autoplay prevented:', error);
-              setIsPlaying(false);
-              // On first interaction anywhere, try again
-              const retryOnGesture = () => {
-                video.play()
-                  .then(() => {
-                    video.muted = isMuted;
-                  })
-                  .catch(e => {
-                    console.log('[Short] Retry failed:', e);
-                    setIsPlaying(false);
-                  });
-                window.removeEventListener('pointerdown', retryOnGesture);
-                window.removeEventListener('touchstart', retryOnGesture);
-              };
-              window.addEventListener('pointerdown', retryOnGesture, { once: true });
-              window.addEventListener('touchstart', retryOnGesture, { once: true });
-            });
+          playPromise.catch(error => {
+            console.log('[Short] Autoplay prevented:', error);
+            setIsPlaying(false);
+            // On first interaction anywhere, try again
+            const retryOnGesture = () => {
+              video.play().catch(e => {
+                console.log('[Short] Retry failed:', e);
+                setIsPlaying(false);
+              });
+              window.removeEventListener('pointerdown', retryOnGesture);
+              window.removeEventListener('touchstart', retryOnGesture);
+            };
+            window.addEventListener('pointerdown', retryOnGesture, { once: true });
+            window.addEventListener('touchstart', retryOnGesture, { once: true });
+          });
         }
       }
       
@@ -114,16 +104,10 @@ export function MobileShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Zero volume FIRST to prevent audio bleed
-      video.volume = 0;
-      video.muted = true;
+      // Immediately and synchronously stop inactive videos
       video.pause();
       video.currentTime = 0;
-      
-      // Force stop - remove src after pausing
-      video.removeAttribute('src');
-      video.load();
-      
+      video.muted = true;
       setIsPlaying(false);
     }
 
@@ -351,28 +335,18 @@ export function MobileShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
-          key={short.id}
-          ref={(el) => {
-            videoRef.current = el;
-            onRegisterVideo(short.id, el);
-          }}
+          ref={videoRef}
           src={short.video_url}
-          className="mobile-short-video absolute inset-0 w-full h-full object-cover"
+          className="mobile-short-video absolute inset-0 w-full h-full object-contain"
           playsInline
           loop
-          muted={isMuted}
-          preload={isActive ? "auto" : "metadata"}
+          muted
+          preload={(isActive || isPreviewMode) ? "auto" : "none"}
+          onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
       )}
-
-      {/* Tap anywhere overlay for play/pause */}
-      <div 
-        className="absolute inset-0 z-10"
-        onPointerUp={handleVideoClick}
-        onTouchEnd={handleTouchEnd}
-      />
 
       {/* Controls Overlay - Shows on Tap */}
       <div
@@ -437,8 +411,8 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1">
               <Link 
                 to={`/profile/${short.profiles?.username}`}
                 className="cursor-pointer hover:opacity-90 transition-opacity"
@@ -455,15 +429,15 @@ export function MobileShortPlayer({
                   variant={isFollowing ? "secondary" : "default"}
                   onClick={toggleFollow}
                   disabled={isFollowLoading}
-                  className="h-6 px-3 text-xs rounded-full bg-red-600 hover:bg-red-700 text-white shrink-0 active:scale-95 transition-transform"
+                  className="h-5 px-2 text-[11px] leading-none rounded-sm ml-1 shrink-0 active:scale-95 transition-transform"
                   aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
                 >
-                  {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
+                  {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
                 </Button>
               )}
             </div>
             {short.profiles?.display_name && (
-              <p className="text-white/80 text-xs mt-0.5 truncate">{short.profiles.display_name}</p>
+              <p className="text-white/80 text-xs mt-1 truncate block">{short.profiles.display_name}</p>
             )}
           </div>
         </div>
@@ -487,7 +461,9 @@ export function MobileShortPlayer({
           onClick={onToggleMute}
           className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
         >
-          <div className="p-3 rounded-full shadow-2xl backdrop-blur-sm border-2 border-white/30 bg-red-500/90 hover:bg-red-600">
+          <div className={`p-3 rounded-full shadow-2xl backdrop-blur-sm border-2 border-white/30 ${
+            isMuted ? 'bg-red-500/90' : 'bg-green-500/90'
+          }`}>
             {isMuted ? (
               <VolumeX className="h-6 w-6 text-white" />
             ) : (

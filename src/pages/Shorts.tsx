@@ -47,68 +47,8 @@ const Shorts = () => {
   const desktopScrollRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const isScrollingRef = useRef(false);
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const { data: shorts = [], isLoading } = useShortsQuery();
-
-  // Register video elements for centralized control
-  const handleRegisterVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
-    videoRefs.current[id] = el;
-    console.debug('[Shorts] Registered video:', id, el ? 'mounted' : 'unmounted');
-  }, []);
-
-  // Centralized playback control - pause all except active
-  useEffect(() => {
-    if (shorts.length === 0) return;
-
-    const activeShort = shorts[activeShortIndex];
-    console.debug('[Shorts] Active index changed to:', activeShortIndex, activeShort?.id);
-
-    // Stop all non-active videos
-    Object.entries(videoRefs.current).forEach(([id, video]) => {
-      if (video && id !== activeShort?.id) {
-        console.debug('[Shorts] Stopping video:', id);
-        // CRITICAL: Zero volume FIRST to prevent audio bleed
-        video.volume = 0;
-        video.muted = true;
-        video.pause();
-        video.currentTime = 0;
-        
-        // Force stop - remove src after pausing
-        video.removeAttribute('src');
-        video.load();
-      }
-    });
-
-    // Start the active video
-    if (activeShort) {
-      const activeVideo = videoRefs.current[activeShort.id];
-      if (activeVideo) {
-        console.debug('[Shorts] Starting video:', activeShort.id, 'isMuted:', isMuted);
-        activeVideo.muted = isMuted;
-        if (!isMuted) {
-          activeVideo.volume = 1;
-        }
-        activeVideo.play().catch(e => {
-          console.log('[Shorts] Play failed:', e);
-        });
-      }
-    }
-  }, [activeShortIndex, shorts, isMuted]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(videoRefs.current).forEach(video => {
-        if (video) {
-          video.pause();
-          video.muted = true;
-          video.removeAttribute('src');
-          video.load();
-        }
-      });
-    };
-  }, []);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -139,6 +79,8 @@ const Shorts = () => {
             const targetElement = desktopScrollRef.current.children[targetIndex] as HTMLElement;
             if (targetElement) {
               targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+              // Fallback if scrollIntoView doesn't work reliably
+              desktopScrollRef.current.scrollTo({ top: targetElement.offsetTop, behavior: 'auto' });
             }
           }
           
@@ -188,11 +130,11 @@ const Shorts = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Don't update if we're deep-linking or programmatically scrolling
-        if (isDeepLinkingRef.current || isScrollingRef.current) return;
+        // Don't update if we're deep-linking
+        if (isDeepLinkingRef.current) return;
         
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
             
             // Debounce to prevent rapid changes
@@ -202,12 +144,12 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 150);
+            }, 100);
           }
         });
       },
       {
-        threshold: 0.75,
+        threshold: 0.5,
         root: desktopScrollRef.current,
       }
     );
@@ -304,6 +246,11 @@ const Shorts = () => {
     if (targetElement) {
       // Use scrollIntoView for reliable scrolling
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Fallback: also set scrollTop directly to the target
+      setTimeout(() => {
+        container.scrollTo({ top: targetElement.offsetTop, behavior: 'smooth' });
+      }, 10);
     }
 
     // Clear lock after animation completes
@@ -443,7 +390,6 @@ const Shorts = () => {
                 isActive={index === activeShortIndex}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted(!isMuted)}
-                onRegisterVideo={handleRegisterVideo}
                 onOpenComments={() => {
                   setSelectedShort(short);
                   setIsCommentsOpen(true);
@@ -518,7 +464,6 @@ const Shorts = () => {
               isActive={index === activeShortIndex}
               isMuted={isMuted}
               onToggleMute={() => setIsMuted(!isMuted)}
-              onRegisterVideo={handleRegisterVideo}
               onOpenComments={() => {
                 setSelectedShort(short);
                 setIsCommentsOpen(true);

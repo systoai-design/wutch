@@ -27,7 +27,6 @@ interface DesktopShortPlayerProps {
   isActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
-  onRegisterVideo: (id: string, el: HTMLVideoElement | null) => void;
   onOpenComments: () => void;
   onOpenDonation: () => void;
   onOpenPayment: () => void;
@@ -39,7 +38,6 @@ export function DesktopShortPlayer({
   isActive,
   isMuted,
   onToggleMute,
-  onRegisterVideo,
   onOpenComments,
   onOpenDonation,
   onOpenPayment,
@@ -79,34 +77,25 @@ export function DesktopShortPlayer({
     if (isActive) {
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
+        video.muted = isMuted;
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsPlaying(true);
-              // Set mute state AFTER play to avoid autoplay policy issues
-              video.muted = isMuted;
-            })
-            .catch(error => {
-              console.log('[Short] Autoplay prevented:', error);
-              setIsPlaying(false);
-              // On first interaction anywhere, try again
-              const retryOnGesture = () => {
-                video.play()
-                  .then(() => {
-                    video.muted = isMuted;
-                  })
-                  .catch(e => {
-                    console.log('[Short] Retry failed:', e);
-                    setIsPlaying(false);
-                  });
-                window.removeEventListener('pointerdown', retryOnGesture);
-                window.removeEventListener('touchstart', retryOnGesture);
-              };
-              window.addEventListener('pointerdown', retryOnGesture, { once: true });
-              window.addEventListener('touchstart', retryOnGesture, { once: true });
-            });
+          playPromise.catch(error => {
+            console.log('[Short] Autoplay prevented:', error);
+            setIsPlaying(false);
+            // On first interaction anywhere, try again
+            const retryOnGesture = () => {
+              video.play().catch(e => {
+                console.log('[Short] Retry failed:', e);
+                setIsPlaying(false);
+              });
+              window.removeEventListener('pointerdown', retryOnGesture);
+              window.removeEventListener('touchstart', retryOnGesture);
+            };
+            window.addEventListener('pointerdown', retryOnGesture, { once: true });
+            window.addEventListener('touchstart', retryOnGesture, { once: true });
+          });
         }
       }
       
@@ -115,16 +104,10 @@ export function DesktopShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Zero volume FIRST to prevent audio bleed
-      video.volume = 0;
-      video.muted = true;
+      // Immediately and synchronously stop inactive videos
       video.pause();
       video.currentTime = 0;
-      
-      // Force stop - remove src after pausing
-      video.removeAttribute('src');
-      video.load();
-      
+      video.muted = true;
       setIsPlaying(false);
     }
 
@@ -343,17 +326,13 @@ export function DesktopShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
-          key={short.id}
-          ref={(el) => {
-            videoRef.current = el;
-            onRegisterVideo(short.id, el);
-          }}
+          ref={videoRef}
           src={short.video_url}
-          className="w-screen h-screen object-cover cursor-pointer transform-gpu will-change-transform"
+          className="w-full h-full object-contain cursor-pointer"
           loop
           playsInline
-          muted={isMuted}
-          preload={isActive ? "auto" : "metadata"}
+          muted
+          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
           onClick={handleVideoClick}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -403,7 +382,11 @@ export function DesktopShortPlayer({
             e.stopPropagation();
             onToggleMute();
           }}
-          className="h-12 w-12 rounded-full transition-all bg-red-500/90 hover:bg-red-600 text-white shadow-lg"
+          className={`h-12 w-12 rounded-full transition-all ${
+            isMuted 
+              ? 'bg-red-500/90 hover:bg-red-600' 
+              : 'bg-green-500/90 hover:bg-green-600'
+          } text-white shadow-lg`}
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </Button>

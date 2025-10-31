@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Moon, Sun, User, LogOut, Plus, Shield, ShieldCheck, Flag, Bell, Wallet, Zap, Video } from 'lucide-react';
+import { Search, Menu, Moon, Sun, User, LogOut, Plus, Shield, ShieldCheck, Flag, Bell, Wallet, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -413,12 +413,6 @@ const Navigation = () => {
                         <Link to="/admin/roles">
                           <Shield className="h-4 w-4 mr-2" />
                           Roles
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="cursor-pointer py-3 min-h-[44px]">
-                        <Link to="/admin/video-optimization">
-                          <Video className="h-4 w-4 mr-2" />
-                          Video Optimization
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
