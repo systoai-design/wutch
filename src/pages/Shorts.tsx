@@ -66,19 +66,19 @@ const Shorts = () => {
   }, []);
 
   const stopAllVideos = useCallback(() => {
-    let pausedCount = 0;
+    let silencedCount = 0;
     videoRefsMap.current.forEach((video, id) => {
-      if (video && !video.paused) {
+      // ALWAYS hard-stop, regardless of paused state
+      if (video) {
         video.volume = 0;
         video.muted = true;
         video.pause();
         video.currentTime = 0;
-        pausedCount++;
-        console.log('[AudioManager] Silenced short:', id);
+        silencedCount++;
       }
     });
-    if (pausedCount > 0) {
-      console.log('[AudioManager] Stopped', pausedCount, 'videos');
+    if (silencedCount > 0) {
+      console.log('[AudioManager] Silenced', silencedCount, 'videos');
     }
   }, []);
 

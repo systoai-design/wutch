@@ -111,28 +111,36 @@ export function MobileShortPlayer({
     if (isActive) {
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        // Always start muted to allow autoplay
-        video.muted = true;
-        video.volume = volume;
+        // Fresh start: reset video state
+        video.pause();
+        video.currentTime = 0;
         
+        // Always start muted and volume 0 to guarantee autoplay
+        video.muted = true;
+        video.volume = 0;
+        
+        // Play the video
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
           playPromise.then(() => {
+            console.log('[Short] Playing short:', short.id);
             // After playback starts, try to unmute if user preference is unmuted
             if (!isMuted) {
               video.muted = false;
               video.volume = volume;
               
-              // Check if unmute worked by testing volume
+              // Check if unmute worked
               setTimeout(() => {
                 if (video.muted || video.volume === 0) {
                   console.log('[Short] Unmute blocked, waiting for gesture');
                   // Attach one-time gesture listener to unmute
                   const unmuteOnGesture = () => {
-                    video.muted = false;
-                    video.volume = volume;
-                    console.log('[Short] Unmuted after gesture');
+                    if (video) {
+                      video.muted = false;
+                      video.volume = volume;
+                      console.log('[Short] Unmuted after gesture');
+                    }
                   };
                   window.addEventListener('pointerdown', unmuteOnGesture, { once: true });
                   window.addEventListener('touchstart', unmuteOnGesture, { once: true });
@@ -162,9 +170,10 @@ export function MobileShortPlayer({
       if (video) {
         video.pause();
         video.muted = true;
+        video.volume = 0;
       }
     };
-  }, [isActive, isMuted, volume, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
+  }, [isActive, isMuted, volume, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode, short.id]);
 
   // Handle video loop
   useEffect(() => {
@@ -212,8 +221,23 @@ export function MobileShortPlayer({
       video.muted = true;
       video.volume = 0;
     } else {
+      // Try to unmute
       video.muted = false;
       video.volume = volume;
+      
+      // If unmute is blocked, wait for gesture
+      setTimeout(() => {
+        if (video.muted || video.volume === 0) {
+          const unmuteOnGesture = () => {
+            if (video) {
+              video.muted = false;
+              video.volume = volume;
+            }
+          };
+          window.addEventListener('pointerdown', unmuteOnGesture, { once: true });
+          window.addEventListener('touchstart', unmuteOnGesture, { once: true });
+        }
+      }, 100);
     }
   }, [isMuted, volume, isActive]);
 
@@ -388,13 +412,14 @@ export function MobileShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
+          key={`${short.id}-${isActive ? 'active' : 'inactive'}`}
           ref={videoRef}
           src={short.video_url}
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
           playsInline
           loop
-          muted
-          preload={isActive ? "auto" : Math.abs(index - activeIndex) === 1 ? "auto" : "metadata"}
+          autoPlay
+          preload={isActive ? "auto" : Math.abs(index - activeIndex) === 1 ? "metadata" : "none"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -446,11 +471,11 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
-        className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom)+10px)] z-40 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom)+6px)] z-40 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-2 mb-3">
+        <div className="flex items-start gap-2 mb-2">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -464,15 +489,15 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="min-w-0">
-            <div className="inline-flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-1 mb-0.5">
               <Link 
                 to={`/profile/${short.profiles?.username}`}
                 className="cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`View ${short.profiles?.username}'s profile`}
               >
-                <span className="text-white font-semibold text-sm">
+                <span className="text-white font-semibold text-sm leading-snug">
                   @{short.profiles?.username || 'Unknown'}
                 </span>
               </Link>
@@ -489,19 +514,19 @@ export function MobileShortPlayer({
                 </Button>
               )}
             </div>
-            {short.profiles?.display_name && (
-              <p className="text-white/80 text-xs mt-1 truncate block">{short.profiles.display_name}</p>
-            )}
+            <p className="text-white/70 text-xs leading-snug truncate">
+              {short.profiles?.display_name || short.profiles?.username || 'Unknown'}
+            </p>
           </div>
         </div>
         
-        <div className="space-y-1">
-          <h3 className="text-white font-semibold text-base line-clamp-2">{short.title}</h3>
+        <div className="space-y-0.5">
+          <h3 className="text-white font-semibold text-sm leading-snug line-clamp-2">{short.title}</h3>
           {short.description && (
             <ExpandableDescription 
               text={short.description}
-              maxLines={3}
-              className="text-white/90 text-sm"
+              maxLines={2}
+              className="text-white/90 text-xs leading-snug"
             />
           )}
         </div>
