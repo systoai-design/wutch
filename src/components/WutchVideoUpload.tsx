@@ -20,6 +20,7 @@ interface Chapter {
   title: string;
 }
 
+// Video upload component for Wutch videos
 export const WutchVideoUpload = () => {
   const { user } = useAuth();
   const { toast } = useToast();

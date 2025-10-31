@@ -26,6 +26,7 @@ import ScheduleStreamPicker from '@/components/ScheduleStreamPicker';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import { CATEGORY_NAMES } from '@/constants/categories';
 
+// Submit content page - livestreams, videos, and shorts
 const Submit = () => {
   useEffect(() => {
     document.title = 'Submit Your Stream | Wutch';
