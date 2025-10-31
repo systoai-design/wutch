@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
+import { useDeleteWutchVideo } from '@/hooks/useDeleteWutchVideo';
 import { X402PaymentModal } from '@/components/X402PaymentModal';
 import { WutchVideoPlayer } from '@/components/WutchVideoPlayer';
 import { WutchVideoCard } from '@/components/WutchVideoCard';
@@ -15,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ThumbsUp, Share2, ExternalLink, Eye, Lock, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ThumbsUp, Share2, ExternalLink, Eye, Lock, Loader2, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSection from '@/components/CommentsSection';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +43,8 @@ const WutchVideoDetail = () => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { deleteWutchVideo, isDeleting } = useDeleteWutchVideo();
   const [video, setVideo] = useState<any>(null);
   const [creator, setCreator] = useState<any>(null);
   const [isLiked, setIsLiked] = useState(false);
@@ -289,6 +293,13 @@ const WutchVideoDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    const result = await deleteWutchVideo(video.id);
+    if (result.success) {
+      navigate('/wutch-videos');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen pb-20 lg:pb-6">
@@ -473,6 +484,39 @@ const WutchVideoDetail = () => {
                       contentTitle={video.title}
                       contentUrl={videoUrl}
                     />
+                  )}
+
+                  {/* Delete button - only for video owner */}
+                  {isVideoOwner && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Video</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this video? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>
