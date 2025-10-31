@@ -54,6 +54,9 @@ export const WutchVideoPlayer = ({
   const [isBuffering, setIsBuffering] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const maxRetries = 3;
   
   // Stage 2: Chapter states
   const [currentChapter, setCurrentChapter] = useState(0);
@@ -181,19 +184,51 @@ export const WutchVideoPlayer = ({
     const handleError = () => {
       const error = video.error;
       let message = 'Failed to load video';
+      let shouldRetry = false;
       
       if (error) {
+        console.error('[WutchVideoPlayer] Error details:', {
+          code: error.code,
+          message: error.message,
+          videoUrl,
+          videoId,
+          retryCount,
+        });
+        
         switch (error.code) {
-          case 1: message = 'Video loading was aborted'; break;
-          case 2: message = 'Network error occurred'; break;
-          case 3: message = 'Video format not supported'; break;
-          case 4: message = 'Video source not found'; break;
+          case 1: 
+            message = 'Video loading was aborted';
+            break;
+          case 2: 
+            message = 'Network issue - check your connection';
+            shouldRetry = true;
+            break;
+          case 3: 
+            message = 'Video format not supported by your browser';
+            break;
+          case 4: 
+            message = 'Video source not found. Try refreshing the page.';
+            shouldRetry = true;
+            break;
         }
       }
       
-      setError(message);
-      setIsLoading(false);
-      console.error('Video error:', error);
+      // Retry logic for network and not found errors
+      if (shouldRetry && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`[WutchVideoPlayer] Retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        setIsRetrying(true);
+        
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          setError(null);
+          setIsRetrying(false);
+          video.load();
+        }, delay);
+      } else {
+        setError(message);
+        setIsLoading(false);
+      }
     };
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -404,25 +439,51 @@ export const WutchVideoPlayer = ({
         </div>
       )}
 
+      {/* Retry overlay */}
+      {isRetrying && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
+          <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
+          <p className="text-white text-sm">Retrying... (Attempt {retryCount + 1}/{maxRetries})</p>
+        </div>
+      )}
+
       {/* Error overlay */}
-      {error && (
+      {error && !isRetrying && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-40 p-6">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="mt-2">
-              {error}
+              <div className="space-y-2">
+                <p>{error}</p>
+                {retryCount >= maxRetries && (
+                  <p className="text-xs opacity-80">
+                    Tried {maxRetries} times. The video may still be processing or there could be a connection issue.
+                  </p>
+                )}
+              </div>
             </AlertDescription>
-            <Button 
-              onClick={() => {
-                setError(null);
-                window.location.reload();
-              }}
-              variant="outline"
-              size="sm"
-              className="mt-4"
-            >
-              Retry
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button 
+                onClick={() => {
+                  setError(null);
+                  setRetryCount(0);
+                  if (videoRef.current) {
+                    videoRef.current.load();
+                  }
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Try Again
+              </Button>
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+                size="sm"
+              >
+                Refresh Page
+              </Button>
+            </div>
           </Alert>
         </div>
       )}

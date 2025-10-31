@@ -1,5 +1,13 @@
 project_id = "vsjldzfoneoofvntjjcl"
 
+[storage]
+file_size_limit = "3GB"
+
+[storage.buckets.wutch-videos]
+public = true
+allowed_mime_types = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"]
+file_size_limit = "3GB"
+
 [api]
 enabled = true
 port = 54321

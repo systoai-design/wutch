@@ -400,6 +400,21 @@ export const WutchVideoUpload = () => {
         .from('wutch-videos')
         .getPublicUrl(videoPath);
 
+      // Verify video URL is accessible
+      console.log('[WutchVideoUpload] Verifying video URL:', videoUrl);
+      try {
+        const verifyResponse = await fetch(videoUrl, { method: 'HEAD' });
+        if (!verifyResponse.ok) {
+          console.error('[WutchVideoUpload] Video URL not accessible:', verifyResponse.status);
+          throw new Error('Uploaded video is not accessible. Please try again.');
+        }
+        console.log('[WutchVideoUpload] Video URL verified successfully');
+      } catch (verifyError) {
+        console.error('[WutchVideoUpload] URL verification failed:', verifyError);
+        await supabase.storage.from('wutch-videos').remove([videoPath]);
+        throw new Error('Video upload verification failed. Please check your connection and try again.');
+      }
+
       // Content moderation
       const { data: moderationData, error: moderationError } = await supabase.functions.invoke(
         'moderate-content',
