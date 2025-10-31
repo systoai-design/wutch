@@ -47,7 +47,7 @@ serve(async (req) => {
       .from(tableName)
       .select('user_id, x402_price, is_premium, x402_asset, x402_network')
       .eq('id', contentId)
-      .single();
+      .maybeSingle();
 
     if (contentError || !content) {
       return new Response(
