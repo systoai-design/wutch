@@ -4,7 +4,6 @@ import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, P
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
 import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
@@ -341,7 +340,7 @@ export function MobileShortPlayer({
           playsInline
           loop
           muted
-          preload={(isActive || isPreviewMode) ? "auto" : "none"}
+          preload={isActive ? "auto" : "metadata"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}

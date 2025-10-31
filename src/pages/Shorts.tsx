@@ -144,7 +144,7 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 100);
+            }, 50);
           }
         });
       },
@@ -190,7 +190,7 @@ const Shorts = () => {
             
             observerTimeout = setTimeout(() => {
               setActiveShortIndex(index);
-            }, 100);
+            }, 50);
           }
         });
       },

@@ -332,7 +332,7 @@ export function DesktopShortPlayer({
           loop
           playsInline
           muted
-          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
+          preload={isActive ? "auto" : "metadata"}
           onClick={handleVideoClick}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
