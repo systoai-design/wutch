@@ -120,11 +120,9 @@ export function MobileShortPlayer({
       video.volume = 0;
       video.muted = true;
       
-      // Force stop by removing and re-adding src
-      const currentSrc = video.src;
+      // Force stop - do NOT reassign src
       video.removeAttribute('src');
       video.load();
-      video.src = currentSrc;
       
       setIsPlaying(false);
     }
@@ -372,7 +370,7 @@ export function MobileShortPlayer({
       {/* Tap anywhere overlay for play/pause */}
       <div 
         className="absolute inset-0 z-10"
-        onClick={handleVideoClick}
+        onPointerUp={handleVideoClick}
         onTouchEnd={handleTouchEnd}
       />
 
@@ -440,7 +438,7 @@ export function MobileShortPlayer({
             </Avatar>
           </Link>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Link 
                 to={`/profile/${short.profiles?.username}`}
                 className="cursor-pointer hover:opacity-90 transition-opacity"

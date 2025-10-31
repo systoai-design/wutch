@@ -121,11 +121,9 @@ export function DesktopShortPlayer({
       video.volume = 0;
       video.muted = true;
       
-      // Force stop by removing and re-adding src
-      const currentSrc = video.src;
+      // Force stop - do NOT reassign src
       video.removeAttribute('src');
       video.load();
-      video.src = currentSrc;
       
       setIsPlaying(false);
     }
@@ -351,7 +349,7 @@ export function DesktopShortPlayer({
             onRegisterVideo(short.id, el);
           }}
           src={short.video_url}
-          className="w-full h-full object-contain cursor-pointer"
+          className="w-full h-full object-contain cursor-pointer transform-gpu will-change-transform"
           loop
           playsInline
           muted={isMuted}

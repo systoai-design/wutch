@@ -73,11 +73,9 @@ const Shorts = () => {
         video.volume = 0;
         video.muted = true;
         
-        // Force stop
-        const src = video.src;
+        // Force stop - do NOT reassign src
         video.removeAttribute('src');
         video.load();
-        video.src = src;
       }
     });
 
@@ -104,6 +102,8 @@ const Shorts = () => {
         if (video) {
           video.pause();
           video.muted = true;
+          video.removeAttribute('src');
+          video.load();
         }
       });
     };
@@ -138,8 +138,6 @@ const Shorts = () => {
             const targetElement = desktopScrollRef.current.children[targetIndex] as HTMLElement;
             if (targetElement) {
               targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-              // Fallback if scrollIntoView doesn't work reliably
-              desktopScrollRef.current.scrollTo({ top: targetElement.offsetTop, behavior: 'auto' });
             }
           }
           
