@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { FilterOption } from '@/components/FilterBar';
-import { sortByTrendingWithVariety, shuffleWithBias } from '@/utils/trendingScore';
+import { shuffleWithBias } from '@/utils/trendingScore';
 
 type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
   profiles?: {
@@ -75,13 +75,8 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
         commentCount: commentCounts[video.id] || 0,
       })) as WutchVideo[];
 
-      // Apply trending sort with variety
-      if (activeFilter === 'trending') {
-        return sortByTrendingWithVariety(videosWithData);
-      }
-
-      // For 'all' and 'recent', add slight randomization (70% score, 30% random)
-      return shuffleWithBias(videosWithData, 0.7);
+      // Apply randomization with quality bias for all filters
+      return shuffleWithBias(videosWithData, 0.5);
     },
     staleTime: 2 * 60 * 1000, // 2 minutes for videos
     gcTime: 5 * 60 * 1000, // 5 minutes

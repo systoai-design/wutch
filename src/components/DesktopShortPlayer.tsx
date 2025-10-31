@@ -1,13 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX, ExternalLink, Play, Pause, Lock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, DollarSign, Volume2, VolumeX, ExternalLink, Play, Pause, Lock, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Slider } from '@/components/ui/slider';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
+import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -51,9 +62,11 @@ export function DesktopShortPlayer({
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewEnded, setPreviewEnded] = useState(false);
   const [previewCountdown, setPreviewCountdown] = useState<number>(0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
     useShortVideoLike(short.id);
@@ -267,6 +280,14 @@ export function DesktopShortPlayer({
     await toggleFollow();
   };
 
+  const handleDelete = async () => {
+    const result = await deleteShortVideo(short.id);
+    if (result.success) {
+      setShowDeleteDialog(false);
+      navigate('/shorts');
+    }
+  };
+
   return (
     <div className="relative w-full h-screen flex items-center justify-center bg-black overflow-hidden">
       {/* Preview Badge */}
@@ -473,6 +494,20 @@ export function DesktopShortPlayer({
             className="h-14 w-14 rounded-full bg-accent/90 hover:bg-accent text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
           >
             <ExternalLink className="h-7 w-7" />
+          </Button>
+        )}
+
+        {/* Delete Button - Owner Only */}
+        {isOwner && (
+          <Button
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
+            className="h-14 w-14 rounded-full bg-destructive/90 hover:bg-destructive text-white border-2 border-white/30 shadow-2xl transition-transform hover:scale-110"
+          >
+            <Trash className="h-7 w-7" />
           </Button>
         )}
       </div>

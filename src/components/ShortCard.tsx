@@ -1,12 +1,31 @@
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Eye, Lock } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Lock, MoreVertical, Trash } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatNumber } from '@/utils/formatters';
 import { Database } from '@/integrations/supabase/types';
 import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { VerificationBadge } from '@/components/VerificationBadge';
 import { UserBadges } from '@/components/UserBadges';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAuth } from '@/hooks/useAuth';
+import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { useNavigate } from 'react-router-dom';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
@@ -25,10 +44,15 @@ interface ShortCardProps {
 export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { isAdmin, isModerator } = useUserRoles(short.user_id);
+  const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
+
+  const isOwner = user?.id === short.user_id;
 
   useEffect(() => {
     return () => {
@@ -96,13 +120,21 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
     }
   };
 
+  const handleDelete = async () => {
+    const result = await deleteShortVideo(short.id);
+    if (result.success) {
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
-    <Card 
-      className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-card will-change-transform"
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <>
+      <Card 
+        className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-card will-change-transform"
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
       {/* Aspect Ratio Container (9:16 for vertical video) */}
       <div className="relative aspect-[9/16] bg-muted">
         {/* Video Element - Always in DOM */}
@@ -131,8 +163,37 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
         
+        {/* Delete Menu - Top Right */}
+        {isOwner && (
+          <div className="absolute top-2 right-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 bg-black/60 hover:bg-black/80 backdrop-blur-sm"
+                >
+                  <MoreVertical className="h-4 w-4 text-white" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
         {/* Stats Overlay - Top Right */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
+        <div className="absolute top-3 right-14 flex flex-col gap-2">
           {short.is_premium && short.x402_price && (
             <div className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-lg">
               <Lock className="h-3 w-3 text-white" />
@@ -194,5 +255,27 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         </div>
       </div>
     </Card>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Short Video</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this short? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

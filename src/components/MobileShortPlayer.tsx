@@ -1,7 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign, Lock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Wallet, Volume2, VolumeX, ExternalLink, Play, Pause, DollarSign, Lock, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
@@ -10,6 +20,7 @@ import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
+import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -17,6 +28,7 @@ import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 import { cn } from '@/lib/utils';
 import DonationModal from '@/components/DonationModal';
 import { ExpandableDescription } from '@/components/ExpandableDescription';
+import { useNavigate } from 'react-router-dom';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -53,8 +65,11 @@ export function MobileShortPlayer({
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewEnded, setPreviewEnded] = useState(false);
   const [previewCountdown, setPreviewCountdown] = useState<number>(0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
   
   const { isLiked, likeCount, toggleLike, setLikeCount, showGuestDialog, setShowGuestDialog } = 
     useShortVideoLike(short.id);
@@ -274,6 +289,14 @@ export function MobileShortPlayer({
     }
     
     lastTap = currentTime;
+  };
+
+  const handleDelete = async () => {
+    const result = await deleteShortVideo(short.id);
+    if (result.success) {
+      setShowDeleteDialog(false);
+      navigate('/shorts');
+    }
   };
 
   return (
@@ -554,6 +577,18 @@ export function MobileShortPlayer({
             </div>
           </button>
         )}
+
+        {/* Delete Button - Owner Only */}
+        {isOwner && (
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
+          >
+            <div className="p-2.5 rounded-full bg-destructive/90 hover:bg-destructive shadow-lg backdrop-blur-sm">
+              <Trash className="h-6 w-6 text-white" />
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Guest Dialogs */}
@@ -567,6 +602,27 @@ export function MobileShortPlayer({
         onOpenChange={setShowFollowGuestDialog}
         action="follow"
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Short Video</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this short? This action cannot be undone and you will be redirected to the shorts feed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

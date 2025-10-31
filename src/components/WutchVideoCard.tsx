@@ -1,9 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, ThumbsUp, Lock } from 'lucide-react';
+import { Eye, ThumbsUp, Lock, MoreVertical, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { generateContentUrl } from '@/utils/urlHelpers';
 import { getCategoryIcon } from '@/constants/categories';
@@ -11,6 +28,8 @@ import { optimizeImage, generateSrcSet, imagePresets } from '@/utils/imageOptimi
 import { VerificationBadge } from '@/components/VerificationBadge';
 import { UserBadges } from '@/components/UserBadges';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAuth } from '@/hooks/useAuth';
+import { useDeleteWutchVideo } from '@/hooks/useDeleteWutchVideo';
 
 interface WutchVideoCardProps {
   video: {
@@ -55,10 +74,15 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const CategoryIcon = video.category ? getCategoryIcon(video.category) : null;
+  const { user } = useAuth();
   const { isAdmin, isModerator } = useUserRoles(video.user_id);
+  const { deleteWutchVideo, isDeleting } = useDeleteWutchVideo();
+  
+  const isOwner = user?.id === video.user_id;
   
   const videoUrl = generateContentUrl('wutch', {
     id: video.id,
@@ -120,16 +144,55 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     }
   };
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = await deleteWutchVideo(video.id);
+    if (result.success) {
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
-    <Link 
-      to={videoUrl}
-      className={cn("group block", className)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <>
+      <Link 
+        to={videoUrl}
+        className={cn("group block", className)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
       <div className="space-y-3.5">
         {/* Thumbnail/Video */}
         <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted shadow-sm group-hover:shadow-lg transition-all duration-500">
+          {/* Delete Menu - Top Right */}
+          {isOwner && (
+            <div className="absolute top-2 right-2 z-10">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 bg-black/60 hover:bg-black/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreVertical className="h-4 w-4 text-white" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
           {/* Thumbnail - always visible unless playing */}
           {video.thumbnail_url && !imageError && (
             <img
@@ -248,5 +311,27 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
         </div>
       </div>
     </Link>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Video</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this video? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

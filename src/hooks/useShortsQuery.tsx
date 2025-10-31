@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { sortByTrendingWithVariety } from '@/utils/trendingScore';
+import { shuffleWithBias } from '@/utils/trendingScore';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -43,8 +43,8 @@ export const useShortsQuery = () => {
         commentCount: commentCounts[short.id] || 0,
       })) as ShortVideo[];
 
-      // Sort by trending score with variety
-      return sortByTrendingWithVariety(shortsWithComments);
+      // Randomize with quality bias (50% score, 50% random)
+      return shuffleWithBias(shortsWithComments, 0.5);
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
