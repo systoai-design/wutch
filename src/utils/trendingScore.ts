@@ -137,6 +137,45 @@ export function shuffleWithBias<T extends TrendingInput>(
 }
 
 /**
+ * Disperse content by creator to avoid clustering same-creator content
+ * Maintains quality distribution while spreading out same-creator items
+ */
+export function disperseByCreator<T extends { user_id?: string; profiles?: any }>(
+  content: T[]
+): T[] {
+  if (content.length <= 1) return content;
+
+  const result: T[] = [];
+  const byCreator = new Map<string, T[]>();
+  
+  // Group by creator
+  content.forEach(item => {
+    const creatorId = item.user_id || 'unknown';
+    if (!byCreator.has(creatorId)) {
+      byCreator.set(creatorId, []);
+    }
+    byCreator.get(creatorId)!.push(item);
+  });
+
+  // Convert to array and sort by group size (larger groups first)
+  const creatorGroups = Array.from(byCreator.entries())
+    .sort((a, b) => b[1].length - a[1].length);
+
+  // Round-robin distribute items from each creator
+  let maxLength = Math.max(...creatorGroups.map(g => g[1].length));
+  
+  for (let i = 0; i < maxLength; i++) {
+    for (const [_, items] of creatorGroups) {
+      if (items[i]) {
+        result.push(items[i]);
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
  * Sort content array by trending score (legacy)
  */
 export function sortByTrending<T extends TrendingInput>(content: T[]): T[] {

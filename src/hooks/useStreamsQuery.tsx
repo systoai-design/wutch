@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { shuffleWithBias } from '@/utils/trendingScore';
+import { shuffleWithBias, disperseByCreator } from '@/utils/trendingScore';
 
 type Livestream = Database['public']['Tables']['livestreams']['Row'];
 
@@ -56,11 +56,15 @@ export const useStreamsQuery = () => {
           hasShareCampaign: campaignStreamIds.has(stream.id),
         })) || [];
 
-      // Apply randomization with quality bias
+      // Apply randomization with quality bias, then disperse by creator
+      const disperseLive = disperseByCreator(shuffleWithBias(addRewardInfo(liveResult.data || []), 0.5));
+      const disperseUpcoming = disperseByCreator(shuffleWithBias(addRewardInfo(upcomingResult.data || []), 0.5));
+      const disperseEnded = disperseByCreator(shuffleWithBias(addRewardInfo(endedResult.data || []), 0.5));
+      
       return {
-        liveStreams: shuffleWithBias(addRewardInfo(liveResult.data || []), 0.5),
-        upcomingStreams: shuffleWithBias(addRewardInfo(upcomingResult.data || []), 0.5),
-        endedStreams: shuffleWithBias(addRewardInfo(endedResult.data || []), 0.5),
+        liveStreams: disperseLive,
+        upcomingStreams: disperseUpcoming,
+        endedStreams: disperseEnded,
       };
     },
     staleTime: 10000, // 10 seconds for live data
