@@ -111,24 +111,37 @@ export function MobileShortPlayer({
     if (isActive) {
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        video.muted = isMuted;
+        // Always start muted to allow autoplay
+        video.muted = true;
+        video.volume = volume;
+        
         const playPromise = video.play();
         
         if (playPromise !== undefined) {
-          playPromise.catch(error => {
+          playPromise.then(() => {
+            // After playback starts, try to unmute if user preference is unmuted
+            if (!isMuted) {
+              video.muted = false;
+              video.volume = volume;
+              
+              // Check if unmute worked by testing volume
+              setTimeout(() => {
+                if (video.muted || video.volume === 0) {
+                  console.log('[Short] Unmute blocked, waiting for gesture');
+                  // Attach one-time gesture listener to unmute
+                  const unmuteOnGesture = () => {
+                    video.muted = false;
+                    video.volume = volume;
+                    console.log('[Short] Unmuted after gesture');
+                  };
+                  window.addEventListener('pointerdown', unmuteOnGesture, { once: true });
+                  window.addEventListener('touchstart', unmuteOnGesture, { once: true });
+                }
+              }, 100);
+            }
+          }).catch(error => {
             console.log('[Short] Autoplay prevented:', error);
             setIsPlaying(false);
-            // On first interaction anywhere, try again
-            const retryOnGesture = () => {
-              video.play().catch(e => {
-                console.log('[Short] Retry failed:', e);
-                setIsPlaying(false);
-              });
-              window.removeEventListener('pointerdown', retryOnGesture);
-              window.removeEventListener('touchstart', retryOnGesture);
-            };
-            window.addEventListener('pointerdown', retryOnGesture, { once: true });
-            window.addEventListener('touchstart', retryOnGesture, { once: true });
           });
         }
       }
@@ -137,7 +150,7 @@ export function MobileShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Stop audio FIRST to prevent bleeding across shorts
+      // CRITICAL: Forcefully silence and reset inactive videos
       video.volume = 0;
       video.muted = true;
       video.pause();
@@ -151,7 +164,7 @@ export function MobileShortPlayer({
         video.muted = true;
       }
     };
-  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
+  }, [isActive, isMuted, volume, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
 
   // Handle video loop
   useEffect(() => {
@@ -189,22 +202,20 @@ export function MobileShortPlayer({
     };
   }, [hasAccess, isPreviewMode]);
 
-  // Sync mute state and volume
+  // Sync mute state and volume when user toggles during playback
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-      if (!isMuted) {
-        videoRef.current.volume = volume;
-      }
-    }
-  }, [isMuted, volume]);
+    const video = videoRef.current;
+    if (!video || !isActive || video.paused) return;
 
-  // Force sync video muted state when becoming active
-  useEffect(() => {
-    if (videoRef.current && isActive) {
-      videoRef.current.muted = isMuted;
+    // Only adjust if video is actively playing
+    if (isMuted) {
+      video.muted = true;
+      video.volume = 0;
+    } else {
+      video.muted = false;
+      video.volume = volume;
     }
-  }, [isActive, isMuted]);
+  }, [isMuted, volume, isActive]);
 
   // Preview mode logic
   useEffect(() => {
@@ -435,7 +446,7 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
-        className="absolute bottom-0 left-0 right-0 p-4 pb-20 z-40 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom)+10px)] z-40 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >

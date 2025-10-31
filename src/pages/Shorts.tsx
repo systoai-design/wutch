@@ -72,6 +72,7 @@ const Shorts = () => {
         video.volume = 0;
         video.muted = true;
         video.pause();
+        video.currentTime = 0;
         pausedCount++;
         console.log('[AudioManager] Silenced short:', id);
       }
@@ -98,6 +99,31 @@ const Shorts = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [stopAllVideos]);
+
+  // Stop all videos on scroll (mobile) to immediately silence previous shorts
+  useEffect(() => {
+    if (!isMobile || !containerRef.current) return;
+
+    let scrollTimeout: NodeJS.Timeout | null = null;
+    const handleScroll = () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      scrollTimeout = setTimeout(() => {
+        stopAllVideos();
+      }, 50); // Throttle to 50ms
+    };
+
+    const container = containerRef.current;
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [isMobile, stopAllVideos]);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
