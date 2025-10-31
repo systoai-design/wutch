@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAutoPlayShort } from '@/hooks/useAutoPlayShort';
+
 import { useVideoView } from '@/hooks/useVideoView';
 import { useShortVideoLike } from '@/hooks/useShortVideoLike';
 import { useFollow } from '@/hooks/useFollow';
@@ -109,60 +109,39 @@ export function MobileShortPlayer({
     if (!video) return;
 
     if (isActive) {
+      console.log('[Short] Activating short:', short.id);
       // Only play if we have access or it's not premium or in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        // Fresh start: reset video state
-        video.pause();
-        video.currentTime = 0;
-        
-        // Always start muted and volume 0 to guarantee autoplay
-        video.muted = true;
-        video.volume = 0;
-        
-        // Play the video
+        // Do not reset on activation; just ensure mute state and try to play
+        video.muted = isMuted;
+
         const playPromise = video.play();
-        
         if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log('[Short] Playing short:', short.id);
-            // After playback starts, try to unmute if user preference is unmuted
-            if (!isMuted) {
-              video.muted = false;
-              video.volume = volume;
-              
-              // Check if unmute worked
-              setTimeout(() => {
-                if (video.muted || video.volume === 0) {
-                  console.log('[Short] Unmute blocked, waiting for gesture');
-                  // Attach one-time gesture listener to unmute
-                  const unmuteOnGesture = () => {
-                    if (video) {
-                      video.muted = false;
-                      video.volume = volume;
-                      console.log('[Short] Unmuted after gesture');
-                    }
-                  };
-                  window.addEventListener('pointerdown', unmuteOnGesture, { once: true });
-                  window.addEventListener('touchstart', unmuteOnGesture, { once: true });
-                }
-              }, 100);
-            }
-          }).catch(error => {
-            console.log('[Short] Autoplay prevented:', error);
-            setIsPlaying(false);
-          });
+          playPromise
+            .then(() => {
+              console.log('[Short] Playing short:', short.id);
+            })
+            .catch((error) => {
+              console.log('[Short] Autoplay prevented:', error);
+              setIsPlaying(false);
+              const retry = () => {
+                video.play().catch((e) => console.log('[Short] Retry failed:', e));
+              };
+              window.addEventListener('pointerdown', retry, { once: true });
+              window.addEventListener('touchstart', retry, { once: true });
+            });
         }
       }
-      
+
       if (short.like_count !== undefined) {
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Forcefully silence and reset inactive videos
-      video.volume = 0;
-      video.muted = true;
+      console.log('[Short] Deactivating short:', short.id);
+      // Silence and reset inactive videos
       video.pause();
       video.currentTime = 0;
+      video.muted = true;
       setIsPlaying(false);
     }
 
@@ -170,10 +149,9 @@ export function MobileShortPlayer({
       if (video) {
         video.pause();
         video.muted = true;
-        video.volume = 0;
       }
     };
-  }, [isActive, isMuted, volume, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode, short.id]);
+  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode, short.id]);
 
   // Handle video loop
   useEffect(() => {
@@ -412,18 +390,32 @@ export function MobileShortPlayer({
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
         <video
-          key={`${short.id}-${isActive ? 'active' : 'inactive'}`}
           ref={videoRef}
           src={short.video_url}
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
+          muted
           playsInline
           loop
           autoPlay
-          preload={isActive ? "auto" : Math.abs(index - activeIndex) === 1 ? "metadata" : "none"}
+          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
+      )}
+
+      {/* Center Play/Pause Button - Always visible when paused */}
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-20">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-24 w-24 rounded-full bg-black/70 hover:bg-black/80 backdrop-blur-md transition-all shadow-2xl active:scale-95"
+            onClick={togglePlayPause}
+          >
+            <Play className="h-12 w-12 text-white ml-1" />
+          </Button>
+        </div>
       )}
 
       {/* Controls Overlay - Shows on Tap */}
