@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useDeleteWutchVideo } from '@/hooks/useDeleteWutchVideo';
 import { X402PaymentModal } from '@/components/X402PaymentModal';
@@ -42,6 +43,7 @@ const WutchVideoDetail = () => {
   }
   
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { deleteWutchVideo, isDeleting } = useDeleteWutchVideo();
@@ -332,7 +334,8 @@ const WutchVideoDetail = () => {
     );
   }
 
-  const isVideoOwner = user && video.user_id === user.id;
+  const isVideoOwner = isOwner || (user && video.user_id === user.id);
+  const canDelete = isVideoOwner || isAdmin;
   const videoUrl = makeAbsoluteUrl(generateContentUrl('wutch', { 
     id: video.id, 
     title: video.title, 
@@ -486,8 +489,8 @@ const WutchVideoDetail = () => {
                     />
                   )}
 
-                  {/* Delete button - only for video owner */}
-                  {isVideoOwner && (
+                  {/* Delete button - only for video owner or admin */}
+                  {canDelete && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 

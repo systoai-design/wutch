@@ -25,6 +25,7 @@ import { VerificationBadge } from '@/components/VerificationBadge';
 import { UserBadges } from '@/components/UserBadges';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { useNavigate } from 'react-router-dom';
 
@@ -49,10 +50,12 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
   const timeoutRef = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin: isCurrentUserAdmin } = useAdmin();
   const { isAdmin, isModerator } = useUserRoles(short.user_id);
   const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
 
   const isOwner = user?.id === short.user_id;
+  const canDelete = isOwner || isCurrentUserAdmin;
 
   useEffect(() => {
     return () => {
@@ -163,8 +166,8 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
         
-        {/* Delete Menu - Top Right */}
-        {isOwner && (
+        {/* Delete Menu - Top Right (Owner or Admin) */}
+        {canDelete && (
           <div className="absolute top-2 right-2 z-10">
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>

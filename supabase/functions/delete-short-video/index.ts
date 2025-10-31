@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify ownership
+    // Verify ownership or admin status
     const { data: video, error: fetchError } = await supabaseClient
       .from('short_videos')
       .select('user_id')
@@ -52,7 +52,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (video.user_id !== user.id) {
+    // Check if user is admin
+    const { data: adminRole } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    const isAdmin = !!adminRole;
+
+    // Allow deletion if user is owner or admin
+    if (video.user_id !== user.id && !isAdmin) {
       return new Response(
         JSON.stringify({ error: 'You can only delete your own content' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
