@@ -75,6 +75,8 @@ export function MobileShortPlayer({
   const [previewCountdown, setPreviewCountdown] = useState<number>(0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const touchRef = useRef({ x: 0, y: 0, t: 0 });
+  const lastTapRef = useRef(0);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
@@ -161,10 +163,8 @@ export function MobileShortPlayer({
         }
       }
     } else {
-      console.log('[Short] Deactivating short:', short.id);
-      // Immediately pause, reset, and mute inactive videos
+      // Immediately pause and mute inactive videos (don't reset time for natural resume)
       video.pause();
-      video.currentTime = 0;
       video.muted = true;
       video.volume = 0;
       setIsPlaying(false);
@@ -282,19 +282,30 @@ export function MobileShortPlayer({
     }
   }, [isMuted, onToggleMute]);
 
-  const lastTapRef = useRef(0);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTapRef.current;
+    const now = Date.now();
+    const touch = e.changedTouches[0];
+    const dx = (touch?.clientX || 0) - touchRef.current.x;
+    const dy = (touch?.clientY || 0) - touchRef.current.y;
+    const moved = Math.hypot(dx, dy);
     
-    if (tapLength < 300 && tapLength > 0) {
+    // Ignore if it was a swipe (movement > 15px)
+    if (moved > 15) return;
+    
+    const delta = now - lastTapRef.current;
+    if (delta < 300 && delta > 0) {
       e.preventDefault();
       handleDoubleTap();
     } else {
       handleVideoClick();
     }
     
-    lastTapRef.current = currentTime;
+    lastTapRef.current = now;
   };
 
   const handleDelete = async () => {
@@ -369,8 +380,9 @@ export function MobileShortPlayer({
           className="mobile-short-video absolute inset-0 w-full h-full object-contain"
           playsInline
           loop
-          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
+          preload={Math.abs(index - activeIndex) <= 1 || isPreviewMode ? 'auto' : 'metadata'}
           poster={short.thumbnail_url || undefined}
+          onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         />
       )}

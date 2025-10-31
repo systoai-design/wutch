@@ -169,10 +169,21 @@ const Shorts = () => {
     }
   }, [activeShortIndex, shorts]);
 
-  // When active short changes, hard-stop everyone; active item will re-play
+  // When active short changes, pause only the previous video
+  const prevActiveIndexRef = useRef<number | null>(null);
   useEffect(() => {
-    stopAllVideos();
-  }, [activeShortIndex, stopAllVideos]);
+    const prev = prevActiveIndexRef.current;
+    if (prev !== null && shorts[prev]) {
+      const prevId = shorts[prev].id;
+      const prevVideo = videoRefsMap.current.get(prevId);
+      if (prevVideo) {
+        prevVideo.pause();
+        prevVideo.muted = true;
+        // Don't reset currentTime to make pausing/scrolling back feel natural
+      }
+    }
+    prevActiveIndexRef.current = activeShortIndex;
+  }, [activeShortIndex, shorts]);
 
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
@@ -201,8 +212,9 @@ const Shorts = () => {
         });
       },
       {
-        threshold: 0.5,
+        threshold: 0.75,
         root: desktopScrollRef.current,
+        rootMargin: '0px 0px -10% 0px',
       }
     );
 
@@ -247,8 +259,9 @@ const Shorts = () => {
         });
       },
       {
-        threshold: 0.5,
+        threshold: 0.75,
         root: containerRef.current,
+        rootMargin: '0px 0px -10% 0px',
       }
     );
 
