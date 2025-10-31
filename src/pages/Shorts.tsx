@@ -68,12 +68,13 @@ const Shorts = () => {
     Object.entries(videoRefs.current).forEach(([id, video]) => {
       if (video && id !== activeShort?.id) {
         console.debug('[Shorts] Stopping video:', id);
-        video.pause();
-        video.currentTime = 0;
+        // CRITICAL: Zero volume FIRST to prevent audio bleed
         video.volume = 0;
         video.muted = true;
+        video.pause();
+        video.currentTime = 0;
         
-        // Force stop - do NOT reassign src
+        // Force stop - remove src after pausing
         video.removeAttribute('src');
         video.load();
       }

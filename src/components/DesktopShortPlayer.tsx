@@ -115,13 +115,13 @@ export function DesktopShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Comprehensive cleanup for inactive videos
-      video.pause();
-      video.currentTime = 0;
+      // CRITICAL: Zero volume FIRST to prevent audio bleed
       video.volume = 0;
       video.muted = true;
+      video.pause();
+      video.currentTime = 0;
       
-      // Force stop - do NOT reassign src
+      // Force stop - remove src after pausing
       video.removeAttribute('src');
       video.load();
       
@@ -349,7 +349,7 @@ export function DesktopShortPlayer({
             onRegisterVideo(short.id, el);
           }}
           src={short.video_url}
-          className="w-full h-full object-contain cursor-pointer transform-gpu will-change-transform"
+          className="w-screen h-screen object-cover cursor-pointer transform-gpu will-change-transform"
           loop
           playsInline
           muted={isMuted}

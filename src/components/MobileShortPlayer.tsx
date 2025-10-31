@@ -114,13 +114,13 @@ export function MobileShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // CRITICAL: Comprehensive cleanup for inactive videos
-      video.pause();
-      video.currentTime = 0;
+      // CRITICAL: Zero volume FIRST to prevent audio bleed
       video.volume = 0;
       video.muted = true;
+      video.pause();
+      video.currentTime = 0;
       
-      // Force stop - do NOT reassign src
+      // Force stop - remove src after pausing
       video.removeAttribute('src');
       video.load();
       
