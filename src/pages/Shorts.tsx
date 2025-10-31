@@ -50,6 +50,24 @@ const Shorts = () => {
 
   const { data: shorts = [], isLoading } = useShortsQuery();
 
+  // Global audio manager: Ensure only one video plays audio at a time
+  const videoRefsMap = useRef<Map<number, HTMLVideoElement>>(new Map());
+
+  const stopAllVideos = useCallback(() => {
+    videoRefsMap.current.forEach((video) => {
+      if (video && !video.paused) {
+        video.volume = 0;
+        video.muted = true;
+        video.pause();
+      }
+    });
+  }, []);
+
+  // Stop all videos when active index changes (extra safety)
+  useEffect(() => {
+    stopAllVideos();
+  }, [activeShortIndex, stopAllVideos]);
+
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
     if (!shorts || shorts.length === 0 || hasInitializedRef.current) return;

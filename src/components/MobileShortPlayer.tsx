@@ -119,10 +119,11 @@ export function MobileShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // Immediately and synchronously stop inactive videos
+      // CRITICAL: Stop audio FIRST to prevent bleeding across shorts
+      video.volume = 0;
+      video.muted = true;
       video.pause();
       video.currentTime = 0;
-      video.muted = true;
       setIsPlaying(false);
     }
 
@@ -364,7 +365,7 @@ export function MobileShortPlayer({
           playsInline
           loop
           muted
-          preload={(isActive || isPreviewMode) ? "auto" : "none"}
+          preload={isActive ? "auto" : "metadata"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -416,7 +417,7 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
-        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-24 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/80 to-transparent pt-20 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
