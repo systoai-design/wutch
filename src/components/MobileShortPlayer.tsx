@@ -38,6 +38,8 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
 
 interface MobileShortPlayerProps {
   short: ShortVideo;
+  index: number;
+  activeIndex: number;
   isActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
@@ -45,10 +47,14 @@ interface MobileShortPlayerProps {
   onOpenDonation: () => void;
   onOpenPayment: () => void;
   onShare: () => void;
+  registerVideo: (id: string, videoEl: HTMLVideoElement | null) => void;
+  unregisterVideo: (id: string) => void;
 }
 
 export function MobileShortPlayer({
   short,
+  index,
+  activeIndex,
   isActive,
   isMuted,
   onToggleMute,
@@ -56,6 +62,8 @@ export function MobileShortPlayer({
   onOpenDonation,
   onOpenPayment,
   onShare,
+  registerVideo,
+  unregisterVideo,
 }: MobileShortPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -84,6 +92,16 @@ export function MobileShortPlayer({
 
   // Track views when active
   useVideoView(short.id, isActive);
+
+  // Register/unregister video with global audio manager
+  useEffect(() => {
+    if (videoRef.current) {
+      registerVideo(short.id, videoRef.current);
+    }
+    return () => {
+      unregisterVideo(short.id);
+    };
+  }, [short.id, registerVideo, unregisterVideo]);
 
   // Direct playback control based on isActive prop
   useEffect(() => {
@@ -365,7 +383,7 @@ export function MobileShortPlayer({
           playsInline
           loop
           muted
-          preload={isActive ? "auto" : "metadata"}
+          preload={isActive ? "auto" : Math.abs(index - activeIndex) === 1 ? "auto" : "metadata"}
           onTouchEnd={handleTouchEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -417,7 +435,7 @@ export function MobileShortPlayer({
 
       {/* Bottom Overlay - Creator Info & Title */}
       <div 
-        className="absolute bottom-0 left-0 right-16 p-4 z-40 bg-gradient-to-t from-black/80 to-transparent pt-20 pointer-events-auto"
+        className="absolute bottom-0 left-0 right-0 p-4 pb-20 z-40 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >

@@ -51,22 +51,53 @@ const Shorts = () => {
   const { data: shorts = [], isLoading } = useShortsQuery();
 
   // Global audio manager: Ensure only one video plays audio at a time
-  const videoRefsMap = useRef<Map<number, HTMLVideoElement>>(new Map());
+  const videoRefsMap = useRef<Map<string, HTMLVideoElement>>(new Map());
+
+  const registerVideo = useCallback((id: string, videoEl: HTMLVideoElement | null) => {
+    if (videoEl) {
+      videoRefsMap.current.set(id, videoEl);
+      console.log('[AudioManager] Registered video:', id, 'Total:', videoRefsMap.current.size);
+    }
+  }, []);
+
+  const unregisterVideo = useCallback((id: string) => {
+    videoRefsMap.current.delete(id);
+    console.log('[AudioManager] Unregistered video:', id, 'Remaining:', videoRefsMap.current.size);
+  }, []);
 
   const stopAllVideos = useCallback(() => {
-    videoRefsMap.current.forEach((video) => {
+    let pausedCount = 0;
+    videoRefsMap.current.forEach((video, id) => {
       if (video && !video.paused) {
         video.volume = 0;
         video.muted = true;
         video.pause();
+        pausedCount++;
+        console.log('[AudioManager] Silenced short:', id);
       }
     });
+    if (pausedCount > 0) {
+      console.log('[AudioManager] Stopped', pausedCount, 'videos');
+    }
   }, []);
 
   // Stop all videos when active index changes (extra safety)
   useEffect(() => {
     stopAllVideos();
   }, [activeShortIndex, stopAllVideos]);
+
+  // Pause all videos when tab becomes hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('[AudioManager] Tab hidden, stopping all videos');
+        stopAllVideos();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [stopAllVideos]);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -401,10 +432,12 @@ const Shorts = () => {
             <div
               key={short.id}
               data-index={index}
-              className="mobile-short-item"
+              className="mobile-short-item h-[100dvh] snap-start snap-always"
             >
               <MobileShortPlayer
                 short={short}
+                index={index}
+                activeIndex={activeShortIndex}
                 isActive={index === activeShortIndex}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted(!isMuted)}
@@ -421,6 +454,8 @@ const Shorts = () => {
                   setIsPaymentModalOpen(true);
                 }}
                 onShare={() => handleShare(short)}
+                registerVideo={registerVideo}
+                unregisterVideo={unregisterVideo}
               />
             </div>
           ))}
