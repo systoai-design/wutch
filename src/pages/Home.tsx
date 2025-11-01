@@ -425,35 +425,47 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {(() => {
-                    // Randomize entire list first
+                    // Shuffle pool first
                     const shuffled = [...wutchVideos];
                     for (let i = shuffled.length - 1; i > 0; i--) {
                       const j = Math.floor(Math.random() * (i + 1));
                       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                     }
-                    
-                    // First pass: pick unique creators
+
+                    // Enforce strict uniqueness by creator as seen by users (username/display_name fallback to user_id)
                     const picked: typeof shuffled = [];
                     const seenCreators = new Set<string>();
                     for (const v of shuffled) {
-                      const uid = v.user_id ?? 'unknown';
-                      if (!seenCreators.has(uid)) {
+                      const creatorKey = (
+                        (v as any).profiles?.username?.toLowerCase?.() ||
+                        (v as any).profiles?.display_name?.toLowerCase?.() ||
+                        (v as any).user_id || 'unknown'
+                      ).toString().trim();
+
+                      if (!seenCreators.has(creatorKey)) {
                         picked.push(v);
-                        seenCreators.add(uid);
+                        seenCreators.add(creatorKey);
                         if (picked.length === 6) break;
                       }
                     }
-                    
-                    // Second pass: if we don't have 6 yet, fill with remaining videos
+
+                    // If still fewer than 6, keep scanning shuffled for creators we haven't seen yet
                     if (picked.length < 6) {
                       for (const v of shuffled) {
-                        if (!picked.some(p => p.id === v.id)) {
+                        if (picked.some(p => p.id === v.id)) continue;
+                        const creatorKey = (
+                          (v as any).profiles?.username?.toLowerCase?.() ||
+                          (v as any).profiles?.display_name?.toLowerCase?.() ||
+                          (v as any).user_id || 'unknown'
+                        ).toString().trim();
+                        if (!seenCreators.has(creatorKey)) {
                           picked.push(v);
+                          seenCreators.add(creatorKey);
                           if (picked.length === 6) break;
                         }
                       }
                     }
-                    
+
                     return picked;
                   })().map((video, index) => (
                     <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
