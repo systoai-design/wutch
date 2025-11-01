@@ -425,12 +425,14 @@ const Home = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {(() => {
-                    // Randomize and enforce unique creators (up to 6)
+                    // Randomize entire list first
                     const shuffled = [...wutchVideos];
                     for (let i = shuffled.length - 1; i > 0; i--) {
                       const j = Math.floor(Math.random() * (i + 1));
                       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                     }
+                    
+                    // First pass: pick unique creators
                     const picked: typeof shuffled = [];
                     const seenCreators = new Set<string>();
                     for (const v of shuffled) {
@@ -441,7 +443,18 @@ const Home = () => {
                         if (picked.length === 6) break;
                       }
                     }
-                    return picked; // do NOT backfill duplicates
+                    
+                    // Second pass: if we don't have 6 yet, fill with remaining videos
+                    if (picked.length < 6) {
+                      for (const v of shuffled) {
+                        if (!picked.some(p => p.id === v.id)) {
+                          picked.push(v);
+                          if (picked.length === 6) break;
+                        }
+                      }
+                    }
+                    
+                    return picked;
                   })().map((video, index) => (
                     <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
                       <WutchVideoCard video={video} />
