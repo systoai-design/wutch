@@ -52,15 +52,31 @@ function ShortsContent() {
 
   const { data: shorts = [], isLoading } = useShortsQuery();
   const controller = useShortsVideoController();
+  const activationTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Activate video when active index changes
+  // Activate video when active index changes (debounced)
   useEffect(() => {
-    if (shorts.length > 0 && shorts[activeShortIndex]) {
-      controller.activate(shorts[activeShortIndex].id, { 
-        muted: isMuted,
-        startAt: 0 
-      });
+    // Clear pending activation
+    if (activationTimeoutRef.current) {
+      clearTimeout(activationTimeoutRef.current);
     }
+
+    // Debounce activation to prevent rapid changes during scroll
+    activationTimeoutRef.current = setTimeout(() => {
+      if (shorts.length > 0 && shorts[activeShortIndex]) {
+        console.log('[Shorts] Mobile activating index:', activeShortIndex);
+        controller.activate(shorts[activeShortIndex].id, { 
+          muted: isMuted,
+          startAt: 0 
+        });
+      }
+    }, 100);
+
+    return () => {
+      if (activationTimeoutRef.current) {
+        clearTimeout(activationTimeoutRef.current);
+      }
+    };
   }, [activeShortIndex, isMuted, shorts, controller]);
 
   // Handle deep-linking: Check URL for specific short ID

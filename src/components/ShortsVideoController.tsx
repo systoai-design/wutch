@@ -22,6 +22,7 @@ class ShortsVideoControllerClass {
   private slots = new Map<string, VideoSlot>();
   private activeSlotId: string | null = null;
   private playEventHandler: ((e: Event) => void) | null = null;
+  private isDeactivating = false;
 
   constructor() {
     // Create single video element
@@ -67,16 +68,24 @@ class ShortsVideoControllerClass {
   }
 
   async activate(id: string, options: ActivateOptions) {
+    // CRITICAL: Silence all videos first
+    this.silenceAll();
+    
     const slot = this.slots.get(id);
     if (!slot) {
       console.warn('[ShortsController] Slot not found:', id);
       return;
     }
 
-    // Deactivate previous if different
+    // CRITICAL: Wait for previous deactivation to complete
+    if (this.isDeactivating) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    // Deactivate previous BEFORE loading new source
     if (this.activeSlotId && this.activeSlotId !== id) {
       console.log('[ShortsController] Deactivate prev:', this.activeSlotId);
-      this.deactivateCurrentSlot();
+      await this.deactivateCurrentSlot();
     }
 
     console.log('[ShortsController] Activate:', id);
@@ -100,12 +109,25 @@ class ShortsVideoControllerClass {
     }
   }
 
-  private deactivateCurrentSlot() {
-    if (!this.activeSlotId) return;
+  private silenceAll() {
+    // Emergency silence: force-stop ALL video elements in DOM
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach(vid => {
+      if (vid !== this.videoElement) {
+        vid.pause();
+        vid.muted = true;
+        vid.currentTime = 0;
+      }
+    });
+  }
 
+  private async deactivateCurrentSlot() {
+    if (!this.activeSlotId || this.isDeactivating) return;
+    
+    this.isDeactivating = true;
     console.log('[ShortsController] Hard release media for:', this.activeSlotId);
     
-    // Stop playback
+    // Stop playback IMMEDIATELY
     this.videoElement.pause();
     this.videoElement.muted = true;
     this.videoElement.currentTime = 0;
@@ -120,12 +142,16 @@ class ShortsVideoControllerClass {
     this.videoElement.removeAttribute('src');
     this.videoElement.load();
 
+    // Small delay to ensure media pipeline fully releases
+    await new Promise(resolve => setTimeout(resolve, 10));
+
     // Remove from DOM
     if (this.videoElement.parentElement) {
       this.videoElement.parentElement.removeChild(this.videoElement);
     }
 
     this.activeSlotId = null;
+    this.isDeactivating = false;
   }
 
   private async loadSource(sources: VideoSources, startAt: number) {

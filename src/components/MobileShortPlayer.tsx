@@ -64,6 +64,7 @@ export function MobileShortPlayer({
 }: MobileShortPlayerProps) {
   const controller = useShortsVideoController();
   const videoSlotRef = useRef<HTMLDivElement>(null);
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -106,12 +107,18 @@ export function MobileShortPlayer({
     };
   }, [short.id, short.video_url, short.hls_playlist_url, controller]);
 
-  // Get video element from controller when active
+  // Get video element from controller when active and cache it
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      activeVideoRef.current = null;
+      return;
+    }
 
     const video = controller.getVideoElement();
     if (!video) return;
+
+    // Cache the video element
+    activeVideoRef.current = video;
 
     // Reset preview state
     setPreviewEnded(false);
@@ -141,6 +148,7 @@ export function MobileShortPlayer({
       clearTimeout(playPauseDebounce);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
+      activeVideoRef.current = null;
     };
   }, [isActive, short.id, short.like_count, setLikeCount, controller]);
 
@@ -201,15 +209,18 @@ export function MobileShortPlayer({
   };
 
   const togglePlayPause = useCallback(() => {
-    const video = controller.getVideoElement();
-    if (video) {
-      if (video.paused) {
-        video.play().catch(e => console.log('Play failed:', e));
-      } else {
-        video.pause();
-      }
+    const video = activeVideoRef.current;
+    if (!video || !isActive) {
+      console.warn('[MobileShortPlayer] No active video element');
+      return;
     }
-  }, [controller]);
+    
+    if (video.paused || video.ended) {
+      video.play().catch(e => console.log('[MobileShortPlayer] Play failed:', e));
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
 
   const handleVideoClick = useCallback(() => {
     togglePlayPause();
@@ -400,7 +411,7 @@ export function MobileShortPlayer({
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-3 mb-2">
+        <div className="flex items-center gap-2 mb-2">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -415,7 +426,7 @@ export function MobileShortPlayer({
             </Avatar>
           </Link>
           
-          <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="min-w-0 flex-1">
             <Link 
               to={`/profile/${short.profiles?.username}`}
               className="block cursor-pointer hover:opacity-90 transition-opacity"
@@ -426,7 +437,7 @@ export function MobileShortPlayer({
                 @{short.profiles?.username || 'Unknown'}
               </span>
             </Link>
-            <p className="text-white/70 text-xs truncate">
+            <p className="text-white/70 text-xs truncate leading-tight">
               {short.profiles?.display_name || short.profiles?.username || 'Unknown'}
             </p>
           </div>
@@ -437,7 +448,7 @@ export function MobileShortPlayer({
               variant={isFollowing ? "secondary" : "default"}
               onClick={toggleFollow}
               disabled={isFollowLoading}
-              className="shrink-0 h-7 px-3 text-xs rounded-full"
+              className="shrink-0 h-8 px-3 text-xs rounded-full"
               aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
             >
               {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}

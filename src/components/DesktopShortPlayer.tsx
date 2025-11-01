@@ -56,6 +56,7 @@ export function DesktopShortPlayer({
   onShare,
 }: DesktopShortPlayerProps) {
   const videoSlotRef = useRef<HTMLDivElement>(null);
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const controller = useShortsVideoController();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -97,28 +98,39 @@ export function DesktopShortPlayer({
   // Track views when active
   useVideoView(short.id, isActive);
 
-  // Get video element from controller when active
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Get video element from controller when active and cache it
   useEffect(() => {
-    if (isActive) {
-      videoRef.current = controller.getVideoElement();
-      
-      // Reset preview state when activating
-      if (isPreviewMode && !previewEnded && videoRef.current) {
-        videoRef.current.currentTime = 0;
-        setCurrentTime(0);
-        setPreviewCountdown(previewDuration || 0);
-        setPreviewEnded(false);
-      }
-      
-      // Fetch like count when video becomes active
-      if (short.like_count !== undefined) {
-        setLikeCount(short.like_count);
-      }
-    } else {
-      videoRef.current = null;
+    if (!isActive) {
+      activeVideoRef.current = null;
       setIsPlaying(false);
+      return;
     }
+
+    const video = controller.getVideoElement();
+    if (!video) return;
+
+    // Cache the video element
+    activeVideoRef.current = video;
+    
+    // Reset preview state when activating
+    if (isPreviewMode && !previewEnded) {
+      video.currentTime = 0;
+      setCurrentTime(0);
+      setPreviewCountdown(previewDuration || 0);
+      setPreviewEnded(false);
+    }
+    
+    // Set initial like count
+    if (short.like_count !== undefined) {
+      setLikeCount(short.like_count);
+    }
+
+    // Sync playing state
+    setIsPlaying(!video.paused);
+
+    return () => {
+      activeVideoRef.current = null;
+    };
   }, [isActive, short.like_count, setLikeCount, isPreviewMode, previewEnded, previewDuration, controller]);
 
   // Controls auto-hide - show on mouse move, hide after 3s
@@ -145,7 +157,7 @@ export function DesktopShortPlayer({
 
   // Update isPlaying state
   useEffect(() => {
-    const video = videoRef.current;
+    const video = activeVideoRef.current;
     if (!video) return;
 
     const handlePlay = () => setIsPlaying(true);
@@ -161,7 +173,7 @@ export function DesktopShortPlayer({
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [hasAccess, isPreviewMode]);
+  }, [isActive, controller]);
 
   // Preview mode logic
   useEffect(() => {
@@ -177,7 +189,7 @@ export function DesktopShortPlayer({
 
   // Handle preview timeupdate
   useEffect(() => {
-    const video = videoRef.current;
+    const video = activeVideoRef.current;
     if (!video || !isPreviewMode) return;
 
     const handleTimeUpdate = () => {
@@ -200,10 +212,10 @@ export function DesktopShortPlayer({
 
   // Sync mute state and volume
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
+    if (activeVideoRef.current) {
+      activeVideoRef.current.muted = isMuted;
       if (!isMuted) {
-        videoRef.current.volume = volume;
+        activeVideoRef.current.volume = volume;
       }
     }
   }, [isMuted, volume]);
@@ -214,18 +226,18 @@ export function DesktopShortPlayer({
     // Also show controls briefly
     setShowControls(true);
     // Unmute on first click if video is playing muted
-    if (isMuted && videoRef.current && !videoRef.current.paused) {
+    if (isMuted && activeVideoRef.current && !activeVideoRef.current.paused) {
       onToggleMute();
     }
   };
 
   const togglePlayPause = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
+    if (activeVideoRef.current) {
+      if (activeVideoRef.current.paused) {
+        activeVideoRef.current.play();
       } else {
-        videoRef.current.pause();
+        activeVideoRef.current.pause();
       }
     }
   };
@@ -233,8 +245,8 @@ export function DesktopShortPlayer({
   const handleVolumeChange = (newVolume: number[]) => {
     const vol = newVolume[0];
     setVolume(vol);
-    if (videoRef.current) {
-      videoRef.current.volume = vol;
+    if (activeVideoRef.current) {
+      activeVideoRef.current.volume = vol;
       if (vol === 0 && !isMuted) {
         onToggleMute();
       } else if (vol > 0 && isMuted) {
