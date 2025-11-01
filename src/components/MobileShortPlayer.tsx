@@ -241,7 +241,7 @@ export function MobileShortPlayer({
       {/* Bottom Info Section */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-20">
         {/* Creator Info */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-start gap-3 mb-2">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0"
@@ -254,26 +254,29 @@ export function MobileShortPlayer({
             </Avatar>
           </Link>
 
-          <Link 
-            to={`/profile/${short.profiles?.username}`}
-            className="flex-1 min-w-0"
-          >
-            <p className="text-white font-semibold text-sm truncate">
-              @{short.profiles?.username || 'Unknown'}
-            </p>
-          </Link>
-
-          {user?.id !== short.user_id && (
-            <Button
-              size="sm"
-              variant={isFollowing ? "secondary" : "default"}
-              onClick={toggleFollow}
-              disabled={isFollowLoading}
-              className="shrink-0 h-7 px-3 text-xs rounded-full"
+          {/* Username + Follow Button Container */}
+          <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+            <Link 
+              to={`/profile/${short.profiles?.username}`}
+              className="shrink-0"
             >
-              {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
-            </Button>
-          )}
+              <p className="text-white font-semibold text-sm break-words">
+                @{short.profiles?.username || 'Unknown'}
+              </p>
+            </Link>
+
+            {user?.id !== short.user_id && (
+              <Button
+                size="sm"
+                variant={isFollowing ? "secondary" : "default"}
+                onClick={toggleFollow}
+                disabled={isFollowLoading}
+                className="shrink-0 h-7 px-3 text-xs rounded-full"
+              >
+                {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Title */}
