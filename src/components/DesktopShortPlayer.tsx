@@ -19,6 +19,7 @@ import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
+import { useShortsVideoController } from '@/components/ShortsVideoController';
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -54,7 +55,8 @@ export function DesktopShortPlayer({
   onOpenPayment,
   onShare,
 }: DesktopShortPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoSlotRef = useRef<HTMLDivElement>(null);
+  const controller = useShortsVideoController();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -79,37 +81,34 @@ export function DesktopShortPlayer({
     contentId: short.id,
   });
 
+  // Register video slot with controller
+  useEffect(() => {
+    if (videoSlotRef.current) {
+      controller.registerSlot(short.id, videoSlotRef.current, {
+        mp4Url: short.video_url,
+        hlsUrl: short.hls_playlist_url,
+      });
+    }
+    return () => {
+      controller.unregisterSlot(short.id);
+    };
+  }, [short.id, short.video_url, short.hls_playlist_url, controller]);
+
   // Track views when active
   useVideoView(short.id, isActive);
 
-  // Auto-play when active
+  // Get video element from controller when active
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
     if (isActive) {
-      // Only play if we have access or it's not premium or in preview mode
-      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        video.muted = isMuted;
-        const playPromise = video.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('[Short] Autoplay prevented:', error);
-            setIsPlaying(false);
-            // On first interaction anywhere, try again
-            const retryOnGesture = () => {
-              video.play().catch(e => {
-                console.log('[Short] Retry failed:', e);
-                setIsPlaying(false);
-              });
-              window.removeEventListener('pointerdown', retryOnGesture);
-              window.removeEventListener('touchstart', retryOnGesture);
-            };
-            window.addEventListener('pointerdown', retryOnGesture, { once: true });
-            window.addEventListener('touchstart', retryOnGesture, { once: true });
-          });
-        }
+      videoRef.current = controller.getVideoElement();
+      
+      // Reset preview state when activating
+      if (isPreviewMode && !previewEnded && videoRef.current) {
+        videoRef.current.currentTime = 0;
+        setCurrentTime(0);
+        setPreviewCountdown(previewDuration || 0);
+        setPreviewEnded(false);
       }
       
       // Fetch like count when video becomes active
@@ -117,36 +116,10 @@ export function DesktopShortPlayer({
         setLikeCount(short.like_count);
       }
     } else {
-      // Immediately and synchronously stop inactive videos
-      video.pause();
-      video.currentTime = 0;
-      video.muted = true;
+      videoRef.current = null;
       setIsPlaying(false);
     }
-
-    return () => {
-      if (video) {
-        video.pause();
-        video.muted = true;
-      }
-    };
-  }, [isActive, isMuted, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
-
-  // Handle video loop
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleEnded = () => {
-      if (isActive) {
-        video.currentTime = 0;
-        video.play().catch(e => console.log('Loop play failed:', e));
-      }
-    };
-
-    video.addEventListener('ended', handleEnded);
-    return () => video.removeEventListener('ended', handleEnded);
-  }, [isActive]);
+  }, [isActive, short.like_count, setLikeCount, isPreviewMode, previewEnded, previewDuration, controller]);
 
   // Controls auto-hide - show on mouse move, hide after 3s
   useEffect(() => {
@@ -344,22 +317,15 @@ export function DesktopShortPlayer({
         </div>
       )}
 
-      {/* Video - Render if has access OR in preview mode */}
-      {(hasAccess || isPreviewMode) && (
-        <video
-          ref={videoRef}
-          src={short.video_url}
-          className="w-full h-full object-contain cursor-pointer"
-          loop
-          playsInline
-          muted
-          preload={(isActive || isPreviewMode) ? "auto" : "metadata"}
-          onClick={handleVideoClick}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          aria-label="Short video player"
-        />
-      )}
+      {/* Video Slot - Controller will attach video element here when active */}
+      <div 
+        ref={videoSlotRef}
+        className="w-full h-full cursor-pointer"
+        style={{ 
+          background: short.thumbnail_url ? `url(${short.thumbnail_url}) center/contain no-repeat` : 'black' 
+        }}
+        onClick={handleVideoClick}
+      />
 
       {/* Play/Pause Overlay - shows only when video is paused */}
       {!isPlaying && (

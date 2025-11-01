@@ -1831,6 +1831,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration: number | null
+          hls_playlist_url: string | null
           id: string
           is_premium: boolean | null
           like_count: number | null
@@ -1854,6 +1855,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration?: number | null
+          hls_playlist_url?: string | null
           id?: string
           is_premium?: boolean | null
           like_count?: number | null
@@ -1877,6 +1879,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration?: number | null
+          hls_playlist_url?: string | null
           id?: string
           is_premium?: boolean | null
           like_count?: number | null
@@ -3301,6 +3304,7 @@ export type Database = {
           current_size: number
           queue_id: string
           title: string
+          user_id: string
           video_id: string
           video_url: string
         }[]

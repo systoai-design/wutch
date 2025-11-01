@@ -220,32 +220,6 @@ const Shorts = () => {
     }
   }, [activeShortIndex, shorts]);
 
-  // When active short changes, pause the previous video with fallback
-  const prevActiveIndexRef = useRef<number | null>(null);
-  useEffect(() => {
-    const prev = prevActiveIndexRef.current;
-    if (prev !== null && shorts[prev]) {
-      const prevId = shorts[prev].id;
-      let prevVideo = videoRefsMap.current.get(prevId);
-
-      if (!prevVideo) {
-        // Fallback: DOM query in case map not populated yet
-        const prevItem = (isMobile ? containerRef.current : desktopScrollRef.current)
-          ?.querySelector(`[data-index="${prev}"] video`) as HTMLVideoElement | null;
-        if (prevItem) prevVideo = prevItem;
-      }
-
-      if (prevVideo) {
-        console.log('[AudioFence] Deactivate prev', prev, prevId);
-        prevVideo.pause();
-        prevVideo.currentTime = 0;
-        prevVideo.muted = true;
-      } else {
-        console.warn('[AudioFence] Prev video not found for index', prev);
-      }
-    }
-    prevActiveIndexRef.current = activeShortIndex;
-  }, [activeShortIndex, shorts, isMobile]);
 
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
