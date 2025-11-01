@@ -254,28 +254,30 @@ export function MobileShortPlayer({
             </Avatar>
           </Link>
 
-          {/* Username + Follow Button Container */}
-          <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
-            <Link 
-              to={`/profile/${short.profiles?.username}`}
-              className="shrink-0"
-            >
-              <p className="text-white font-semibold text-sm break-words">
-                @{short.profiles?.username || 'Unknown'}
-              </p>
-            </Link>
-
-            {user?.id !== short.user_id && (
-              <Button
-                size="sm"
-                variant={isFollowing ? "secondary" : "default"}
-                onClick={toggleFollow}
-                disabled={isFollowLoading}
-                className="shrink-0 h-7 px-3 text-xs rounded-full"
+          {/* Username + Follow Button Container - Natural inline flow */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+              <Link 
+                to={`/profile/${short.profiles?.username}`}
+                className="inline-block"
               >
-                {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
-              </Button>
-            )}
+                <span className="text-white font-semibold text-sm">
+                  @{short.profiles?.username || 'Unknown'}
+                </span>
+              </Link>
+
+              {user?.id !== short.user_id && (
+                <Button
+                  size="sm"
+                  variant={isFollowing ? "secondary" : "default"}
+                  onClick={toggleFollow}
+                  disabled={isFollowLoading}
+                  className="h-7 px-3 text-xs rounded-full"
+                >
+                  {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
