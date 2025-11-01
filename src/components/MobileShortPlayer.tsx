@@ -105,7 +105,7 @@ export function MobileShortPlayer({
     };
   }, [short.id, registerVideo, unregisterVideo]);
 
-  // Consolidated video state management - single source of truth
+  // Unified video playback control - matches desktop logic
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -125,7 +125,7 @@ export function MobileShortPlayer({
     const handleEnded = () => {
       if (isActive) {
         video.currentTime = 0;
-        video.play().catch(e => console.log('Loop play failed:', e));
+        video.play().catch(e => console.log('[Short] Loop play failed:', e));
       }
     };
 
@@ -136,7 +136,7 @@ export function MobileShortPlayer({
 
     // Control playback based on isActive
     if (isActive) {
-      console.log('[Short] Activating short:', short.id);
+      console.log('[Short] Activating:', short.id);
       
       // Set initial like count
       if (short.like_count !== undefined) {
@@ -147,26 +147,38 @@ export function MobileShortPlayer({
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
         // Always start muted for mobile autoplay policy
         video.muted = true;
-        video.volume = 0;
 
-        // Attempt to play
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise
+        // Attempt autoplay with retry logic
+        const attemptPlay = () => {
+          video.play()
             .then(() => {
-              console.log('[Short] Playing short:', short.id);
+              console.log('[Short] Playing:', short.id);
+              // After playing starts, sync mute state
+              setTimeout(() => {
+                if (!video.paused && isActive) {
+                  video.muted = isMuted;
+                  video.volume = isMuted ? 0 : volume;
+                }
+              }, 100);
             })
             .catch((error) => {
-              console.log('[Short] Autoplay prevented:', error);
-              setIsPlaying(false);
+              console.log('[Short] Autoplay prevented, retrying muted:', error);
+              // Retry muted
+              video.muted = true;
+              video.play().catch(e => {
+                console.log('[Short] Retry failed:', e);
+                setIsPlaying(false);
+              });
             });
-        }
+        };
+        
+        attemptPlay();
       }
     } else {
-      // Immediately pause and mute inactive videos (don't reset time for natural resume)
+      // Pause, mute, AND reset to beginning - matches desktop
       video.pause();
+      video.currentTime = 0;
       video.muted = true;
-      video.volume = 0;
       setIsPlaying(false);
     }
 
@@ -180,24 +192,9 @@ export function MobileShortPlayer({
       if (video) {
         video.pause();
         video.muted = true;
-        video.volume = 0;
       }
     };
   }, [isActive, isMuted, volume, short.id, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
-
-  // Handle mute/volume changes during active playback
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !isActive || video.paused) return;
-
-    if (isMuted) {
-      video.muted = true;
-      video.volume = 0;
-    } else {
-      video.muted = false;
-      video.volume = volume;
-    }
-  }, [isMuted, volume, isActive]);
 
   // Preview mode logic
   useEffect(() => {
@@ -374,17 +371,23 @@ export function MobileShortPlayer({
 
       {/* Video - Render if has access OR in preview mode */}
       {(hasAccess || isPreviewMode) && (
-        <video
-          ref={videoRef}
-          src={short.video_url}
-          className="mobile-short-video absolute inset-0 w-full h-full object-contain"
-          playsInline
-          loop
-          preload={Math.abs(index - activeIndex) <= 1 || isPreviewMode ? 'auto' : 'metadata'}
-          poster={short.thumbnail_url || undefined}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        />
+        <>
+          <video
+            ref={videoRef}
+            src={short.video_url}
+            className="mobile-short-video absolute inset-0 w-full h-full object-contain"
+            playsInline
+            loop
+            preload={(isActive || isPreviewMode) ? 'auto' : 'metadata'}
+            poster={short.thumbnail_url || undefined}
+          />
+          {/* Touch overlay for gestures - don't attach to video directly */}
+          <div 
+            className="absolute inset-0 z-10"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          />
+        </>
       )}
 
       {/* Center Play/Pause Button - Always visible when paused */}

@@ -169,7 +169,7 @@ const Shorts = () => {
     }
   }, [activeShortIndex, shorts]);
 
-  // When active short changes, pause only the previous video
+  // When active short changes, pause the previous video
   const prevActiveIndexRef = useRef<number | null>(null);
   useEffect(() => {
     const prev = prevActiveIndexRef.current;
@@ -177,9 +177,10 @@ const Shorts = () => {
       const prevId = shorts[prev].id;
       const prevVideo = videoRefsMap.current.get(prevId);
       if (prevVideo) {
+        console.log('[Shorts] Deactivating previous video at index:', prev);
         prevVideo.pause();
+        prevVideo.currentTime = 0;
         prevVideo.muted = true;
-        // Don't reset currentTime to make pausing/scrolling back feel natural
       }
     }
     prevActiveIndexRef.current = activeShortIndex;
@@ -200,14 +201,15 @@ const Shorts = () => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
             
-            // Debounce to prevent rapid changes
+            // Debounce to prevent rapid changes during scroll
             if (observerTimeout) {
               clearTimeout(observerTimeout);
             }
             
             observerTimeout = setTimeout(() => {
+              console.log('[Shorts] Desktop activating index:', index);
               setActiveShortIndex(index);
-            }, 100);
+            }, 200);
           }
         });
       },
@@ -247,14 +249,15 @@ const Shorts = () => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const index = parseInt(entry.target.getAttribute('data-index') || '0');
             
-            // Debounce to prevent rapid changes
+            // Debounce to prevent rapid changes during scroll
             if (observerTimeout) {
               clearTimeout(observerTimeout);
             }
             
             observerTimeout = setTimeout(() => {
+              console.log('[Shorts] Mobile activating index:', index);
               setActiveShortIndex(index);
-            }, 100);
+            }, 200);
           }
         });
       },
