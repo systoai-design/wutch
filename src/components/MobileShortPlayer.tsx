@@ -241,7 +241,7 @@ export function MobileShortPlayer({
       {/* Bottom Info Section */}
       <div className="absolute bottom-0 left-0 right-16 p-4 z-20">
         {/* Creator Info */}
-        <div className="flex items-center gap-2.5 mb-2">
+        <div className="flex items-center gap-3 mb-2">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0"
@@ -254,28 +254,28 @@ export function MobileShortPlayer({
             </Avatar>
           </Link>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex items-center gap-2">
             <Link 
               to={`/profile/${short.profiles?.username}`}
-              className="block"
+              className="block min-w-0"
             >
               <p className="text-white font-semibold text-sm truncate leading-tight">
                 @{short.profiles?.username || 'Unknown'}
               </p>
             </Link>
-          </div>
 
-          {user?.id !== short.user_id && (
-            <Button
-              size="sm"
-              variant={isFollowing ? "secondary" : "default"}
-              onClick={toggleFollow}
-              disabled={isFollowLoading}
-              className="shrink-0 h-8 px-4 text-xs rounded-full"
-            >
-              {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
-            </Button>
-          )}
+            {user?.id !== short.user_id && (
+              <Button
+                size="sm"
+                variant={isFollowing ? "secondary" : "default"}
+                onClick={toggleFollow}
+                disabled={isFollowLoading}
+                className="shrink-0 h-7 px-3 text-xs rounded-full ml-auto"
+              >
+                {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Title */}
