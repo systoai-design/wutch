@@ -99,6 +99,9 @@ export function MobileShortPlayer({
       }
     });
 
+    // Sync mute state for THIS video before playing
+    videoRef.current.muted = isMuted;
+
     // Play this video
     const playPromise = videoRef.current.play();
     if (playPromise) {
@@ -114,7 +117,7 @@ export function MobileShortPlayer({
         videoRef.current.currentTime = 0;
       }
     };
-  }, [isActive]);
+  }, [isActive, isMuted]);
 
   // Sync mute state
   useEffect(() => {
@@ -182,7 +185,6 @@ export function MobileShortPlayer({
         className="absolute inset-0 w-full h-full object-contain"
         playsInline
         loop
-        muted={isMuted}
         preload="metadata"
       />
 
