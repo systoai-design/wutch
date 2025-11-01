@@ -20,7 +20,7 @@ import { generateContentUrl, parseContentUrl } from '@/utils/urlHelpers';
 import { makeAbsoluteUrl } from '@/utils/appUrl';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
-import { ShortsVideoControllerProvider, useShortsVideoController } from '@/components/ShortsVideoController';
+// Controller removed - using direct video elements now
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -51,33 +51,7 @@ function ShortsContent() {
   const isScrollingRef = useRef(false);
 
   const { data: shorts = [], isLoading } = useShortsQuery();
-  const controller = useShortsVideoController();
-  const activationTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Activate video when active index changes (debounced)
-  useEffect(() => {
-    // Clear pending activation
-    if (activationTimeoutRef.current) {
-      clearTimeout(activationTimeoutRef.current);
-    }
-
-    // Debounce activation to prevent rapid changes during scroll
-    activationTimeoutRef.current = setTimeout(() => {
-      if (shorts.length > 0 && shorts[activeShortIndex]) {
-        console.log('[Shorts] Mobile activating index:', activeShortIndex);
-        controller.activate(shorts[activeShortIndex].id, { 
-          muted: isMuted,
-          startAt: 0 
-        });
-      }
-    }, 100);
-
-    return () => {
-      if (activationTimeoutRef.current) {
-        clearTimeout(activationTimeoutRef.current);
-      }
-    };
-  }, [activeShortIndex, isMuted, shorts, controller]);
+  // Controller removed - each video manages itself now
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -421,8 +395,6 @@ function ShortsContent() {
             >
               <MobileShortPlayer
                 short={short}
-                index={index}
-                activeIndex={activeShortIndex}
                 isActive={index === activeShortIndex}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted(!isMuted)}
@@ -433,10 +405,6 @@ function ShortsContent() {
                 onOpenDonation={() => {
                   setSelectedShort(short);
                   setIsDonationModalOpen(true);
-                }}
-                onOpenPayment={() => {
-                  setSelectedShort(short);
-                  setIsPaymentModalOpen(true);
                 }}
                 onShare={() => handleShare(short)}
               />
@@ -506,7 +474,7 @@ function ShortsContent() {
               }}
               onOpenDonation={() => {
                 setSelectedShort(short);
-                setIsDonationModalOpen(true);
+                setIsPaymentModalOpen(true);
               }}
               onOpenPayment={() => {
                 setSelectedShort(short);
@@ -601,9 +569,5 @@ function ShortsContent() {
 }
 
 export default function Shorts() {
-  return (
-    <ShortsVideoControllerProvider>
-      <ShortsContent />
-    </ShortsVideoControllerProvider>
-  );
+  return <ShortsContent />;
 }

@@ -19,7 +19,7 @@ import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
 import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
-import { useShortsVideoController } from '@/components/ShortsVideoController';
+// Controller removed - using direct video elements now
 import { formatNumber } from '@/utils/formatters';
 import GuestPromptDialog from '@/components/GuestPromptDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -55,9 +55,7 @@ export function DesktopShortPlayer({
   onOpenPayment,
   onShare,
 }: DesktopShortPlayerProps) {
-  const videoSlotRef = useRef<HTMLDivElement>(null);
-  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
-  const controller = useShortsVideoController();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -82,42 +80,35 @@ export function DesktopShortPlayer({
     contentId: short.id,
   });
 
-  // Register video slot with controller
-  useEffect(() => {
-    if (videoSlotRef.current) {
-      controller.registerSlot(short.id, videoSlotRef.current, {
-        mp4Url: short.video_url,
-        hlsUrl: short.hls_playlist_url,
-      });
-    }
-    return () => {
-      controller.unregisterSlot(short.id);
-    };
-  }, [short.id, short.video_url, short.hls_playlist_url, controller]);
+  // Direct video element - no controller needed
 
   // Track views when active
   useVideoView(short.id, isActive);
 
-  // Get video element from controller when active and cache it
+  // Activation logic - play when active, pause when not
   useEffect(() => {
-    if (!isActive) {
-      activeVideoRef.current = null;
-      setIsPlaying(false);
+    if (!isActive || !videoRef.current) {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
       return;
     }
 
-    const video = controller.getVideoElement();
-    if (!video) return;
+    // Force stop all other videos
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach(v => {
+      if (v !== videoRef.current) {
+        v.pause();
+        v.muted = true;
+        v.currentTime = 0;
+      }
+    });
 
-    // Cache the video element
-    activeVideoRef.current = video;
-    
-    // Reset preview state when activating
-    if (isPreviewMode && !previewEnded) {
-      video.currentTime = 0;
-      setCurrentTime(0);
-      setPreviewCountdown(previewDuration || 0);
-      setPreviewEnded(false);
+    // Play this video
+    const playPromise = videoRef.current.play();
+    if (playPromise) {
+      playPromise.catch(err => console.log('[DesktopShortPlayer] Autoplay prevented:', err));
     }
     
     // Set initial like count
@@ -126,12 +117,15 @@ export function DesktopShortPlayer({
     }
 
     // Sync playing state
-    setIsPlaying(!video.paused);
+    setIsPlaying(!videoRef.current.paused);
 
     return () => {
-      activeVideoRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
     };
-  }, [isActive, short.like_count, setLikeCount, isPreviewMode, previewEnded, previewDuration, controller]);
+  }, [isActive, short.like_count, setLikeCount]);
 
   // Controls auto-hide - show on mouse move, hide after 3s
   useEffect(() => {
@@ -157,7 +151,7 @@ export function DesktopShortPlayer({
 
   // Update isPlaying state
   useEffect(() => {
-    const video = activeVideoRef.current;
+    const video = videoRef.current;
     if (!video) return;
 
     const handlePlay = () => setIsPlaying(true);
@@ -165,15 +159,12 @@ export function DesktopShortPlayer({
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
-    
-    // Initial sync
-    setIsPlaying(!video.paused);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [isActive, controller]);
+  }, []);
 
   // Preview mode logic
   useEffect(() => {
@@ -189,7 +180,7 @@ export function DesktopShortPlayer({
 
   // Handle preview timeupdate
   useEffect(() => {
-    const video = activeVideoRef.current;
+    const video = videoRef.current;
     if (!video || !isPreviewMode) return;
 
     const handleTimeUpdate = () => {
@@ -212,32 +203,29 @@ export function DesktopShortPlayer({
 
   // Sync mute state and volume
   useEffect(() => {
-    if (activeVideoRef.current) {
-      activeVideoRef.current.muted = isMuted;
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
       if (!isMuted) {
-        activeVideoRef.current.volume = volume;
+        videoRef.current.volume = volume;
       }
     }
   }, [isMuted, volume]);
 
   const handleVideoClick = () => {
-    // Toggle play/pause on click
     togglePlayPause();
-    // Also show controls briefly
     setShowControls(true);
-    // Unmute on first click if video is playing muted
-    if (isMuted && activeVideoRef.current && !activeVideoRef.current.paused) {
+    if (isMuted && videoRef.current && !videoRef.current.paused) {
       onToggleMute();
     }
   };
 
   const togglePlayPause = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (activeVideoRef.current) {
-      if (activeVideoRef.current.paused) {
-        activeVideoRef.current.play();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
       } else {
-        activeVideoRef.current.pause();
+        videoRef.current.pause();
       }
     }
   };
@@ -245,8 +233,8 @@ export function DesktopShortPlayer({
   const handleVolumeChange = (newVolume: number[]) => {
     const vol = newVolume[0];
     setVolume(vol);
-    if (activeVideoRef.current) {
-      activeVideoRef.current.volume = vol;
+    if (videoRef.current) {
+      videoRef.current.volume = vol;
       if (vol === 0 && !isMuted) {
         onToggleMute();
       } else if (vol > 0 && isMuted) {
@@ -329,13 +317,15 @@ export function DesktopShortPlayer({
         </div>
       )}
 
-      {/* Video Slot - Controller will attach video element here when active */}
-      <div 
-        ref={videoSlotRef}
-        className="w-full h-full cursor-pointer"
-        style={{ 
-          background: short.thumbnail_url ? `url(${short.thumbnail_url}) center/contain no-repeat` : 'black' 
-        }}
+      {/* Direct Video Element */}
+      <video
+        ref={videoRef}
+        src={short.video_url}
+        className="w-full h-full object-contain cursor-pointer"
+        playsInline
+        loop
+        muted={isMuted}
+        preload="metadata"
         onClick={handleVideoClick}
       />
 
