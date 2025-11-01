@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, ExternalLink, Wallet, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Volume1, Play, Pause, ExternalLink, Wallet, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -10,6 +10,7 @@ import { useFollow } from "@/hooks/useFollow";
 import { useVideoView } from "@/hooks/useVideoView";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { formatNumber } from "@/utils/formatters";
+import { useToast } from "@/hooks/use-toast";
 import GuestPromptDialog from "./GuestPromptDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Database } from "@/integrations/supabase/types";
@@ -47,7 +48,11 @@ export function MobileShortPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [showVolumeControl, setShowVolumeControl] = useState(false);
+  const [volume, setVolume] = useState(1);
   const lastTapTime = useRef(0);
+  const { toast } = useToast();
   
   // Hooks
   const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
@@ -258,9 +263,6 @@ export function MobileShortPlayer({
                 @{short.profiles?.username || 'Unknown'}
               </p>
             </Link>
-            <p className="text-white/70 text-xs truncate leading-tight">
-              {short.profiles?.display_name || short.profiles?.username || 'Unknown'}
-            </p>
           </div>
 
           {user?.id !== short.user_id && (
@@ -282,31 +284,98 @@ export function MobileShortPlayer({
         </h3>
 
         {/* Description */}
-        {short.description && (
-          <p className="text-white/80 text-xs line-clamp-2 leading-tight">
-            {short.description}
-          </p>
-        )}
+          {short.description && (
+            <div className="space-y-1">
+              <p className={`text-white/80 text-xs leading-tight ${
+                isDescriptionExpanded ? '' : 'line-clamp-3'
+              }`}>
+                {short.description}
+                {!isDescriptionExpanded && short.description.length > 100 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDescriptionExpanded(true);
+                    }}
+                    className="ml-1 text-white/90 font-medium"
+                  >
+                    ...more
+                  </button>
+                )}
+              </p>
+              {isDescriptionExpanded && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDescriptionExpanded(false);
+                  }}
+                  className="text-white/90 text-xs font-medium"
+                >
+                  Show less
+                </button>
+              )}
+            </div>
+          )}
       </div>
 
       {/* Right Action Bar */}
       <div className="absolute right-3 bottom-20 z-20 flex flex-col gap-4">
-        {/* Mute/Unmute */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleMute();
-          }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
-            {isMuted ? (
-              <VolumeX className="h-6 w-6 text-white" />
-            ) : (
-              <Volume2 className="h-6 w-6 text-white" />
-            )}
-          </div>
-        </button>
+        {/* Volume Control */}
+        <div className="relative flex flex-col items-center gap-1">
+          {/* Volume Slider Popup */}
+          {showVolumeControl && (
+            <div 
+              className="absolute bottom-full mb-2 bg-black/90 backdrop-blur-sm rounded-full p-3 flex flex-col items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={volume * 100}
+                onChange={(e) => {
+                  const newVolume = parseInt(e.target.value) / 100;
+                  setVolume(newVolume);
+                  if (videoRef.current) {
+                    videoRef.current.volume = newVolume;
+                    if (newVolume === 0) {
+                      videoRef.current.muted = true;
+                    } else if (isMuted) {
+                      videoRef.current.muted = false;
+                      onToggleMute();
+                    }
+                  }
+                }}
+                className="h-24 w-1 accent-white cursor-pointer"
+                style={{
+                  WebkitAppearance: 'slider-vertical',
+                } as React.CSSProperties}
+              />
+              <span className="text-white text-xs font-medium">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+          )}
+          
+          {/* Volume Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowVolumeControl(!showVolumeControl);
+              setTimeout(() => setShowVolumeControl(false), 3000);
+            }}
+            className="flex flex-col items-center gap-1"
+          >
+            <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
+              {volume === 0 || isMuted ? (
+                <VolumeX className="h-6 w-6 text-white" />
+              ) : volume < 0.5 ? (
+                <Volume1 className="h-6 w-6 text-white" />
+              ) : (
+                <Volume2 className="h-6 w-6 text-white" />
+              )}
+            </div>
+          </button>
+        </div>
 
         {/* Like */}
         <button
@@ -368,20 +437,25 @@ export function MobileShortPlayer({
           </a>
         )}
 
-        {/* Wallet */}
-        {short.profiles?.public_wallet_address && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
+        {/* Donate/Wallet - Always visible */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (short.profiles?.public_wallet_address) {
               onOpenDonation();
-            }}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
-              <Wallet className="h-6 w-6 text-white" />
-            </div>
-          </button>
-        )}
+            } else {
+              toast({
+                title: "Wallet not configured",
+                description: "This creator hasn't set up their wallet for donations yet.",
+              });
+            }
+          }}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="h-12 w-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform">
+            <Wallet className="h-6 w-6 text-white" />
+          </div>
+        </button>
 
         {/* Delete (owner only) */}
         {isOwner && (
