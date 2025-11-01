@@ -424,7 +424,15 @@ const Home = () => {
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                  {wutchVideos.slice(0, 6).map((video, index) => (
+                  {(() => {
+                    // Additional shuffle for recommended section to ensure creator diversity
+                    const shuffled = [...wutchVideos];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                      const j = Math.floor(Math.random() * (i + 1));
+                      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    return shuffled.slice(0, 6);
+                  })().map((video, index) => (
                     <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
                       <WutchVideoCard video={video} />
                     </div>
