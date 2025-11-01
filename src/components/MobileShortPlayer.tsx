@@ -145,6 +145,11 @@ export function MobileShortPlayer({
 
       // Only play if we have access or it's in preview mode
       if (hasAccess || !isPremium || isOwner || isPreviewMode) {
+        // Extra guard: pause/mute/reset all other videos before playing
+        if (typeof window !== 'undefined') {
+          (window as any).__pauseAllOtherVideos?.(short.id);
+        }
+
         // Always start muted for mobile autoplay policy
         video.muted = true;
 
@@ -378,6 +383,7 @@ export function MobileShortPlayer({
             className="mobile-short-video absolute inset-0 w-full h-full object-contain"
             playsInline
             loop
+            muted
             preload={(isActive || isPreviewMode) ? 'auto' : 'metadata'}
             poster={short.thumbnail_url || undefined}
           />

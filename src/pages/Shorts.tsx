@@ -83,6 +83,39 @@ const Shorts = () => {
     }
   }, []);
 
+  // Expose global helper for players to proactively pause other videos
+  useEffect(() => {
+    (window as any).__pauseAllOtherVideos = (keepId: string) => {
+      videoRefsMap.current.forEach((vid, id) => {
+        if (id !== keepId) {
+          vid.pause();
+          vid.muted = true;
+          vid.currentTime = 0;
+        }
+      });
+    };
+    return () => { (window as any).__pauseAllOtherVideos = undefined; };
+  }, []);
+
+  // Global audio fence: capture play events and force-stop all other videos
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const target = e.target as HTMLVideoElement | null;
+      if (!target || target.tagName !== 'VIDEO') return;
+
+      // Pause/mute/reset all other videos immediately
+      videoRefsMap.current.forEach((vid, id) => {
+        if (vid !== target) {
+          vid.pause();
+          vid.muted = true;
+          vid.currentTime = 0;
+        }
+      });
+    };
+
+    document.addEventListener('play', handler, true);
+    return () => document.removeEventListener('play', handler, true);
+  }, []);
 
   // Pause all videos when tab becomes hidden
   useEffect(() => {
@@ -96,6 +129,24 @@ const Shorts = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [stopAllVideos]);
+
+  // Hard cleanup on unmount: release all media resources
+  useEffect(() => {
+    return () => {
+      console.log('[AudioFence] Unmount: hard-stop all videos');
+      videoRefsMap.current.forEach((vid) => {
+        try {
+          vid.pause();
+          vid.muted = true;
+          vid.removeAttribute('src');
+          vid.load();
+        } catch (e) {
+          console.warn('[AudioFence] Unmount cleanup error:', e);
+        }
+      });
+      videoRefsMap.current.clear();
+    };
+  }, []);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -169,22 +220,32 @@ const Shorts = () => {
     }
   }, [activeShortIndex, shorts]);
 
-  // When active short changes, pause the previous video
+  // When active short changes, pause the previous video with fallback
   const prevActiveIndexRef = useRef<number | null>(null);
   useEffect(() => {
     const prev = prevActiveIndexRef.current;
     if (prev !== null && shorts[prev]) {
       const prevId = shorts[prev].id;
-      const prevVideo = videoRefsMap.current.get(prevId);
+      let prevVideo = videoRefsMap.current.get(prevId);
+
+      if (!prevVideo) {
+        // Fallback: DOM query in case map not populated yet
+        const prevItem = (isMobile ? containerRef.current : desktopScrollRef.current)
+          ?.querySelector(`[data-index="${prev}"] video`) as HTMLVideoElement | null;
+        if (prevItem) prevVideo = prevItem;
+      }
+
       if (prevVideo) {
-        console.log('[Shorts] Deactivating previous video at index:', prev);
+        console.log('[AudioFence] Deactivate prev', prev, prevId);
         prevVideo.pause();
         prevVideo.currentTime = 0;
         prevVideo.muted = true;
+      } else {
+        console.warn('[AudioFence] Prev video not found for index', prev);
       }
     }
     prevActiveIndexRef.current = activeShortIndex;
-  }, [activeShortIndex, shorts]);
+  }, [activeShortIndex, shorts, isMobile]);
 
   // Track active short with Intersection Observer (Desktop vertical scroll)
   useEffect(() => {
