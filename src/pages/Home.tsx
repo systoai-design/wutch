@@ -412,11 +412,11 @@ const Home = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Wutch Videos Section - MOVED TO TOP */}
+            {/* Recommended Videos Section */}
             {wutchVideos.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold">Trending Wutch Videos</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold">Recommended Videos</h2>
                   <Link to="/wutch">
                     <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
                       View All <ChevronRight className="h-4 w-4" />
