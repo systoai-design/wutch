@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import DonationModal from '@/components/DonationModal';
 import { ExpandableDescription } from '@/components/ExpandableDescription';
 import { useNavigate } from 'react-router-dom';
+import { useShortsVideoController } from '@/components/ShortsVideoController';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -47,8 +48,6 @@ interface MobileShortPlayerProps {
   onOpenDonation: () => void;
   onOpenPayment: () => void;
   onShare: () => void;
-  registerVideo: (id: string, videoEl: HTMLVideoElement | null) => void;
-  unregisterVideo: (id: string) => void;
 }
 
 export function MobileShortPlayer({
@@ -62,10 +61,9 @@ export function MobileShortPlayer({
   onOpenDonation,
   onOpenPayment,
   onShare,
-  registerVideo,
-  unregisterVideo,
 }: MobileShortPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const controller = useShortsVideoController();
+  const videoSlotRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -95,20 +93,34 @@ export function MobileShortPlayer({
   // Track views when active
   useVideoView(short.id, isActive);
 
-  // Register/unregister video with global audio manager
+  // Register video slot with controller
   useEffect(() => {
-    if (videoRef.current) {
-      registerVideo(short.id, videoRef.current);
+    if (videoSlotRef.current) {
+      controller.registerSlot(short.id, videoSlotRef.current, {
+        mp4Url: short.video_url,
+        hlsUrl: short.hls_playlist_url,
+      });
     }
     return () => {
-      unregisterVideo(short.id);
+      controller.unregisterSlot(short.id);
     };
-  }, [short.id, registerVideo, unregisterVideo]);
+  }, [short.id, short.video_url, short.hls_playlist_url, controller]);
 
-  // Unified video playback control - matches desktop logic
+  // Get video element from controller when active
   useEffect(() => {
-    const video = videoRef.current;
+    if (!isActive) return;
+
+    const video = controller.getVideoElement();
     if (!video) return;
+
+    // Reset preview state
+    setPreviewEnded(false);
+    setIsPreviewMode(false);
+
+    // Set initial like count
+    if (short.like_count !== undefined) {
+      setLikeCount(short.like_count);
+    }
 
     let playPauseDebounce: NodeJS.Timeout;
     
@@ -122,84 +134,15 @@ export function MobileShortPlayer({
       playPauseDebounce = setTimeout(() => setIsPlaying(false), 50);
     };
 
-    const handleEnded = () => {
-      if (isActive) {
-        video.currentTime = 0;
-        video.play().catch(e => console.log('[Short] Loop play failed:', e));
-      }
-    };
-
-    // Add event listeners
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
-    video.addEventListener('ended', handleEnded);
-
-    // Control playback based on isActive
-    if (isActive) {
-      console.log('[Short] Activating:', short.id);
-      
-      // Set initial like count
-      if (short.like_count !== undefined) {
-        setLikeCount(short.like_count);
-      }
-
-      // Only play if we have access or it's in preview mode
-      if (hasAccess || !isPremium || isOwner || isPreviewMode) {
-        // Extra guard: pause/mute/reset all other videos before playing
-        if (typeof window !== 'undefined') {
-          (window as any).__pauseAllOtherVideos?.(short.id);
-        }
-
-        // Always start muted for mobile autoplay policy
-        video.muted = true;
-
-        // Attempt autoplay with retry logic
-        const attemptPlay = () => {
-          video.play()
-            .then(() => {
-              console.log('[Short] Playing:', short.id);
-              // After playing starts, sync mute state
-              setTimeout(() => {
-                if (!video.paused && isActive) {
-                  video.muted = isMuted;
-                  video.volume = isMuted ? 0 : volume;
-                }
-              }, 100);
-            })
-            .catch((error) => {
-              console.log('[Short] Autoplay prevented, retrying muted:', error);
-              // Retry muted
-              video.muted = true;
-              video.play().catch(e => {
-                console.log('[Short] Retry failed:', e);
-                setIsPlaying(false);
-              });
-            });
-        };
-        
-        attemptPlay();
-      }
-    } else {
-      // Pause, mute, AND reset to beginning - matches desktop
-      video.pause();
-      video.currentTime = 0;
-      video.muted = true;
-      setIsPlaying(false);
-    }
 
     return () => {
       clearTimeout(playPauseDebounce);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
-      video.removeEventListener('ended', handleEnded);
-      
-      // Cleanup: ensure video is paused and muted
-      if (video) {
-        video.pause();
-        video.muted = true;
-      }
     };
-  }, [isActive, isMuted, volume, short.id, short.like_count, setLikeCount, hasAccess, isPremium, isOwner, isPreviewMode]);
+  }, [isActive, short.id, short.like_count, setLikeCount, controller]);
 
   // Preview mode logic
   useEffect(() => {
@@ -215,8 +158,10 @@ export function MobileShortPlayer({
 
   // Handle preview timeupdate
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !isPreviewMode) return;
+    if (!isActive || !isPreviewMode) return;
+    
+    const video = controller.getVideoElement();
+    if (!video) return;
 
     const handleTimeUpdate = () => {
       const current = video.currentTime;
@@ -234,7 +179,7 @@ export function MobileShortPlayer({
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [isPreviewMode, previewDuration]);
+  }, [isActive, isPreviewMode, previewDuration, controller]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -256,14 +201,15 @@ export function MobileShortPlayer({
   };
 
   const togglePlayPause = useCallback(() => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(e => console.log('Play failed:', e));
+    const video = controller.getVideoElement();
+    if (video) {
+      if (video.paused) {
+        video.play().catch(e => console.log('Play failed:', e));
       } else {
-        videoRef.current.pause();
+        video.pause();
       }
     }
-  }, []);
+  }, [controller]);
 
   const handleVideoClick = useCallback(() => {
     togglePlayPause();
@@ -277,12 +223,16 @@ export function MobileShortPlayer({
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
+    const video = controller.getVideoElement();
+    if (video) {
+      video.volume = newVolume;
+    }
     if (newVolume === 0 && !isMuted) {
       onToggleMute();
     } else if (newVolume > 0 && isMuted) {
       onToggleMute();
     }
-  }, [isMuted, onToggleMute]);
+  }, [isMuted, onToggleMute, controller]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -374,27 +324,18 @@ export function MobileShortPlayer({
         </div>
       )}
 
-      {/* Video - Render if has access OR in preview mode */}
-      {(hasAccess || isPreviewMode) && (
-        <>
-          <video
-            ref={videoRef}
-            src={short.video_url}
-            className="mobile-short-video absolute inset-0 w-full h-full object-contain"
-            playsInline
-            loop
-            muted
-            preload={(isActive || isPreviewMode) ? 'auto' : 'metadata'}
-            poster={short.thumbnail_url || undefined}
-          />
-          {/* Touch overlay for gestures - don't attach to video directly */}
-          <div 
-            className="absolute inset-0 z-10"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          />
-        </>
-      )}
+      {/* Video Slot - Controller manages the video element */}
+      <div
+        ref={videoSlotRef}
+        className="absolute inset-0 w-full h-full"
+      />
+
+      {/* Touch overlay for gestures */}
+      <div 
+        className="absolute inset-0 z-10"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      />
 
       {/* Center Play/Pause Button - Always visible when paused */}
       {!isPlaying && (
@@ -459,7 +400,7 @@ export function MobileShortPlayer({
         onClick={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-2 mb-2">
+        <div className="flex items-start gap-3 mb-2">
           <Link 
             to={`/profile/${short.profiles?.username}`}
             className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -473,35 +414,35 @@ export function MobileShortPlayer({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1 mb-0.5">
-              <Link 
-                to={`/profile/${short.profiles?.username}`}
-                className="cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`View ${short.profiles?.username}'s profile`}
-              >
-                <span className="text-white font-semibold text-sm leading-snug">
-                  @{short.profiles?.username || 'Unknown'}
-                </span>
-              </Link>
-              {user?.id !== short.user_id && (
-                <Button
-                  size="sm"
-                  variant={isFollowing ? "secondary" : "default"}
-                  onClick={toggleFollow}
-                  disabled={isFollowLoading}
-                  className="h-5 px-2 text-[11px] leading-none rounded-sm ml-1 shrink-0 active:scale-95 transition-transform"
-                  aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
-                >
-                  {isFollowLoading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
-                </Button>
-              )}
-            </div>
-            <p className="text-white/70 text-xs leading-snug truncate">
+          
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <Link 
+              to={`/profile/${short.profiles?.username}`}
+              className="block cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`View ${short.profiles?.username}'s profile`}
+            >
+              <span className="text-white font-semibold text-sm block truncate">
+                @{short.profiles?.username || 'Unknown'}
+              </span>
+            </Link>
+            <p className="text-white/70 text-xs truncate">
               {short.profiles?.display_name || short.profiles?.username || 'Unknown'}
             </p>
           </div>
+
+          {user?.id !== short.user_id && (
+            <Button
+              size="sm"
+              variant={isFollowing ? "secondary" : "default"}
+              onClick={toggleFollow}
+              disabled={isFollowLoading}
+              className="shrink-0 h-7 px-3 text-xs rounded-full"
+              aria-label={isFollowing ? "Unfollow creator" : "Follow creator"}
+            >
+              {isFollowLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
+            </Button>
+          )}
         </div>
         
         <div className="space-y-0.5">

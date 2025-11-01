@@ -20,6 +20,7 @@ import { generateContentUrl, parseContentUrl } from '@/utils/urlHelpers';
 import { makeAbsoluteUrl } from '@/utils/appUrl';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
+import { ShortsVideoControllerProvider, useShortsVideoController } from '@/components/ShortsVideoController';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -27,7 +28,7 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   commentCount?: number;
 };
 
-const Shorts = () => {
+function ShortsContent() {
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,103 +51,17 @@ const Shorts = () => {
   const isScrollingRef = useRef(false);
 
   const { data: shorts = [], isLoading } = useShortsQuery();
+  const controller = useShortsVideoController();
 
-  // Global audio manager: Ensure only one video plays audio at a time
-  const videoRefsMap = useRef<Map<string, HTMLVideoElement>>(new Map());
-
-  const registerVideo = useCallback((id: string, videoEl: HTMLVideoElement | null) => {
-    if (videoEl) {
-      videoRefsMap.current.set(id, videoEl);
-      console.log('[AudioManager] Registered video:', id, 'Total:', videoRefsMap.current.size);
+  // Activate video when active index changes
+  useEffect(() => {
+    if (shorts.length > 0 && shorts[activeShortIndex]) {
+      controller.activate(shorts[activeShortIndex].id, { 
+        muted: isMuted,
+        startAt: 0 
+      });
     }
-  }, []);
-
-  const unregisterVideo = useCallback((id: string) => {
-    videoRefsMap.current.delete(id);
-    console.log('[AudioManager] Unregistered video:', id, 'Remaining:', videoRefsMap.current.size);
-  }, []);
-
-  const stopAllVideos = useCallback(() => {
-    let silencedCount = 0;
-    videoRefsMap.current.forEach((video, id) => {
-      // ALWAYS hard-stop, regardless of paused state
-      if (video) {
-        video.volume = 0;
-        video.muted = true;
-        video.pause();
-        video.currentTime = 0;
-        silencedCount++;
-      }
-    });
-    if (silencedCount > 0) {
-      console.log('[AudioManager] Silenced', silencedCount, 'videos');
-    }
-  }, []);
-
-  // Expose global helper for players to proactively pause other videos
-  useEffect(() => {
-    (window as any).__pauseAllOtherVideos = (keepId: string) => {
-      videoRefsMap.current.forEach((vid, id) => {
-        if (id !== keepId) {
-          vid.pause();
-          vid.muted = true;
-          vid.currentTime = 0;
-        }
-      });
-    };
-    return () => { (window as any).__pauseAllOtherVideos = undefined; };
-  }, []);
-
-  // Global audio fence: capture play events and force-stop all other videos
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const target = e.target as HTMLVideoElement | null;
-      if (!target || target.tagName !== 'VIDEO') return;
-
-      // Pause/mute/reset all other videos immediately
-      videoRefsMap.current.forEach((vid, id) => {
-        if (vid !== target) {
-          vid.pause();
-          vid.muted = true;
-          vid.currentTime = 0;
-        }
-      });
-    };
-
-    document.addEventListener('play', handler, true);
-    return () => document.removeEventListener('play', handler, true);
-  }, []);
-
-  // Pause all videos when tab becomes hidden
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        console.log('[AudioManager] Tab hidden, stopping all videos');
-        stopAllVideos();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [stopAllVideos]);
-
-  // Hard cleanup on unmount: release all media resources
-  useEffect(() => {
-    return () => {
-      console.log('[AudioFence] Unmount: hard-stop all videos');
-      videoRefsMap.current.forEach((vid) => {
-        try {
-          vid.pause();
-          vid.muted = true;
-          vid.removeAttribute('src');
-          vid.load();
-        } catch (e) {
-          console.warn('[AudioFence] Unmount cleanup error:', e);
-        }
-      });
-      videoRefsMap.current.clear();
-    };
-  }, []);
+  }, [activeShortIndex, isMuted, shorts, controller]);
 
   // Handle deep-linking: Check URL for specific short ID
   useEffect(() => {
@@ -508,8 +423,6 @@ const Shorts = () => {
                   setIsPaymentModalOpen(true);
                 }}
                 onShare={() => handleShare(short)}
-                registerVideo={registerVideo}
-                unregisterVideo={unregisterVideo}
               />
             </div>
           ))}
@@ -669,6 +582,12 @@ const Shorts = () => {
       )}
     </div>
   );
-};
+}
 
-export default Shorts;
+export default function Shorts() {
+  return (
+    <ShortsVideoControllerProvider>
+      <ShortsContent />
+    </ShortsVideoControllerProvider>
+  );
+}
