@@ -11,6 +11,9 @@ const transactionSignatureSchema = z.string()
 // UUID validation
 const uuidSchema = z.string().uuid("Invalid UUID format");
 
+// Content type validation
+const contentTypeSchema = z.enum(['livestream', 'shortvideo', 'wutch_video', 'community_post']);
+
 // Donation validation schema
 export const donationValidationSchema = z.object({
   amount: z.number()
@@ -61,6 +64,27 @@ export const sharePayoutValidationSchema = z.object({
 export const verificationCodeValidationSchema = z.object({
   type: z.enum(['email', 'username']),
   newValue: z.string().min(1, "Value cannot be empty").max(255, "Value too long")
+});
+
+// X402 payment validation schema
+export const x402PaymentValidationSchema = z.object({
+  transactionSignature: transactionSignatureSchema,
+  contentType: contentTypeSchema,
+  contentId: uuidSchema
+});
+
+// Bounty claim validation schema with enhanced validation
+export const bountyClaimEnhancedSchema = z.object({
+  bounty_id: uuidSchema,
+  user_id: uuidSchema,
+  wallet_address: solanaAddressSchema,
+  submitted_word: z.string()
+    .min(1, "Secret word cannot be empty")
+    .max(100, "Secret word too long"),
+  watch_time_seconds: z.number()
+    .int("Watch time must be an integer")
+    .min(0, "Watch time cannot be negative")
+    .max(86400, "Watch time cannot exceed 24 hours")
 });
 
 // Helper function to validate and return typed data

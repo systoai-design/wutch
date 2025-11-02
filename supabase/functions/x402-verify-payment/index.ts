@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from "https://esm.sh/@solana/web3.js@1.87.6";
+import { validateInput, x402PaymentValidationSchema } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,11 +37,11 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { transactionSignature, contentType, contentId } = await req.json();
-
-    if (!transactionSignature || !contentType || !contentId) {
-      throw new Error('Missing required fields: transactionSignature, contentType, contentId');
-    }
+    const requestBody = await req.json();
+    
+    // Validate input using Zod schema
+    const validatedData = validateInput(x402PaymentValidationSchema, requestBody);
+    const { transactionSignature, contentType, contentId } = validatedData;
 
     console.log('Verifying x402 payment:', { transactionSignature, contentType, contentId, userId: user.id });
 
@@ -89,11 +90,14 @@ serve(async (req) => {
       throw new Error('Creator wallet not found');
     }
 
-    // Connect to Solana mainnet
-    const connection = new Connection(
-      Deno.env.get('SOLANA_RPC_URL') || 'https://mainnet.helius-rpc.com/?api-key=a181d89a-54f8-4a83-a857-a760d595180f',
-      'confirmed'
-    );
+    // Connect to Solana mainnet - MUST have RPC URL configured
+    const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL');
+    if (!SOLANA_RPC_URL) {
+      console.error('SOLANA_RPC_URL not configured');
+      throw new Error('Payment verification temporarily unavailable');
+    }
+    
+    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
 
     // Get transaction details
     console.log('[X402Verify] Fetching transaction:', transactionSignature);
@@ -103,12 +107,12 @@ serve(async (req) => {
     });
 
     if (!transaction) {
-      console.error('[X402Verify] Transaction not found on blockchain');
+      const errorId = crypto.randomUUID();
+      console.error(`[${errorId}] Transaction not found:`, transactionSignature);
       return new Response(
         JSON.stringify({ 
-          error: 'Transaction not found on blockchain. Please wait a few seconds and try again.',
-          signature: transactionSignature,
-          tip: 'Check on Solana Explorer if the transaction exists'
+          error: 'Transaction not found. Please wait a few moments and try again.',
+          errorId
         }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -116,18 +120,16 @@ serve(async (req) => {
 
     // Verify transaction is confirmed
     if (transaction.meta?.err) {
-      console.error('[X402Verify] Transaction failed on-chain:', {
+      const errorId = crypto.randomUUID();
+      console.error(`[${errorId}] Transaction failed on-chain:`, {
         signature: transactionSignature,
         error: transaction.meta.err,
-        logs: transaction.meta.logMessages?.slice(-5)
+        logs: transaction.meta.logMessages
       });
       return new Response(
         JSON.stringify({ 
-          error: 'Transaction failed on blockchain', 
-          signature: transactionSignature,
-          details: transaction.meta.err,
-          logs: transaction.meta.logMessages?.slice(-5),
-          tip: 'Check Solana Explorer for detailed error information'
+          error: 'Transaction failed on blockchain',
+          errorId
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -166,12 +168,13 @@ serve(async (req) => {
     }
 
     if (transferCount !== 2) {
-      console.error('[X402Verify] Invalid transaction structure:', {
+      const errorId = crypto.randomUUID();
+      console.error(`[${errorId}] Invalid transaction structure:`, {
         expected: 2,
         actual: transferCount,
         signature: transactionSignature
       });
-      throw new Error(`Invalid transaction structure. Expected 2 transfers, got ${transferCount}`);
+      throw new Error('Invalid payment structure');
     }
 
     console.log('[X402Verify] Transaction structure valid: 2 transfers found');
@@ -181,7 +184,8 @@ serve(async (req) => {
     const expectedCreatorLamports = Math.floor(priceLamports * 95 / 100);
     const expectedPlatformLamports = priceLamports - expectedCreatorLamports;
 
-    console.log('Amount verification:', {
+    const errorId = crypto.randomUUID();
+    console.log(`[${errorId}] Amount verification:`, {
       priceLamports,
       expectedCreatorLamports,
       actualCreatorLamports: creatorAmountLamports,
@@ -190,11 +194,19 @@ serve(async (req) => {
     });
 
     if (creatorAmountLamports !== expectedCreatorLamports) {
-      throw new Error(`Invalid creator amount. Expected ${expectedCreatorLamports} lamports, got ${creatorAmountLamports} lamports`);
+      console.error(`[${errorId}] Invalid creator amount`, {
+        expected: expectedCreatorLamports,
+        actual: creatorAmountLamports
+      });
+      throw new Error('Invalid payment amount');
     }
 
     if (platformAmountLamports !== expectedPlatformLamports) {
-      throw new Error(`Invalid platform amount. Expected ${expectedPlatformLamports} lamports, got ${platformAmountLamports} lamports`);
+      console.error(`[${errorId}] Invalid platform amount`, {
+        expected: expectedPlatformLamports,
+        actual: platformAmountLamports
+      });
+      throw new Error('Invalid payment amount');
     }
 
     // Check if transaction already used

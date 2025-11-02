@@ -40,14 +40,6 @@ serve(async (req) => {
       );
     }
 
-    // Check rate limit
-    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
-    const rateLimit = await checkRateLimit('verify-donation', user.id, ipAddress);
-    
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit.resetAt);
-    }
-
     const requestBody = await req.json();
     
     // Validate input using Zod schema
@@ -62,6 +54,35 @@ serve(async (req) => {
       amount,
       message
     } = validatedData;
+
+    // SECURITY: Verify that the authenticated user owns the donor wallet
+    const { data: userWallet, error: walletError } = await supabaseClient
+      .from('profile_wallets')
+      .select('wallet_address')
+      .eq('user_id', user.id)
+      .single();
+
+    if (walletError || !userWallet) {
+      return new Response(
+        JSON.stringify({ error: 'User wallet not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (userWallet.wallet_address !== donorWallet) {
+      return new Response(
+        JSON.stringify({ error: 'Donor wallet must match authenticated user wallet' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check rate limit
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const rateLimit = await checkRateLimit('verify-donation', user.id, ipAddress);
+    
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetAt);
+    }
 
     // Connect to Solana mainnet using environment variable
     const solanaRpcUrl = Deno.env.get('SOLANA_RPC_URL');

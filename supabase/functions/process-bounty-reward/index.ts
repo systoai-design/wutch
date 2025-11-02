@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from 'https://esm.sh/@solana/web3.js@1.87.6'
 import bs58 from 'https://esm.sh/bs58@5.0.0'
+import { validateInput, bountyClaimEnhancedSchema } from '../_shared/validation.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,11 @@ serve(async (req) => {
       }
     )
 
-    const { bounty_id, user_id, wallet_address, submitted_word, watch_time_seconds } = await req.json()
+    const requestBody = await req.json()
+    
+    // Validate input using Zod schema
+    const validatedData = validateInput(bountyClaimEnhancedSchema, requestBody);
+    const { bounty_id, user_id, wallet_address, submitted_word, watch_time_seconds } = validatedData;
 
     // Verify user authentication
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
@@ -153,8 +158,12 @@ serve(async (req) => {
     const escrowBalance = await connection.getBalance(escrowKeypair.publicKey)
     
     if (escrowBalance < amountLamports) {
-      const shortfall = (amountLamports - escrowBalance) / LAMPORTS_PER_SOL
-      throw new Error(`Insufficient funds in payout wallet. Need ${bounty.reward_per_participant} SOL but only have ${(escrowBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL. Please top up the wallet with at least ${shortfall.toFixed(4)} SOL and try again.`)
+      const errorId = crypto.randomUUID();
+      console.error(`[${errorId}] Insufficient escrow balance:`, {
+        required: bounty.reward_per_participant,
+        available: escrowBalance / LAMPORTS_PER_SOL
+      });
+      throw new Error('Payout temporarily unavailable. Please contact support.')
     }
 
     // Create and send transaction

@@ -155,6 +155,13 @@ export type Database = {
             foreignKeyName: "bounty_claims_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bounty_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -217,6 +224,13 @@ export type Database = {
             foreignKeyName: "comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -259,6 +273,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "community_post_likes_user_id_fkey"
@@ -404,6 +425,13 @@ export type Database = {
           x402_price?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "community_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "community_posts_user_id_fkey"
             columns: ["user_id"]
@@ -635,6 +663,13 @@ export type Database = {
             foreignKeyName: "donations_recipient_user_id_fkey"
             columns: ["recipient_user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "donations_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -726,6 +761,13 @@ export type Database = {
             foreignKeyName: "escrow_transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -766,6 +808,13 @@ export type Database = {
             foreignKeyName: "follows_follower_id_fkey"
             columns: ["follower_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -782,6 +831,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "follows_following_id_fkey"
@@ -945,6 +1001,13 @@ export type Database = {
             foreignKeyName: "livestreams_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "livestreams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1083,6 +1146,13 @@ export type Database = {
             foreignKeyName: "notifications_actor_id_fkey"
             columns: ["actor_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1099,6 +1169,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "notifications_user_id_fkey"
@@ -1158,6 +1235,13 @@ export type Database = {
           wallet_address?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "payouts_user_id_fkey"
             columns: ["user_id"]
@@ -1753,6 +1837,13 @@ export type Database = {
             foreignKeyName: "sharing_campaigns_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sharing_campaigns_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1802,6 +1893,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "short_videos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_video_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "short_video_likes_user_id_fkey"
@@ -1918,6 +2016,13 @@ export type Database = {
             foreignKeyName: "short_videos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "short_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2012,6 +2117,13 @@ export type Database = {
             foreignKeyName: "stream_bounties_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2082,6 +2194,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "twitter_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "twitter_connections_user_id_fkey"
             columns: ["user_id"]
@@ -2179,6 +2298,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sharing_campaigns"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "user_shares_user_id_fkey"
@@ -2365,6 +2491,13 @@ export type Database = {
             foreignKeyName: "verification_requests_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2381,6 +2514,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "verification_requests_user_id_fkey"
@@ -2592,6 +2732,13 @@ export type Database = {
           view_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "view_earnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "view_earnings_user_id_fkey"
             columns: ["user_id"]
@@ -2862,6 +3009,13 @@ export type Database = {
             foreignKeyName: "x402_purchases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "x402_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2886,12 +3040,30 @@ export type Database = {
       creator_earnings_summary: {
         Row: {
           confirmed_earned: number | null
-          last_earning_at: string | null
-          pending_earned: number | null
-          total_earned: number | null
-          transaction_count: number | null
-          transaction_type: string | null
+          donations_received: number | null
+          pending_earnings: number | null
+          total_paid_out: number | null
           user_id: string | null
+          username: string | null
+          x402_earnings: number | null
+        }
+        Insert: {
+          confirmed_earned?: never
+          donations_received?: never
+          pending_earnings?: never
+          total_paid_out?: never
+          user_id?: string | null
+          username?: string | null
+          x402_earnings?: never
+        }
+        Update: {
+          confirmed_earned?: never
+          donations_received?: never
+          pending_earnings?: never
+          total_paid_out?: never
+          user_id?: string | null
+          username?: string | null
+          x402_earnings?: never
         }
         Relationships: []
       }
@@ -2927,54 +3099,60 @@ export type Database = {
       public_profiles: {
         Row: {
           avatar_url: string | null
-          banner_url: string | null
           bio: string | null
           created_at: string | null
           display_name: string | null
           follower_count: number | null
           id: string | null
           is_verified: boolean | null
+          moderation_tier: string | null
+          pending_earnings: number | null
           promotional_link: string | null
           promotional_link_text: string | null
           public_wallet_address: string | null
           social_links: Json | null
+          total_donations_received: number | null
+          total_earnings: number | null
           username: string | null
           verification_type: string | null
-          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
-          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
           follower_count?: number | null
           id?: string | null
           is_verified?: boolean | null
+          moderation_tier?: string | null
+          pending_earnings?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
+          total_donations_received?: number | null
+          total_earnings?: number | null
           username?: string | null
           verification_type?: string | null
-          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
-          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
           follower_count?: number | null
           id?: string | null
           is_verified?: boolean | null
+          moderation_tier?: string | null
+          pending_earnings?: number | null
           promotional_link?: string | null
           promotional_link_text?: string | null
           public_wallet_address?: string | null
           social_links?: Json | null
+          total_donations_received?: number | null
+          total_earnings?: number | null
           username?: string | null
           verification_type?: string | null
-          verified_at?: string | null
         }
         Relationships: []
       }
@@ -2990,6 +3168,7 @@ export type Database = {
           participant_limit: number | null
           platform_fee_amount: number | null
           reward_per_participant: number | null
+          secret_word: string | null
           total_deposit: number | null
           updated_at: string | null
         }
@@ -3004,6 +3183,7 @@ export type Database = {
           participant_limit?: number | null
           platform_fee_amount?: number | null
           reward_per_participant?: number | null
+          secret_word?: string | null
           total_deposit?: number | null
           updated_at?: string | null
         }
@@ -3018,10 +3198,18 @@ export type Database = {
           participant_limit?: number | null
           platform_fee_amount?: number | null
           reward_per_participant?: number | null
+          secret_word?: string | null
           total_deposit?: number | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stream_bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "stream_bounties_creator_id_fkey"
             columns: ["creator_id"]
@@ -3054,7 +3242,6 @@ export type Database = {
       }
       user_transaction_history: {
         Row: {
-          buyer_display_name: string | null
           buyer_id: string | null
           buyer_username: string | null
           confirmed_at: string | null
@@ -3064,14 +3251,49 @@ export type Database = {
           creator_amount: number | null
           gross_amount: number | null
           id: string | null
+          metadata: Json | null
           platform_amount: number | null
-          seller_avatar_url: string | null
-          seller_display_name: string | null
           seller_id: string | null
           seller_username: string | null
           status: string | null
           transaction_signature: string | null
           transaction_type: string | null
+        }
+        Insert: {
+          buyer_id?: string | null
+          buyer_username?: never
+          confirmed_at?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          creator_amount?: number | null
+          gross_amount?: number | null
+          id?: string | null
+          metadata?: Json | null
+          platform_amount?: number | null
+          seller_id?: string | null
+          seller_username?: never
+          status?: string | null
+          transaction_signature?: string | null
+          transaction_type?: string | null
+        }
+        Update: {
+          buyer_id?: string | null
+          buyer_username?: never
+          confirmed_at?: string | null
+          content_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          creator_amount?: number | null
+          gross_amount?: number | null
+          id?: string | null
+          metadata?: Json | null
+          platform_amount?: number | null
+          seller_id?: string | null
+          seller_username?: never
+          status?: string | null
+          transaction_signature?: string | null
+          transaction_type?: string | null
         }
         Relationships: []
       }
@@ -3139,6 +3361,13 @@ export type Database = {
             foreignKeyName: "verification_requests_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3155,6 +3384,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_trust_stats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "verification_requests_user_id_fkey"
