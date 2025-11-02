@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { FilterOption } from '@/components/FilterBar';
@@ -15,14 +15,20 @@ type WutchVideo = Database['public']['Tables']['wutch_videos']['Row'] & {
   commentCount?: number;
 };
 
+const VIDEOS_PER_PAGE = 20;
+
 export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['wutch-videos', activeFilter],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * VIDEOS_PER_PAGE;
+      const to = from + VIDEOS_PER_PAGE - 1;
+      
       let query = supabase
         .from('wutch_videos')
         .select('*')
-        .eq('status', 'published');
+        .eq('status', 'published')
+        .range(from, to);
 
       // Apply sorting based on filter
       switch (activeFilter) {
@@ -37,7 +43,7 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
           query = query.order('created_at', { ascending: false });
       }
 
-      const { data, error } = await query.limit(24);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -79,6 +85,10 @@ export const useWutchVideosQuery = (activeFilter: FilterOption = 'all') => {
       const shuffled = shuffleWithBias(videosWithData, 0.5);
       return disperseByCreator(shuffled);
     },
+    getNextPageParam: (lastPage, pages) => {
+      return lastPage.length === VIDEOS_PER_PAGE ? pages.length : undefined;
+    },
+    initialPageParam: 0,
     staleTime: 2 * 60 * 1000, // 2 minutes for videos
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
