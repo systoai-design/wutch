@@ -102,27 +102,31 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     setIsHovering(true);
     if (videoRef.current && video.video_url) {
       const video = videoRef.current;
+      
+      // Change preload to auto when hovering
+      video.preload = 'auto';
       video.currentTime = 0;
       setIsVideoLoading(true);
       
-      // Attempt to play with shorter timeout
+      // Wait a bit for video to load before attempting play
       setTimeout(() => {
         video.play().then(() => {
           setIsPlaying(true);
           setIsVideoLoading(false);
-          // Stop after 5 seconds (reduced from 10)
+          // Stop after 10 seconds
           timeoutRef.current = setTimeout(() => {
             if (videoRef.current) {
               videoRef.current.pause();
               videoRef.current.currentTime = 0;
               setIsPlaying(false);
             }
-          }, 5000);
+          }, 10000);
         }).catch((error) => {
+          // Browser blocked autoplay or video failed to load
           console.log('Preview play failed:', error);
           setIsVideoLoading(false);
         });
-      }, 300); // Reduced from 500ms
+      }, 500); // Give 500ms for video to start loading
     }
   };
 
@@ -136,6 +140,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      videoRef.current.preload = 'none'; // Reset preload
     }
   };
 
@@ -214,7 +219,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
                   "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
                   !isPlaying && "opacity-0 pointer-events-none"
                 )}
-                preload="metadata"
+                preload="none"
                 playsInline
                 muted
                 loop={false}
