@@ -432,38 +432,16 @@ const Home = () => {
                       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                     }
 
-                    // Enforce strict uniqueness by creator as seen by users (username/display_name fallback to user_id)
+                    // Pick exactly 6 videos from 6 unique users
                     const picked: typeof shuffled = [];
-                    const seenCreators = new Set<string>();
-                    for (const v of shuffled) {
-                      const creatorKey = (
-                        (v as any).profiles?.username?.toLowerCase?.() ||
-                        (v as any).profiles?.display_name?.toLowerCase?.() ||
-                        (v as any).user_id || 'unknown'
-                      ).toString().trim();
-
-                      if (!seenCreators.has(creatorKey)) {
-                        picked.push(v);
-                        seenCreators.add(creatorKey);
-                        if (picked.length === 6) break;
-                      }
-                    }
-
-                    // If still fewer than 6, keep scanning shuffled for creators we haven't seen yet
-                    if (picked.length < 6) {
-                      for (const v of shuffled) {
-                        if (picked.some(p => p.id === v.id)) continue;
-                        const creatorKey = (
-                          (v as any).profiles?.username?.toLowerCase?.() ||
-                          (v as any).profiles?.display_name?.toLowerCase?.() ||
-                          (v as any).user_id || 'unknown'
-                        ).toString().trim();
-                        if (!seenCreators.has(creatorKey)) {
-                          picked.push(v);
-                          seenCreators.add(creatorKey);
-                          if (picked.length === 6) break;
-                        }
-                      }
+                    const seenUserIds = new Set<string>();
+                    
+                    for (const video of shuffled) {
+                      if (picked.length >= 6) break;
+                      if (!video.user_id || seenUserIds.has(video.user_id)) continue;
+                      
+                      picked.push(video);
+                      seenUserIds.add(video.user_id);
                     }
 
                     return picked;
