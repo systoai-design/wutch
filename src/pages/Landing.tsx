@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TypewriterText } from '@/components/TypewriterText';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { useSolPrice } from '@/hooks/useSolPrice';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useBatchScrollAnimation } from '@/hooks/useBatchScrollAnimation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { scrollToSection } from '@/utils/performanceOptimization';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -63,18 +63,25 @@ const Landing = () => {
   });
   const [animateRevenue, setAnimateRevenue] = useState(false);
 
-  // Scroll animation hooks for sections
-  const { ref: x402Ref, isVisible: x402Visible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: howItWorksRef, isVisible: howItWorksVisible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: shareCampaignsRef, isVisible: shareCampaignsVisible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: x402PremiumRef, isVisible: x402PremiumVisible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: bountiesRef, isVisible: bountiesVisible } = useScrollAnimation({ threshold: 0.3, triggerOnce: true });
-  const { ref: leaderboardRef, isVisible: leaderboardVisible } = useScrollAnimation({ threshold: 0.3, triggerOnce: true });
-  const { ref: creatorRef, isVisible: creatorVisible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: featuresRef, isVisible: featuresVisible } = useScrollAnimation({ threshold: 0.2, triggerOnce: true });
-  const { ref: transparencyRef, isVisible: transparencyVisible } = useScrollAnimation({ threshold: 0.3, triggerOnce: true });
-  const { ref: finalX402Ref, isVisible: finalX402Visible } = useScrollAnimation({ threshold: 0.3, triggerOnce: true });
-  const { ref: ctaRef, isVisible: ctaVisible } = useScrollAnimation({ threshold: 0.3, triggerOnce: true });
+  // Consolidated scroll animation with single observer
+  const { registerRef, visibilityMap } = useBatchScrollAnimation({
+    elements: [
+      'x402',
+      'how-it-works',
+      'share-campaigns',
+      'x402-premium',
+      'bounties-section',
+      'leaderboard-section',
+      'creator-rewards',
+      'features',
+      'transparency',
+      'final-x402',
+      'cta-section'
+    ],
+    threshold: 0.2,
+    rootMargin: '200px',
+    triggerOnce: true,
+  });
 
   // Intersection Observer for lazy loading sections
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -562,9 +569,9 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section ref={howItWorksRef as any} id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-muted/30 to-muted/50 scroll-mt-20">
+      <section ref={registerRef('how-it-works')} id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-muted/30 to-muted/50 scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className={`text-center mb-20 transition-all duration-700 ${howItWorksVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`text-center mb-20 transition-all duration-700 ${visibilityMap['how-it-works'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
               <Zap className="h-4 w-4" />
               Like YouTube, But You Earn Crypto
@@ -614,9 +621,9 @@ const Landing = () => {
       </section>
 
       {/* Share Campaigns Section */}
-      <section ref={shareCampaignsRef as any} id="share-campaigns" className="py-20 md:py-28 bg-background scroll-mt-20">
+      <section ref={registerRef('share-campaigns')} id="share-campaigns" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className={`text-center mb-16 transition-all duration-700 ${shareCampaignsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`text-center mb-16 transition-all duration-700 ${visibilityMap['share-campaigns'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
               <Share2 className="h-4 w-4" />
               Viral Marketing Meets Crypto Rewards
@@ -629,7 +636,7 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* For Users */}
-            <Card className={`p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group ${shareCampaignsVisible ? 'animate-slide-in-left' : 'opacity-0'}`}>
+            <Card className={`p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group ${visibilityMap['share-campaigns'] ? 'animate-slide-in-left' : 'opacity-0'}`}>
               <div className="flex items-start gap-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
                   <Coins className="h-8 w-8 text-primary" />
@@ -687,7 +694,7 @@ const Landing = () => {
             </Card>
 
             {/* For Creators */}
-            <Card className={`p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group ${shareCampaignsVisible ? 'animate-slide-in-right' : 'opacity-0'}`}>
+            <Card className={`p-8 space-y-6 glass-card bg-gradient-to-br from-card/80 to-primary/5 transition-all hover:scale-105 hover:border-primary/40 hover:shadow-2xl group ${visibilityMap['share-campaigns'] ? 'animate-slide-in-right' : 'opacity-0'}`}>
               <div className="flex items-start gap-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-6">
                   <TrendingUp className="h-8 w-8 text-primary" />
@@ -787,9 +794,9 @@ const Landing = () => {
       </section>
 
       {/* x402 Premium Content Protocol */}
-      <section ref={x402PremiumRef as any} id="x402-protocol" className="py-20 md:py-28 bg-gradient-to-br from-purple-500/5 via-background to-pink-500/5 scroll-mt-20">
+      <section ref={registerRef('x402-premium')} id="x402-protocol" className="py-20 md:py-28 bg-gradient-to-br from-purple-500/5 via-background to-pink-500/5 scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className={`text-center mb-16 transition-all duration-700 ${x402PremiumVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`text-center mb-16 transition-all duration-700 ${visibilityMap['x402-premium'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-500 text-sm font-medium mb-6 border border-purple-500/20">
               <Lock className="h-4 w-4" />
               Revolutionary Payment Protocol
@@ -1195,9 +1202,9 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section ref={featuresRef as any} id="features" className="py-20 md:py-28 bg-background scroll-mt-20">
+      <section ref={registerRef('features')} id="features" className="py-20 md:py-28 bg-background scroll-mt-20">
         <div className="container mx-auto px-4">
-          <div className={`text-center mb-20 transition-all duration-700 ${featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`text-center mb-20 transition-all duration-700 ${visibilityMap['features'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Best Crypto Rewards Platform for Creators & Viewers</h2>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
               Multiple ways to earn. Fair, transparent, instant payments. The crypto rewards platform built for everyone.
@@ -1279,9 +1286,9 @@ const Landing = () => {
       </section>
 
       {/* Transparency Section */}
-      <section ref={transparencyRef as any} className="py-16 md:py-20 bg-muted/30">
+      <section ref={registerRef('transparency')} className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4 max-w-4xl">
-          <Card className={`p-8 md:p-12 transition-all duration-700 ${transparencyVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <Card className={`p-8 md:p-12 transition-all duration-700 ${visibilityMap['transparency'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="flex items-center gap-3 mb-6">
               <Shield className="h-8 w-8 text-primary" />
               <h3 className="text-3xl md:text-4xl font-bold text-foreground">Fair & Transparent Fees</h3>
@@ -1343,9 +1350,9 @@ const Landing = () => {
       </section>
 
       {/* X402 Trust & Comparison Section */}
-      <section ref={finalX402Ref as any} className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5">
+      <section ref={registerRef('final-x402')} className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className={`text-center mb-12 transition-all duration-700 ${finalX402Visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`text-center mb-12 transition-all duration-700 ${visibilityMap['final-x402'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Why Creators Choose X402 Protocol
             </h2>
@@ -1472,9 +1479,9 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef as any} className="py-20 md:py-28 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
+      <section ref={registerRef('cta-section')} className="py-20 md:py-28 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <div className="container mx-auto px-4 text-center">
-          <div className={`max-w-3xl mx-auto space-y-10 transition-all duration-700 ${ctaVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+          <div className={`max-w-3xl mx-auto space-y-10 transition-all duration-700 ${visibilityMap['cta-section'] ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               Start Earning SOLANA Today
             </h2>
