@@ -68,14 +68,16 @@ export function useAutoPlayShort({
     return () => video.removeEventListener('ended', handleEnded);
   }, [isActive]);
 
-  // Preload management
+  // Intelligent preload management: active + next 2 videos get auto preload
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isActive) {
+      // Active video: full preload
       video.preload = 'auto';
     } else {
+      // Inactive: metadata only (will be upgraded when nearby)
       video.preload = 'metadata';
     }
   }, [isActive, videoRef]);

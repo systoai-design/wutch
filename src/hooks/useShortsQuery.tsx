@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { shuffleWithBias, disperseByCreator } from '@/utils/trendingScore';
@@ -9,17 +9,23 @@ type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   commentCount?: number;
 };
 
+const SHORTS_PER_PAGE = 20;
+
 export const useShortsQuery = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['shorts'],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * SHORTS_PER_PAGE;
+      const to = from + SHORTS_PER_PAGE - 1;
+
       const { data: shorts, error } = await supabase
         .from('short_videos')
         .select(`
           *,
           profiles!short_videos_user_id_fkey (username, display_name, avatar_url, public_wallet_address)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
 
@@ -47,6 +53,10 @@ export const useShortsQuery = () => {
       const shuffled = shuffleWithBias(shortsWithComments, 0.5);
       return disperseByCreator(shuffled);
     },
+    getNextPageParam: (lastPage, pages) => {
+      return lastPage.length === SHORTS_PER_PAGE ? pages.length : undefined;
+    },
+    initialPageParam: 0,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -50,7 +50,15 @@ function ShortsContent() {
   const lastScrollTime = useRef(0);
   const isScrollingRef = useRef(false);
 
-  const { data: shorts = [], isLoading } = useShortsQuery();
+  const { 
+    data, 
+    isLoading, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useShortsQuery();
+  
+  const shorts = data?.pages.flatMap(page => page) || [];
   // Controller removed - each video manages itself now
 
   // Handle deep-linking: Check URL for specific short ID
@@ -149,7 +157,12 @@ function ShortsContent() {
             observerTimeout = setTimeout(() => {
               console.log('[Shorts] Desktop activating index:', index);
               setActiveShortIndex(index);
-            }, 200);
+              
+              // Prefetch next batch when near the end
+              if (index >= shorts.length - 5 && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+              }
+            }, 50);
           }
         });
       },
@@ -197,7 +210,12 @@ function ShortsContent() {
             observerTimeout = setTimeout(() => {
               console.log('[Shorts] Mobile activating index:', index);
               setActiveShortIndex(index);
-            }, 200);
+              
+              // Prefetch next batch when near the end
+              if (index >= shorts.length - 5 && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+              }
+            }, 50);
           }
         });
       },

@@ -92,6 +92,42 @@ export const getOptimalImageQuality = (): number => {
 };
 
 /**
+ * Get optimal video preload strategy based on network
+ */
+export const getOptimalPreloadStrategy = (): 'none' | 'metadata' | 'auto' => {
+  if ('connection' in navigator) {
+    const connection = (navigator as any).connection;
+    if (connection) {
+      const effectiveType = connection.effectiveType;
+      switch (effectiveType) {
+        case 'slow-2g':
+        case '2g':
+          return 'none';
+        case '3g':
+          return 'metadata';
+        case '4g':
+        default:
+          return 'auto';
+      }
+    }
+  }
+  return 'metadata';
+};
+
+/**
+ * Check if connection is slow
+ */
+export const isSlowConnection = (): boolean => {
+  if ('connection' in navigator) {
+    const connection = (navigator as any).connection;
+    if (connection) {
+      return connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g';
+    }
+  }
+  return false;
+};
+
+/**
  * Request idle callback polyfill
  */
 export const requestIdleCallback =
