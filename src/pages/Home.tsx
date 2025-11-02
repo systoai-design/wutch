@@ -133,7 +133,7 @@ const Home = () => {
           .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
           .eq('status', 'published')
           .order('created_at', { ascending: false })
-          .limit(12)),
+          .limit(40)),
         
         // Profiles for wutch videos
         supabase
