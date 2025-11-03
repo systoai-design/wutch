@@ -486,6 +486,27 @@ const Home = () => {
               </section>
             )}
 
+            {/* More Videos for You Section */}
+            {wutchVideos.length > 6 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold">More Videos for You</h2>
+                  <Link to="/wutch">
+                    <Button variant="ghost" size="sm" className="gap-2 min-h-[44px]">
+                      View All <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {wutchVideos.slice(6, 14).map((video, index) => (
+                    <div key={video.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 30}ms` }}>
+                      <WutchVideoCard video={video} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Live Now Section */}
             {liveStreams.length > 0 && (
               <section>
