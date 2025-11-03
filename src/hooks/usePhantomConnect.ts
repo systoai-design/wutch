@@ -41,12 +41,33 @@ export const usePhantomConnect = () => {
       // On mobile, check if we're in Phantom's in-app browser
       const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
       
-      // If on mobile and NOT in Phantom app, redirect to open dApp inside Phantom
-      if (isMobile && !isPhantomInApp) {
-        window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`);
-        setIsConnecting(false);
-        return null;
-      }
+    // Mobile: Try deep link to Phantom app first, fallback to browser
+    if (isMobile && !isPhantomInApp) {
+      console.log('📱 Attempting to open Phantom app...');
+      
+      // Deep link format for Phantom mobile app
+      const appDeepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(window.location.origin)}&cluster=mainnet-beta&redirect_link=${encodeURIComponent(window.location.href)}`;
+      
+      // Set timeout to detect if app didn't open (fallback to browser)
+      const fallbackTimeout = setTimeout(() => {
+        console.log('🌐 Phantom app not detected, opening in browser...');
+        window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`);
+      }, 2500);
+      
+      // Try opening the Phantom app
+      window.location.assign(appDeepLink);
+      
+      // Clear timeout if page loses focus (app opened successfully)
+      const handleBlur = () => {
+        clearTimeout(fallbackTimeout);
+        console.log('✅ Phantom app opened successfully');
+      };
+      window.addEventListener('blur', handleBlur, { once: true });
+      window.addEventListener('pagehide', handleBlur, { once: true });
+      
+      setIsConnecting(false);
+      return null;
+    }
       
       // Find and verify Phantom wallet
       const phantomWallet = wallets.find(w => 

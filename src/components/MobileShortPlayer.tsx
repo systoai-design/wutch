@@ -105,7 +105,11 @@ export function MobileShortPlayer({
     });
 
     // Sync mute state for THIS video before playing
-    videoRef.current.muted = isMuted;
+      videoRef.current.muted = isMuted;
+      // Ensure volume is set if not muted
+      if (!isMuted && videoRef.current.volume === 0) {
+        videoRef.current.volume = 1;
+      }
 
     // Play this video
     const playPromise = videoRef.current.play();
@@ -128,14 +132,23 @@ export function MobileShortPlayer({
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
+      // Ensure volume is set if not muted
+      if (!isMuted && videoRef.current.volume === 0) {
+        videoRef.current.volume = 1;
+      }
     }
   }, [isMuted]);
 
-  // Auto-hide controls when playing
+  // Auto-hide controls when playing (only hide if video is actively playing)
   useEffect(() => {
     if (!isPlaying || !showControls) return;
     
-    const timer = setTimeout(() => setShowControls(false), 3000);
+    const timer = setTimeout(() => {
+      // Only hide if video is still playing
+      if (videoRef.current && !videoRef.current.paused) {
+        setShowControls(false);
+      }
+    }, 3000);
     return () => clearTimeout(timer);
   }, [isPlaying, showControls]);
 
@@ -162,9 +175,14 @@ export function MobileShortPlayer({
       e.preventDefault();
       toggleLike();
     } else {
-      // Single tap - play/pause + show controls
+      // Single tap - play/pause
       togglePlayPause();
-      setShowControls(true);
+      // Only show controls if pausing, hide if playing
+      if (videoRef.current?.paused) {
+        setShowControls(true);
+      } else {
+        setShowControls(false);
+      }
     }
 
     lastTapTime.current = now;
@@ -222,8 +240,8 @@ export function MobileShortPlayer({
         onClick={togglePlayPause}
       />
 
-      {/* Play/Pause Button - Center (shows when paused or controls visible) */}
-      {(!isPlaying || showControls) && !showPreviewOverlay && (
+      {/* Play/Pause Button - Center (only shows when paused) */}
+      {!isPlaying && !showPreviewOverlay && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
           <button
             onClick={togglePlayPause}

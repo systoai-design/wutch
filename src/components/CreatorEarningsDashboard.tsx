@@ -40,24 +40,13 @@ export function CreatorEarningsDashboard() {
           service_purchases: { count: 0, amount: 0 },
         };
 
-        data.forEach((row) => {
-          const confirmed = Number(row.confirmed_earned || 0);
-          summary.total_earned += confirmed;
-
-          if (row.transaction_type === 'x402_purchase') {
-            summary.x402_purchases.count = row.transaction_count || 0;
-            summary.x402_purchases.amount = confirmed;
-          } else if (row.transaction_type === 'share_reward') {
-            summary.share_rewards.count = row.transaction_count || 0;
-            summary.share_rewards.amount = confirmed;
-          } else if (row.transaction_type === 'bounty_reward') {
-            summary.bounty_rewards.count = row.transaction_count || 0;
-            summary.bounty_rewards.amount = confirmed;
-          } else if (row.transaction_type === 'service_purchase') {
-            summary.service_purchases.count = row.transaction_count || 0;
-            summary.service_purchases.amount = confirmed;
-          }
-        });
+        // The view now returns aggregated data, not per-transaction-type rows
+        if (data && data.length > 0) {
+          const row = data[0]; // Should only be one row per user
+          summary.total_earned = Number(row.confirmed_earned || 0);
+          summary.x402_purchases.amount = Number(row.x402_earnings || 0);
+          // Count is not available from the view anymore, would need separate query if needed
+        }
 
         setEarnings(summary);
       }

@@ -3047,24 +3047,6 @@ export type Database = {
           username: string | null
           x402_earnings: number | null
         }
-        Insert: {
-          confirmed_earned?: never
-          donations_received?: never
-          pending_earnings?: never
-          total_paid_out?: never
-          user_id?: string | null
-          username?: string | null
-          x402_earnings?: never
-        }
-        Update: {
-          confirmed_earned?: never
-          donations_received?: never
-          pending_earnings?: never
-          total_paid_out?: never
-          user_id?: string | null
-          username?: string | null
-          x402_earnings?: never
-        }
         Relationships: []
       }
       moderation_queue: {
@@ -3099,6 +3081,7 @@ export type Database = {
       public_profiles: {
         Row: {
           avatar_url: string | null
+          banner_url: string | null
           bio: string | null
           created_at: string | null
           display_name: string | null
@@ -3115,9 +3098,11 @@ export type Database = {
           total_earnings: number | null
           username: string | null
           verification_type: string | null
+          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -3134,9 +3119,11 @@ export type Database = {
           total_earnings?: number | null
           username?: string | null
           verification_type?: string | null
+          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -3153,6 +3140,7 @@ export type Database = {
           total_earnings?: number | null
           username?: string | null
           verification_type?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -3242,6 +3230,7 @@ export type Database = {
       }
       user_transaction_history: {
         Row: {
+          buyer_display_name: string | null
           buyer_id: string | null
           buyer_username: string | null
           confirmed_at: string | null
@@ -3253,47 +3242,12 @@ export type Database = {
           id: string | null
           metadata: Json | null
           platform_amount: number | null
+          seller_display_name: string | null
           seller_id: string | null
           seller_username: string | null
           status: string | null
           transaction_signature: string | null
           transaction_type: string | null
-        }
-        Insert: {
-          buyer_id?: string | null
-          buyer_username?: never
-          confirmed_at?: string | null
-          content_id?: string | null
-          content_type?: string | null
-          created_at?: string | null
-          creator_amount?: number | null
-          gross_amount?: number | null
-          id?: string | null
-          metadata?: Json | null
-          platform_amount?: number | null
-          seller_id?: string | null
-          seller_username?: never
-          status?: string | null
-          transaction_signature?: string | null
-          transaction_type?: string | null
-        }
-        Update: {
-          buyer_id?: string | null
-          buyer_username?: never
-          confirmed_at?: string | null
-          content_id?: string | null
-          content_type?: string | null
-          created_at?: string | null
-          creator_amount?: number | null
-          gross_amount?: number | null
-          id?: string | null
-          metadata?: Json | null
-          platform_amount?: number | null
-          seller_id?: string | null
-          seller_username?: never
-          status?: string | null
-          transaction_signature?: string | null
-          transaction_type?: string | null
         }
         Relationships: []
       }
