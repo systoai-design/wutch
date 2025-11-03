@@ -38,45 +38,7 @@ export const usePhantomConnect = () => {
         }
       }
 
-      // Check if we just returned from Phantom connect deep link
-      const urlParams = new URLSearchParams(window.location.search);
-      const phantomConnectReturn = urlParams.get('phantom_connect') === 'true';
-      
-      // On mobile, check if we're in Phantom's in-app browser
-      const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
-
-      // If we returned from Phantom connect and we're in Phantom app, proceed automatically
-      if (isMobile && phantomConnectReturn && isPhantomInApp) {
-        console.log('✅ Returned from Phantom connect deep link, proceeding automatically');
-        
-        // Clear the URL param
-        window.history.replaceState({}, '', window.location.pathname);
-        
-        // Continue to connection logic below
-      }
-
-      // Mobile deep link logic - ONLY if:
-      // 1. Device is mobile AND
-      // 2. NOT in Phantom in-app browser AND
-      // 3. Phantom extension is NOT detected in mobile browser
-      // 4. NOT returning from a connect deep link
-      if (isMobile && !isPhantomInApp && !phantomConnectReturn) {
-        // Check if Phantom is available as browser extension on mobile
-        const { detectPhantomWallet } = await import('@/utils/walletDetection');
-        const hasMobileExtension = await detectPhantomWallet(1000);
-        
-        if (!hasMobileExtension) {
-          console.log('📱 No Phantom extension on mobile browser - user needs to take action');
-          setIsConnecting(false);
-          
-          // Return special status so UI can handle it
-          throw new Error('MOBILE_ACTION_REQUIRED');
-        } else {
-          console.log('✅ Phantom extension detected on mobile browser, proceeding with connection');
-        }
-      }
-      
-      // Desktop or mobile with extension - proceed with wallet adapter connection
+      // Desktop and mobile - proceed with wallet adapter connection
       console.log('[PhantomConnect] Checking for Phantom wallet adapter...');
 
       // Wait for Phantom to be detected in window

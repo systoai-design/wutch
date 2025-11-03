@@ -179,38 +179,6 @@ export const WalletConnect = () => {
         setShowWalletSignUp(true);
       }
     } catch (error: any) {
-      // Handle mobile action required error
-      if (error.message === 'MOBILE_ACTION_REQUIRED') {
-        const appUrl = window.location.origin;
-        const redirectUrl = `${window.location.origin}/?phantom_connect=true`;
-        const deepLink = `phantom://v1/connect?app_url=${encodeURIComponent(appUrl)}&redirect_link=${encodeURIComponent(redirectUrl)}&cluster=mainnet-beta`;
-        
-        sonnerToast.info('Opening Phantom app...', {
-          description: 'You need the Phantom app to connect your wallet',
-          action: {
-            label: 'Install Phantom',
-            onClick: () => window.open('https://phantom.app/download', '_blank')
-          }
-        });
-
-        const fallbackTimeout = setTimeout(() => {
-          sonnerToast.info('Phantom app not found', {
-            description: 'Install Phantom to continue',
-            action: {
-              label: 'Download',
-              onClick: () => window.open('https://phantom.app/download', '_blank')
-            }
-          });
-        }, 2500);
-        
-        window.location.href = deepLink;
-        
-        window.addEventListener('blur', () => clearTimeout(fallbackTimeout), { once: true });
-        window.addEventListener('pagehide', () => clearTimeout(fallbackTimeout), { once: true });
-        return;
-      }
-      
-      // Log other errors for debugging
       console.error('Wallet connection error:', error);
     }
   };
