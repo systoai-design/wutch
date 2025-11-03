@@ -1,54 +1,54 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletReadyState } from '@solana/wallet-adapter-base';
-import { detectPhantomWallet } from '@/utils/walletDetection';
+import { isMobileDevice } from '@/utils/walletDetection';
 
 /**
- * PhantomWarmup component - pre-selects Phantom on mount to eliminate
- * first-click selection race conditions
+ * PhantomWarmup component - pre-selects appropriate wallet adapter on mount
+ * Mobile: prioritizes Mobile Wallet Adapter, then Phantom
+ * Desktop: prioritizes Phantom
  */
 export const PhantomWarmup = () => {
   const { wallets, select } = useWallet();
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const initializePhantom = async () => {
-      // First, verify Phantom is actually installed
-      const phantomDetected = await detectPhantomWallet(3000);
-      
-      if (!phantomDetected) {
-        console.log('[PhantomWarmup] Phantom not detected after timeout');
-        setIsChecking(false);
-        return;
-      }
-
-      console.log('[PhantomWarmup] Phantom detected via window.solana');
-
-      // Now wait for wallet adapter to register it
+    const initializeWallet = () => {
       const maxAttempts = 20; // 5 seconds (20 * 250ms)
       let attempts = 0;
+      const mobile = isMobileDevice();
 
       const waitForAdapter = setInterval(() => {
+        // Find available adapters
+        const mobileWallet = wallets.find(
+          (w) => /mobile wallet adapter/i.test(w.adapter.name) && 
+                 w.adapter.readyState !== WalletReadyState.NotDetected
+        );
         const phantomWallet = wallets.find(
-          (wallet) => wallet.adapter.name === 'Phantom'
+          (w) => /phantom/i.test(w.adapter.name) && 
+                 w.adapter.readyState !== WalletReadyState.NotDetected
         );
 
-        if (phantomWallet && phantomWallet.adapter.readyState !== WalletReadyState.NotDetected) {
-          console.log('[PhantomWarmup] Phantom adapter ready, pre-selecting...');
+        // Select based on environment
+        const selectedWallet = mobile 
+          ? (mobileWallet || phantomWallet)
+          : (phantomWallet || mobileWallet);
+
+        if (selectedWallet) {
+          console.log('[PhantomWarmup] Pre-selecting wallet:', selectedWallet.adapter.name);
           clearInterval(waitForAdapter);
-          select(phantomWallet.adapter.name);
-          setIsChecking(false);
+          select(selectedWallet.adapter.name);
         } else if (attempts >= maxAttempts) {
-          console.log('[PhantomWarmup] Phantom adapter not ready after timeout');
+          console.log('[PhantomWarmup] No wallet adapter ready after timeout');
           clearInterval(waitForAdapter);
-          setIsChecking(false);
         }
         
         attempts++;
       }, 250);
+
+      return () => clearInterval(waitForAdapter);
     };
 
-    initializePhantom();
+    return initializeWallet();
   }, [wallets, select]);
 
   // Render nothing - this is a silent initialization component

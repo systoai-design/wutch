@@ -23,8 +23,12 @@ import {
   registerMwa,
   createDefaultAuthorizationCache,
   createDefaultChainSelector,
-  createDefaultWalletNotFoundHandler
 } from '@solana-mobile/wallet-standard-mobile';
+import {
+  SolanaMobileWalletAdapter,
+  createDefaultAddressSelector,
+  createDefaultAuthorizationResultCache,
+} from '@solana-mobile/wallet-adapter-mobile';
 import { Capacitor } from '@capacitor/core';
 import { APP_BASE_URL } from '@/utils/appUrl';
 
@@ -218,11 +222,28 @@ const App = () => {
       authorizationCache: createDefaultAuthorizationCache(),
       chains: ['solana:mainnet'],
       chainSelector: createDefaultChainSelector(),
-      onWalletNotFound: createDefaultWalletNotFoundHandler(),
+      onWalletNotFound: async () => {
+        console.log('Mobile wallet not found');
+      },
     });
   }, []);
   
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+  const wallets = useMemo(() => [
+    new SolanaMobileWalletAdapter({
+      addressSelector: createDefaultAddressSelector(),
+      appIdentity: {
+        name: 'Wutch',
+        uri: APP_BASE_URL,
+        icon: `${APP_BASE_URL}/favicon.png`,
+      },
+      authorizationResultCache: createDefaultAuthorizationResultCache(),
+      chain: 'solana:mainnet',
+      onWalletNotFound: async () => {
+        console.log('Mobile wallet not found');
+      },
+    }),
+    new PhantomWalletAdapter(),
+  ], []);
 
   return (
     <QueryClientProvider client={queryClient}>

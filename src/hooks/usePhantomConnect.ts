@@ -38,74 +38,58 @@ export const usePhantomConnect = () => {
         }
       }
 
-      // Desktop and mobile - proceed with wallet adapter connection
-      console.log('[PhantomConnect] Checking for Phantom wallet adapter...');
+      // Select adapter based on environment
+      console.log('[PhantomConnect] Selecting wallet adapter...');
 
-      // Wait for Phantom to be detected in window
-      const { detectPhantomWallet, getPhantomProvider } = await import('@/utils/walletDetection');
-      const phantomAvailable = await detectPhantomWallet(3000);
-      if (!phantomAvailable) {
-        throw new Error('Phantom wallet not detected. Please install Phantom from phantom.app');
+      let selectedWallet;
+      if (isMobile) {
+        // Mobile: prefer Mobile Wallet Adapter, fallback to Phantom
+        selectedWallet = wallets.find(w => 
+          /mobile wallet adapter/i.test(w.adapter.name)
+        ) || wallets.find(w => 
+          /phantom/i.test(w.adapter.name)
+        );
+        console.log('[PhantomConnect] Mobile detected, selected:', selectedWallet?.adapter.name);
+      } else {
+        // Desktop: prefer Phantom, fallback to first available
+        selectedWallet = wallets.find(w => 
+          /phantom/i.test(w.adapter.name)
+        ) || wallets[0];
+        console.log('[PhantomConnect] Desktop detected, selected:', selectedWallet?.adapter.name);
       }
 
-      console.log('[PhantomConnect] window.solana detected, finding adapter...');
-
-      // Find Phantom wallet adapter
-      const phantomWallet = wallets.find(w => 
-        w.adapter.name.toLowerCase().includes('phantom')
-      );
-
-      if (!phantomWallet) {
-        // Wallet detected in window but adapter not registered
-        console.log('[PhantomConnect] Adapter not found, but window.solana exists');
-        throw new Error('Phantom wallet adapter not initialized. Please refresh the page.');
+      if (!selectedWallet) {
+        throw new Error('No wallet adapter available. Please install Phantom.');
       }
 
-      // Check adapter ready state with timeout
-      if (phantomWallet.adapter.readyState === WalletReadyState.NotDetected) {
-        console.log('[PhantomConnect] Adapter shows NotDetected, waiting for ready state...');
+      // Check if adapter is ready
+      if (selectedWallet.adapter.readyState === WalletReadyState.NotDetected) {
+        console.log('[PhantomConnect] Adapter not detected, waiting...');
         
-        // Wait up to 3 seconds for adapter to update ready state
+        // Wait up to 3 seconds for adapter to become ready
         let ready = false;
         for (let i = 0; i < 12; i++) {
           await new Promise(resolve => setTimeout(resolve, 250));
-          if (phantomWallet.adapter.readyState !== WalletReadyState.NotDetected) {
+          if (selectedWallet.adapter.readyState !== WalletReadyState.NotDetected) {
             ready = true;
-            console.log('[PhantomConnect] Adapter ready state updated:', phantomWallet.adapter.readyState);
+            console.log('[PhantomConnect] Adapter ready:', selectedWallet.adapter.readyState);
             break;
           }
         }
         
-        if (!ready) {
-          // Even if adapter says NotDetected, if window.solana exists, we can still try
-          console.log('[PhantomConnect] Adapter still NotDetected but window.solana exists, proceeding anyway...');
+        if (!ready && !isMobile) {
+          throw new Error('Phantom wallet not detected. Please install Phantom from phantom.app');
         }
       }
 
       // Only select if not already selected and connected
       if (!connected) {
-        console.log('[PhantomConnect] Selecting Phantom wallet...');
-        select(phantomWallet.adapter.name);
+        console.log('[PhantomConnect] Selecting wallet:', selectedWallet.adapter.name);
+        select(selectedWallet.adapter.name);
         
-        // Increased settle time to 150ms for more reliable selection
+        // Wait for selection to settle
         console.log('[PhantomConnect] Waiting for selection to settle...');
         await new Promise(resolve => setTimeout(resolve, 150));
-        
-        // Poll for wallet to be ready (up to 2 seconds)
-        let ready = false;
-        for (let i = 0; i < 8; i++) {
-          await new Promise(resolve => setTimeout(resolve, 250));
-          const currentWallet = wallets.find(w => w.adapter.name === phantomWallet.adapter.name);
-          if (currentWallet && currentWallet.adapter.readyState !== WalletReadyState.NotDetected) {
-            ready = true;
-            console.log('[PhantomConnect] Phantom is ready');
-            break;
-          }
-        }
-        
-        if (!ready) {
-          throw new Error('Phantom wallet took too long to initialize');
-        }
       }
       
       // Connect with retry on race conditions and selection errors
@@ -117,11 +101,11 @@ export const usePhantomConnect = () => {
         // Handle WalletNotSelectedError specifically
         if (connectError.name === 'WalletNotSelectedError' || connectError.message?.includes('WalletNotSelected')) {
           console.log('[PhantomConnect] WalletNotSelectedError - re-selecting and retrying...');
-          select(phantomWallet.adapter.name);
+          select(selectedWallet.adapter.name);
           await new Promise(resolve => setTimeout(resolve, 150));
           await connect();
           console.log('[PhantomConnect] Retry connection successful');
-        } 
+        }
         // Retry once if we hit other race conditions
         else if (connectError.message?.includes('already connecting') || connectError.message?.includes('ready state')) {
           console.log('[PhantomConnect] Race condition detected - retrying...');
@@ -314,16 +298,12 @@ export const usePhantomConnect = () => {
         errorMessage = "Connection cancelled. Please approve the connection in your Phantom wallet.";
         errorTitle = "Connection Cancelled";
       } else if (error.message?.includes('not installed') || error.message?.includes('not detected')) {
-        // Check one more time if window.solana exists
-        const { detectPhantomWallet } = await import('@/utils/walletDetection');
-        const phantomDetected = await detectPhantomWallet(1000);
-        if (phantomDetected) {
-          errorMessage = "Phantom detected but connection failed. Please refresh the page and try again.";
-          errorTitle = "Connection Error";
+        if (isMobile) {
+          errorMessage = "Please install Phantom wallet from phantom.app to continue.";
         } else {
           errorMessage = "Phantom wallet not detected. Please install Phantom from phantom.app";
-          errorTitle = "Wallet Not Found";
         }
+        errorTitle = "Wallet Not Found";
       } else if (error.message?.includes('unlock')) {
         errorMessage = "Please unlock your Phantom wallet and try again.";
         errorTitle = "Wallet Locked";
