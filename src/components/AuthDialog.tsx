@@ -756,7 +756,7 @@ export const AuthDialog = () => {
                 variant="default"
                 className="w-full"
                 onClick={() => {
-                  const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`;
+                  const deepLink = `phantom://v1/browse/${encodeURIComponent(window.location.href)}?ref=wutch`;
                   
                   const fallbackTimeout = setTimeout(() => {
                     sonnerToast.info('Phantom app not found. Install it first?', {
