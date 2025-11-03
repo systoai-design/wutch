@@ -415,3 +415,19 @@ div[class*="lovable-badge"],
   perspective: 1500px;
   transform-style: preserve-3d;
 }
+
+/* Fullscreen video handling - mobile & desktop */
+video:fullscreen,
+video:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Ensure video controls are visible in fullscreen */
+video::-webkit-media-controls-panel {
+  display: flex !important;
+  opacity: 1 !important;
+}

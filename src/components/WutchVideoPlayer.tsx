@@ -290,6 +290,35 @@ export const WutchVideoPlayer = ({
     }
   }, [playbackRate]);
 
+  // Listen for fullscreen changes (mobile + desktop)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).webkitDisplayingFullscreen ||
+        (video as any).webkitDisplayingFullscreen
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+    };
+
+    // Listen for all possible fullscreen events
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    video.addEventListener('webkitbeginfullscreen', handleFullscreenChange);
+    video.addEventListener('webkitendfullscreen', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      video.removeEventListener('webkitbeginfullscreen', handleFullscreenChange);
+      video.removeEventListener('webkitendfullscreen', handleFullscreenChange);
+    };
+  }, []);
+
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -328,12 +357,37 @@ export const WutchVideoPlayer = ({
   };
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-      setIsFullscreen(true);
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isMobile) {
+      // Mobile: Use native video fullscreen
+      if (isFullscreen) {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        } else if ((video as any).webkitExitFullscreen) {
+          (video as any).webkitExitFullscreen();
+        }
+      } else {
+        // Enter fullscreen - iOS Safari requires video element fullscreen
+        if ((video as any).webkitEnterFullscreen) {
+          (video as any).webkitEnterFullscreen();
+        } else if (video.requestFullscreen) {
+          video.requestFullscreen();
+        } else if ((video as any).webkitRequestFullscreen) {
+          (video as any).webkitRequestFullscreen();
+        }
+      }
     } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+      // Desktop: Use container fullscreen
+      if (!document.fullscreenElement) {
+        containerRef.current?.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
     }
   };
 
