@@ -753,8 +753,10 @@ export const AuthDialog = () => {
             className="w-full"
             onClick={async () => {
               try {
-                if (!publicKey || !signMessage) {
-                  sonnerToast("Please install Phantom wallet");
+                const { detectPhantomWallet } = await import('@/utils/walletDetection');
+                const phantomDetected = await detectPhantomWallet(2000);
+                if (!phantomDetected || !publicKey || !signMessage) {
+                  sonnerToast.error("Phantom wallet not detected. Please install Phantom from phantom.app");
                   return;
                 }
 

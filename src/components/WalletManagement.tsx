@@ -57,12 +57,23 @@ export const WalletManagement = () => {
   const handleConnectNewWallet = async () => {
     try {
       setIsProcessing(true);
-      const { solana } = window as any;
-
-      if (!solana?.isPhantom) {
+      
+      const { detectPhantomWallet, getPhantomProvider } = await import('@/utils/walletDetection');
+      const phantomDetected = await detectPhantomWallet(2000);
+      if (!phantomDetected) {
         toast({
           title: 'Phantom Not Found',
-          description: 'Please install Phantom wallet extension to continue.',
+          description: 'Please install Phantom wallet from phantom.app to continue.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const solana = getPhantomProvider();
+      if (!solana) {
+        toast({
+          title: 'Connection Error',
+          description: 'Could not connect to Phantom wallet. Please refresh and try again.',
           variant: 'destructive',
         });
         return;

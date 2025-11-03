@@ -40,47 +40,88 @@ export const usePhantomConnect = () => {
 
       // On mobile, check if we're in Phantom's in-app browser
       const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
+
+      // Mobile deep link logic - ONLY if:
+      // 1. Device is mobile AND
+      // 2. NOT in Phantom in-app browser AND
+      // 3. Phantom extension is NOT detected in mobile browser
+      if (isMobile && !isPhantomInApp) {
+        // Check if Phantom is available as browser extension on mobile
+        const { detectPhantomWallet } = await import('@/utils/walletDetection');
+        const hasMobileExtension = await detectPhantomWallet(1000);
+        
+        if (!hasMobileExtension) {
+          console.log('📱 No Phantom extension on mobile browser, opening Phantom app...');
+          
+          // Deep link format for Phantom mobile app
+          const appDeepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(window.location.origin)}&cluster=mainnet-beta&redirect_link=${encodeURIComponent(window.location.href)}`;
+          
+          // Set timeout to detect if app didn't open (fallback to browser)
+          const fallbackTimeout = setTimeout(() => {
+            console.log('🌐 Phantom app not detected, opening in browser...');
+            window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`);
+          }, 2500);
+          
+          // Try opening the Phantom app
+          window.location.assign(appDeepLink);
+          
+          // Clear timeout if page loses focus (app opened successfully)
+          const handleBlur = () => {
+            clearTimeout(fallbackTimeout);
+            console.log('✅ Phantom app opened successfully');
+          };
+          window.addEventListener('blur', handleBlur, { once: true });
+          window.addEventListener('pagehide', handleBlur, { once: true });
+          
+          setIsConnecting(false);
+          return null;
+        } else {
+          console.log('✅ Phantom extension detected on mobile browser, proceeding with connection');
+        }
+      }
       
-    // Mobile: Try deep link to Phantom app first, fallback to browser
-    if (isMobile && !isPhantomInApp) {
-      console.log('📱 Attempting to open Phantom app...');
-      
-      // Deep link format for Phantom mobile app
-      const appDeepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(window.location.origin)}&cluster=mainnet-beta&redirect_link=${encodeURIComponent(window.location.href)}`;
-      
-      // Set timeout to detect if app didn't open (fallback to browser)
-      const fallbackTimeout = setTimeout(() => {
-        console.log('🌐 Phantom app not detected, opening in browser...');
-        window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`);
-      }, 2500);
-      
-      // Try opening the Phantom app
-      window.location.assign(appDeepLink);
-      
-      // Clear timeout if page loses focus (app opened successfully)
-      const handleBlur = () => {
-        clearTimeout(fallbackTimeout);
-        console.log('✅ Phantom app opened successfully');
-      };
-      window.addEventListener('blur', handleBlur, { once: true });
-      window.addEventListener('pagehide', handleBlur, { once: true });
-      
-      setIsConnecting(false);
-      return null;
-    }
-      
-      // Find and verify Phantom wallet
+      // Desktop or mobile with extension - proceed with wallet adapter connection
+      console.log('[PhantomConnect] Checking for Phantom wallet adapter...');
+
+      // Wait for Phantom to be detected in window
+      const { detectPhantomWallet, getPhantomProvider } = await import('@/utils/walletDetection');
+      const phantomAvailable = await detectPhantomWallet(3000);
+      if (!phantomAvailable) {
+        throw new Error('Phantom wallet not detected. Please install Phantom from phantom.app');
+      }
+
+      console.log('[PhantomConnect] window.solana detected, finding adapter...');
+
+      // Find Phantom wallet adapter
       const phantomWallet = wallets.find(w => 
         w.adapter.name.toLowerCase().includes('phantom')
       );
-      
+
       if (!phantomWallet) {
-        throw new Error('Phantom wallet not detected. Please install the Phantom browser extension.');
+        // Wallet detected in window but adapter not registered
+        console.log('[PhantomConnect] Adapter not found, but window.solana exists');
+        throw new Error('Phantom wallet adapter not initialized. Please refresh the page.');
       }
 
-      // Check if Phantom is installed/loadable
+      // Check adapter ready state with timeout
       if (phantomWallet.adapter.readyState === WalletReadyState.NotDetected) {
-        throw new Error('Phantom wallet not detected. Please install the Phantom browser extension.');
+        console.log('[PhantomConnect] Adapter shows NotDetected, waiting for ready state...');
+        
+        // Wait up to 3 seconds for adapter to update ready state
+        let ready = false;
+        for (let i = 0; i < 12; i++) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+          if (phantomWallet.adapter.readyState !== WalletReadyState.NotDetected) {
+            ready = true;
+            console.log('[PhantomConnect] Adapter ready state updated:', phantomWallet.adapter.readyState);
+            break;
+          }
+        }
+        
+        if (!ready) {
+          // Even if adapter says NotDetected, if window.solana exists, we can still try
+          console.log('[PhantomConnect] Adapter still NotDetected but window.solana exists, proceeding anyway...');
+        }
       }
 
       // Only select if not already selected and connected
@@ -309,17 +350,29 @@ export const usePhantomConnect = () => {
       console.error('Error connecting wallet:', error);
       
       let errorMessage = error.message || "Failed to connect wallet. Please try again.";
+      let errorTitle = "Connection Failed";
       
       if (error.message?.includes('User rejected') || error.message?.includes('User cancelled')) {
-        errorMessage = "Connection cancelled. Please approve the connection in your wallet.";
+        errorMessage = "Connection cancelled. Please approve the connection in your Phantom wallet.";
+        errorTitle = "Connection Cancelled";
       } else if (error.message?.includes('not installed') || error.message?.includes('not detected')) {
-        errorMessage = "Phantom wallet not detected. Please install the Phantom browser extension.";
+        // Check one more time if window.solana exists
+        const { detectPhantomWallet } = await import('@/utils/walletDetection');
+        const phantomDetected = await detectPhantomWallet(1000);
+        if (phantomDetected) {
+          errorMessage = "Phantom detected but connection failed. Please refresh the page and try again.";
+          errorTitle = "Connection Error";
+        } else {
+          errorMessage = "Phantom wallet not detected. Please install Phantom from phantom.app";
+          errorTitle = "Wallet Not Found";
+        }
       } else if (error.message?.includes('unlock')) {
         errorMessage = "Please unlock your Phantom wallet and try again.";
+        errorTitle = "Wallet Locked";
       }
       
       await disconnect();
-      toast.error(errorMessage);
+      toast.error(errorMessage, { description: errorTitle });
       return null;
     } finally {
       setIsConnecting(false);

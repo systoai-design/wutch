@@ -202,8 +202,11 @@ const Submit = () => {
       }
 
       // Check for Phantom wallet early
-      const { solana } = window as any;
-      if (!solana?.isPhantom) {
+      const { detectPhantomWallet, getPhantomProvider } = await import('@/utils/walletDetection');
+      const phantomDetected = await detectPhantomWallet(2000);
+      const solana = getPhantomProvider();
+
+      if (!phantomDetected || !solana) {
         toast({
           title: 'Phantom Wallet Not Found',
           description: 'Please install Phantom wallet from phantom.app to create bounties',
@@ -264,8 +267,11 @@ const Submit = () => {
         });
 
         // Get Phantom wallet
-        const { solana } = window as any;
-        if (!solana?.isPhantom) {
+        const { detectPhantomWallet, getPhantomProvider } = await import('@/utils/walletDetection');
+        const phantomDetected = await detectPhantomWallet(2000);
+        const solana = getPhantomProvider();
+
+        if (!phantomDetected || !solana) {
           throw new Error('Phantom wallet not detected. Please ensure Phantom is installed and try again.');
         }
 

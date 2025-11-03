@@ -17,3 +17,20 @@ export function useIsMobile() {
 
   return !!isMobile;
 }
+
+/**
+ * Detect if device is actually a mobile/tablet device (not just narrow screen)
+ */
+export function useIsMobileDevice() {
+  const [isMobileDevice, setIsMobileDevice] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobileDevice(isMobile);
+    };
+    checkMobile();
+  }, []);
+
+  return isMobileDevice;
+}
