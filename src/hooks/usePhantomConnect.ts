@@ -51,30 +51,11 @@ export const usePhantomConnect = () => {
         const hasMobileExtension = await detectPhantomWallet(1000);
         
         if (!hasMobileExtension) {
-          console.log('📱 No Phantom extension on mobile browser, opening Phantom app...');
-          
-          // Deep link format for Phantom mobile app
-          const appDeepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(window.location.origin)}&cluster=mainnet-beta&redirect_link=${encodeURIComponent(window.location.href)}`;
-          
-          // Set timeout to detect if app didn't open (fallback to browser)
-          const fallbackTimeout = setTimeout(() => {
-            console.log('🌐 Phantom app not detected, opening in browser...');
-            window.location.assign(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`);
-          }, 2500);
-          
-          // Try opening the Phantom app
-          window.location.assign(appDeepLink);
-          
-          // Clear timeout if page loses focus (app opened successfully)
-          const handleBlur = () => {
-            clearTimeout(fallbackTimeout);
-            console.log('✅ Phantom app opened successfully');
-          };
-          window.addEventListener('blur', handleBlur, { once: true });
-          window.addEventListener('pagehide', handleBlur, { once: true });
-          
+          console.log('📱 No Phantom extension on mobile browser - user needs to take action');
           setIsConnecting(false);
-          return null;
+          
+          // Return special status so UI can handle it
+          throw new Error('MOBILE_ACTION_REQUIRED');
         } else {
           console.log('✅ Phantom extension detected on mobile browser, proceeding with connection');
         }

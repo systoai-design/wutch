@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { MFAVerification } from '@/components/MFAVerification';
 import { WalletSignUpDialog } from '@/components/WalletSignUpDialog';
-import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Smartphone, Download } from 'lucide-react';
 import wutchLogo from '@/assets/wutch-logo.png';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -734,7 +734,9 @@ export const AuthDialog = () => {
             </div>
             <h3 className="text-lg font-semibold">Sign Up with Your Wallet</h3>
             <p className="text-sm text-muted-foreground">
-              Connect your Phantom wallet to create a new account - no email required
+              {isMobile 
+                ? "You'll need the Phantom app to sign up or log in"
+                : "Connect your Phantom wallet to create a new account - no email required"}
             </p>
             <p className="text-xs text-muted-foreground mt-2">
               Already have a wallet account?{" "}
@@ -747,60 +749,110 @@ export const AuthDialog = () => {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={async () => {
-              try {
-                const { detectPhantomWallet } = await import('@/utils/walletDetection');
-                const phantomDetected = await detectPhantomWallet(2000);
-                if (!phantomDetected || !publicKey || !signMessage) {
-                  sonnerToast.error("Phantom wallet not detected. Please install Phantom from phantom.app");
-                  return;
-                }
-
-                setIsLoading(true);
-
-                // Generate message to sign
-                const timestamp = Date.now();
-                const nonce = crypto.randomUUID();
-                const message = `Sign this message to authenticate with Wutch:\n${timestamp}\n${nonce}`;
-                const messageBytes = new TextEncoder().encode(message);
-
-                // Request signature
-                const signature = await signMessage(messageBytes);
-                const signatureBase58 = btoa(String.fromCharCode(...signature));
-
-                setWalletSignUpData({
-                  walletAddress: publicKey.toString(),
-                  signature: signatureBase58,
-                  message,
-                });
-                setShowWalletSignUp(true);
-              } catch (error: any) {
-                console.error('Wallet connection error:', error);
-                sonnerToast(error.message || "Failed to connect wallet");
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
+          {isMobile ? (
+            <>
+              <Button
+                type="button"
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`;
+                  
+                  const fallbackTimeout = setTimeout(() => {
+                    sonnerToast.info('Phantom app not found. Install it first?', {
+                      action: {
+                        label: 'Install',
+                        onClick: () => window.open('https://phantom.app/download', '_blank')
+                      }
+                    });
+                  }, 2500);
+                  
+                  window.location.href = deepLink;
+                  
+                  window.addEventListener('blur', () => clearTimeout(fallbackTimeout), { once: true });
+                  window.addEventListener('pagehide', () => clearTimeout(fallbackTimeout), { once: true });
+                }}
+                disabled={isLoading}
+              >
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8 10c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2-12h4v2h-4V5z"/>
                 </svg>
-                Connect Phantom Wallet
-              </>
-            )}
-          </Button>
+                Open in Phantom App
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => window.open('https://phantom.app/download', '_blank')}
+                disabled={isLoading}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Install Phantom
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                Don't have Phantom? Tap "Install Phantom" to get the app.
+              </p>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                try {
+                  const { detectPhantomWallet } = await import('@/utils/walletDetection');
+                  const phantomDetected = await detectPhantomWallet(2000);
+                  if (!phantomDetected || !publicKey || !signMessage) {
+                    sonnerToast.error("Phantom wallet not detected. Please install Phantom from phantom.app");
+                    return;
+                  }
+
+                  setIsLoading(true);
+
+                  // Generate message to sign
+                  const timestamp = Date.now();
+                  const nonce = crypto.randomUUID();
+                  const message = `Sign this message to authenticate with Wutch:\n${timestamp}\n${nonce}`;
+                  const messageBytes = new TextEncoder().encode(message);
+
+                  // Request signature
+                  const signature = await signMessage(messageBytes);
+                  const signatureBase58 = btoa(String.fromCharCode(...signature));
+
+                  setWalletSignUpData({
+                    walletAddress: publicKey.toString(),
+                    signature: signatureBase58,
+                    message,
+                  });
+                  setShowWalletSignUp(true);
+                } catch (error: any) {
+                  console.error('Wallet connection error:', error);
+                  sonnerToast(error.message || "Failed to connect wallet");
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8 10c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2-12h4v2h-4V5z"/>
+                  </svg>
+                  Connect Phantom Wallet
+                </>
+              )}
+            </Button>
+          )}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

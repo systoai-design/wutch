@@ -83,99 +83,133 @@ export const WalletConnect = () => {
   }, [user]);
 
   const connectWallet = async () => {
-    // If user is authenticated, use the original flow
-    if (user) {
-      const result = await connectPhantomWallet(true);
-      if (typeof result === 'string') {
-        setWalletAddress(result);
-      }
-      return;
-    }
-
-    // If user is NOT authenticated, connect wallet without auth requirement
-    const result = await connectPhantomWallet(false);
-    
-    if (!result || typeof result === 'string') {
-      return;
-    }
-
-    // Check if wallet is already registered
-    const { data: walletData } = await supabase
-      .from('profile_wallets')
-      .select('user_id')
-      .eq('wallet_address', result.address)
-      .maybeSingle();
-
-    if (walletData) {
-      // Wallet is registered, log them in
-      try {
-        setIsLoggingIn(true);
-        sonnerToast.info('Existing wallet detected, logging you in...');
-        
-        const { data, error } = await supabase.functions.invoke('login-with-wallet', {
-          body: {
-            walletAddress: result.address,
-            signature: result.signature,
-            message: result.message,
-          },
-        });
-
-        if (error) {
-          sonnerToast.error(error.message || 'Failed to log in with wallet');
-          return;
+    try {
+      // If user is authenticated, use the original flow
+      if (user) {
+        const result = await connectPhantomWallet(true);
+        if (typeof result === 'string') {
+          setWalletAddress(result);
         }
+        return;
+      }
 
-        if (data?.session?.properties?.action_link) {
-          const url = new URL(data.session.properties.action_link);
-          const tokenHash = url.searchParams.get('token_hash') ?? url.searchParams.get('token');
+      // If user is NOT authenticated, connect wallet without auth requirement
+      const result = await connectPhantomWallet(false);
+      
+      if (!result || typeof result === 'string') {
+        return;
+      }
+
+      // Check if wallet is already registered
+      const { data: walletData } = await supabase
+        .from('profile_wallets')
+        .select('user_id')
+        .eq('wallet_address', result.address)
+        .maybeSingle();
+
+      if (walletData) {
+        // Wallet is registered, log them in
+        try {
+          setIsLoggingIn(true);
+          sonnerToast.info('Existing wallet detected, logging you in...');
           
-          if (!tokenHash) {
-            console.error('No token_hash found in action_link');
-            sonnerToast.error('Authentication failed - missing token');
-            return;
-          }
-
-          const { error: signInError } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: 'magiclink',
+          const { data, error } = await supabase.functions.invoke('login-with-wallet', {
+            body: {
+              walletAddress: result.address,
+              signature: result.signature,
+              message: result.message,
+            },
           });
 
-          if (signInError) {
-            console.error('Sign in error:', signInError);
-            sonnerToast.error('Failed to sign in');
+          if (error) {
+            sonnerToast.error(error.message || 'Failed to log in with wallet');
             return;
           }
 
-          // Verify we're logged into the correct account
-          const { data: authData } = await supabase.auth.getUser();
-          if (authData.user && authData.user.id !== walletData.user_id) {
-            console.error('User ID mismatch after wallet login', {
-              expected: walletData.user_id,
-              actual: authData.user.id,
+          if (data?.session?.properties?.action_link) {
+            const url = new URL(data.session.properties.action_link);
+            const tokenHash = url.searchParams.get('token_hash') ?? url.searchParams.get('token');
+            
+            if (!tokenHash) {
+              console.error('No token_hash found in action_link');
+              sonnerToast.error('Authentication failed - missing token');
+              return;
+            }
+
+            const { error: signInError } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: 'magiclink',
             });
-            
-            // Sign out the wrong account
-            await supabase.auth.signOut();
-            
-            sonnerToast.error('This wallet is linked to another account. Please try again.');
-            return;
-          }
 
-          sonnerToast.success('Logged in successfully!');
-          // Immediately set wallet address and skip next reload
-          setWalletAddress(result.address);
-          skipNextReload.current = true;
+            if (signInError) {
+              console.error('Sign in error:', signInError);
+              sonnerToast.error('Failed to sign in');
+              return;
+            }
+
+            // Verify we're logged into the correct account
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData.user && authData.user.id !== walletData.user_id) {
+              console.error('User ID mismatch after wallet login', {
+                expected: walletData.user_id,
+                actual: authData.user.id,
+              });
+              
+              // Sign out the wrong account
+              await supabase.auth.signOut();
+              
+              sonnerToast.error('This wallet is linked to another account. Please try again.');
+              return;
+            }
+
+            sonnerToast.success('Logged in successfully!');
+            // Immediately set wallet address and skip next reload
+            setWalletAddress(result.address);
+            skipNextReload.current = true;
+          }
+        } catch (error: any) {
+          console.error('Login error:', error);
+          sonnerToast.error(error.message || 'Failed to log in');
+        } finally {
+          setIsLoggingIn(false);
         }
-      } catch (error: any) {
-        console.error('Login error:', error);
-        sonnerToast.error(error.message || 'Failed to log in');
-      } finally {
-        setIsLoggingIn(false);
+      } else {
+        // Wallet is NOT registered, show signup dialog
+        setWalletSignUpData(result);
+        setShowWalletSignUp(true);
       }
-    } else {
-      // Wallet is NOT registered, show signup dialog
-      setWalletSignUpData(result);
-      setShowWalletSignUp(true);
+    } catch (error: any) {
+      // Handle mobile action required error
+      if (error.message === 'MOBILE_ACTION_REQUIRED') {
+        const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}?ref=wutch`;
+        
+        sonnerToast.info('Opening Phantom app...', {
+          description: 'You need the Phantom app to connect your wallet',
+          action: {
+            label: 'Install Phantom',
+            onClick: () => window.open('https://phantom.app/download', '_blank')
+          }
+        });
+
+        const fallbackTimeout = setTimeout(() => {
+          sonnerToast.info('Phantom app not found', {
+            description: 'Install Phantom to continue',
+            action: {
+              label: 'Download',
+              onClick: () => window.open('https://phantom.app/download', '_blank')
+            }
+          });
+        }, 2500);
+        
+        window.location.href = deepLink;
+        
+        window.addEventListener('blur', () => clearTimeout(fallbackTimeout), { once: true });
+        window.addEventListener('pagehide', () => clearTimeout(fallbackTimeout), { once: true });
+        return;
+      }
+      
+      // Log other errors for debugging
+      console.error('Wallet connection error:', error);
     }
   };
 
