@@ -58,7 +58,16 @@ export const isMobileDevice = (): boolean => {
  * Checks if currently running in Phantom's mobile in-app browser
  */
 export const isPhantomMobileApp = (): boolean => {
-  return /Phantom/i.test(navigator.userAgent);
+  // Check user agent
+  const isPhantomUA = /Phantom/i.test(navigator.userAgent);
+  
+  // Check if phantom object exists
+  const hasPhantomObject = !!(window as any).phantom?.solana;
+  
+  // Check if solana.isPhantom is true
+  const isPhantomProvider = !!(window as any).solana?.isPhantom;
+  
+  return isPhantomUA || (hasPhantomObject && isPhantomProvider);
 };
 
 /**

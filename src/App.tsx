@@ -15,6 +15,7 @@ import { AuthDialog } from '@/components/AuthDialog';
 import { useAuthDialog } from '@/store/authDialogStore';
 import { ChatWidget } from '@/components/ChatWidget';
 import { PhantomWarmup } from '@/components/PhantomWarmup';
+import { PhantomMobileConnector } from '@/components/PhantomMobileConnector';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -229,6 +230,7 @@ const App = () => {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect={false}>
           <PhantomWarmup />
+          <PhantomMobileConnector />
           <BrowserRouter>
             <AuthProvider>
               <Toaster />

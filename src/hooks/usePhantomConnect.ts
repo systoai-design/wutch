@@ -38,14 +38,29 @@ export const usePhantomConnect = () => {
         }
       }
 
+      // Check if we just returned from Phantom connect deep link
+      const urlParams = new URLSearchParams(window.location.search);
+      const phantomConnectReturn = urlParams.get('phantom_connect') === 'true';
+      
       // On mobile, check if we're in Phantom's in-app browser
       const isPhantomInApp = /Phantom/i.test(navigator.userAgent) || (window as any).phantom?.solana?.isPhantom;
+
+      // If we returned from Phantom connect and we're in Phantom app, proceed automatically
+      if (isMobile && phantomConnectReturn && isPhantomInApp) {
+        console.log('✅ Returned from Phantom connect deep link, proceeding automatically');
+        
+        // Clear the URL param
+        window.history.replaceState({}, '', window.location.pathname);
+        
+        // Continue to connection logic below
+      }
 
       // Mobile deep link logic - ONLY if:
       // 1. Device is mobile AND
       // 2. NOT in Phantom in-app browser AND
       // 3. Phantom extension is NOT detected in mobile browser
-      if (isMobile && !isPhantomInApp) {
+      // 4. NOT returning from a connect deep link
+      if (isMobile && !isPhantomInApp && !phantomConnectReturn) {
         // Check if Phantom is available as browser extension on mobile
         const { detectPhantomWallet } = await import('@/utils/walletDetection');
         const hasMobileExtension = await detectPhantomWallet(1000);

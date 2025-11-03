@@ -181,7 +181,9 @@ export const WalletConnect = () => {
     } catch (error: any) {
       // Handle mobile action required error
       if (error.message === 'MOBILE_ACTION_REQUIRED') {
-        const deepLink = `phantom://v1/browse/${encodeURIComponent(window.location.href)}?ref=wutch`;
+        const appUrl = window.location.origin;
+        const redirectUrl = `${window.location.origin}/?phantom_connect=true`;
+        const deepLink = `phantom://v1/connect?app_url=${encodeURIComponent(appUrl)}&redirect_link=${encodeURIComponent(redirectUrl)}&cluster=mainnet-beta`;
         
         sonnerToast.info('Opening Phantom app...', {
           description: 'You need the Phantom app to connect your wallet',
