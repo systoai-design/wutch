@@ -545,6 +545,74 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_subscriptions: {
+        Row: {
+          access_level: string
+          created_at: string
+          creator_id: string
+          id: string
+          is_active: boolean
+          price_asset: string
+          price_monthly: number
+          tier_description: string | null
+          tier_name: string
+          updated_at: string
+        }
+        Insert: {
+          access_level?: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          is_active?: boolean
+          price_asset?: string
+          price_monthly: number
+          tier_description?: string | null
+          tier_name: string
+          updated_at?: string
+        }
+        Update: {
+          access_level?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          is_active?: boolean
+          price_asset?: string
+          price_monthly?: number
+          tier_description?: string | null
+          tier_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "creator_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_message_threads: {
         Row: {
           buyer_id: string
@@ -2322,6 +2390,84 @@ export type Database = {
           },
           {
             foreignKeyName: "user_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_trust_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          auto_renew: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          last_payment_at: string
+          subscribed_at: string
+          subscription_id: string
+          transaction_signature: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          last_payment_at?: string
+          subscribed_at?: string
+          subscription_id: string
+          transaction_signature: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          last_payment_at?: string
+          subscribed_at?: string
+          subscription_id?: string
+          transaction_signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "creator_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creator_earnings_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_trust_stats"

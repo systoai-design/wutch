@@ -32,6 +32,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { VerificationBadge } from '@/components/VerificationBadge';
 import { VerificationRequestDialog } from '@/components/VerificationRequestDialog';
+import { SubscribeButton } from '@/components/SubscribeButton';
+import { SubscriptionTierManager } from '@/components/SubscriptionTierManager';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   verification_type?: string | null;
@@ -584,6 +586,11 @@ const ProfilePage = () => {
                   <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"} size="sm" className="sm:size-default">
                     {isFollowing ? "Following" : "Follow"}
                   </Button>
+                  <SubscribeButton 
+                    creatorId={profile.id}
+                    creatorUsername={profile.username}
+                    creatorWalletAddress={profile.public_wallet_address}
+                  />
                   <Button variant="outline" onClick={() => setShowMessageDialog(true)} size="sm" className="sm:size-default">
                     Message
                   </Button>

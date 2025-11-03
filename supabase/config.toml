@@ -93,6 +93,9 @@ verify_jwt = true
 [functions.process-unified-payout]
 verify_jwt = true
 
+[functions.verify-subscription-payment]
+verify_jwt = true
+
 [functions.register-with-wallet]
 verify_jwt = false
 

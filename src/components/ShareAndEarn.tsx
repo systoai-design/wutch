@@ -48,6 +48,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const [twitterHandle, setTwitterHandle] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [creatorSocialLinks, setCreatorSocialLinks] = useState<any>(null);
   const { toast } = useToast();
   const { user, isGuest } = useAuth();
   const { isAdmin } = useAdmin();
@@ -90,6 +91,17 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
 
       if (!error && data) {
         setCampaign(data);
+        
+        // Fetch creator's social links
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("social_links")
+          .eq("id", data.creator_id)
+          .single();
+        
+        if (creatorProfile?.social_links) {
+          setCreatorSocialLinks(creatorProfile.social_links);
+        }
       }
     }
 
@@ -253,13 +265,32 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
       return;
     }
 
+    // Extract Twitter handle from social links
+    let twitterHandleText = '';
+    if (creatorSocialLinks?.twitter) {
+      const match = creatorSocialLinks.twitter.match(/twitter\.com\/([^/?]+)/i) || 
+                    creatorSocialLinks.twitter.match(/x\.com\/([^/?]+)/i);
+      if (match) {
+        twitterHandleText = match[1];
+      }
+    }
+
     const shareTexts = {
       livestream: `Watch "${contentTitle}" live on Wutch! 🔴`,
       short_video: `Check out "${contentTitle}" on Wutch! 🎬`,
       wutch_video: `Watch "${contentTitle}" on Wutch! 📺`
     };
 
-    const text = `${shareTexts[contentType]} Earn crypto while watching!`;
+    let text = `${shareTexts[contentType]} Earn crypto while watching!`;
+    
+    // Add creator social links to the share
+    if (twitterHandleText) {
+      text += `\n\nFollow the creator: @${twitterHandleText}`;
+    }
+    if (creatorSocialLinks?.website) {
+      text += `\n🌐 ${creatorSocialLinks.website}`;
+    }
+    
     const url = contentUrl;
     const hashtags = "Wutch,Web3,Crypto";
 
