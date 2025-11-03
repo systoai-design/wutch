@@ -206,7 +206,7 @@ export function SubscribeButton({ creatorId, creatorUsername, creatorWalletAddre
     return labels[level] || level;
   };
 
-  if (!user || user.id === creatorId) {
+  if (user && user.id === creatorId) {
     return null;
   }
 
