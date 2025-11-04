@@ -37,6 +37,7 @@ type LivestreamWithBounty = Livestream & {
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
     'username' | 'display_name' | 'avatar_url'>;
+  has_active_campaign?: boolean;
 };
 
 type WutchVideo = Pick<Database['public']['Tables']['wutch_videos']['Row'], 
@@ -45,6 +46,7 @@ type WutchVideo = Pick<Database['public']['Tables']['wutch_videos']['Row'],
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
     'username' | 'display_name' | 'avatar_url'>;
   trending_score?: number;
+  has_active_campaign?: boolean;
 };
 
 const Home = () => {
@@ -118,19 +120,23 @@ const Home = () => {
           .order('viewer_count', { ascending: false })),
         
         // Shorts
-        buildQuery(supabase
-          .from('short_videos')
-          .select(`
-            *,
-            profiles!short_videos_user_id_fkey(username, display_name, avatar_url)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(15)),
+      buildQuery(supabase
+        .from('short_videos')
+        .select(`
+          *,
+          profiles!short_videos_user_id_fkey(username, display_name, avatar_url),
+          sharing_campaigns!content_id(id, is_active, content_type)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(15)),
         
         // Wutch videos
         buildQuery(supabase
           .from('wutch_videos')
-          .select('id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status')
+          .select(`
+            id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status,
+            sharing_campaigns!content_id(id, is_active, content_type)
+          `)
           .eq('status', 'published')
           .order('created_at', { ascending: false })
           .limit(40)),
@@ -180,6 +186,18 @@ const Home = () => {
       });
 
       const shortsData = shortsResult.data;
+      
+      // Process shorts with campaign data
+      const processedShortsData = (shortsData || []).map(short => {
+        const activeCampaigns = (short.sharing_campaigns as any[] || []).filter(
+          (c: any) => c.is_active && c.content_type === 'short_video'
+        );
+        return {
+          ...short,
+          has_active_campaign: activeCampaigns.length > 0,
+        };
+      });
+      
       const wutchData = wutchResult.data || [];
       
       // Create profiles map
@@ -187,9 +205,12 @@ const Home = () => {
         (profilesResult.data || []).map(p => [p.id, p])
       );
 
-      // Map wutch videos with profiles
+      // Map wutch videos with profiles and campaign data
       const wutchWithProfiles = wutchData.map((video) => {
         const profile = profilesMap.get(video.user_id);
+        const activeCampaigns = (video.sharing_campaigns as any[] || []).filter(
+          (c: any) => c.is_active && c.content_type === 'wutch_video'
+        );
         return { 
           ...video,
           profiles: profile ? {
@@ -197,6 +218,7 @@ const Home = () => {
             display_name: profile.display_name,
             avatar_url: profile.avatar_url
           } : undefined,
+          has_active_campaign: activeCampaigns.length > 0,
         };
       });
 
@@ -251,7 +273,7 @@ const Home = () => {
 
       // Apply randomization with quality bias and creator dispersion to all content
       setLiveStreams(disperseByCreator(shuffleWithBias(sortedLive, 0.5)));
-      setShorts(disperseByCreator(shuffleWithBias(shortsData || [], 0.5)));
+      setShorts(disperseByCreator(shuffleWithBias(processedShortsData, 0.5)));
       setWutchVideos(disperseByCreator(shuffleWithBias(wutchWithProfiles, 0.5)));
       setUpcomingStreams(disperseByCreator(shuffleWithBias(sortedUpcoming, 0.5)));
       setEndedStreams(disperseByCreator(shuffleWithBias(sortedEnded, 0.5)));
@@ -292,11 +314,15 @@ const Home = () => {
           videos: wutchVideos.slice(0, 9)
         };
       case 'with-rewards':
+        // Show ONLY shorts and wutch videos with active campaigns
+        const shortsWithCampaigns = shorts.filter(s => s.has_active_campaign);
+        const wutchWithCampaigns = wutchVideos.filter(v => v.has_active_campaign);
         return {
-          streams: allStreams.filter(stream => stream.has_active_bounty || stream.has_active_share_campaign),
-          videos: []
+          streams: [],
+          videos: [...shortsWithCampaigns, ...wutchWithCampaigns]
         };
       case 'with-bounty':
+        // Show ONLY livestreams with active bounties
         return { 
           streams: allStreams.filter(stream => stream.has_active_bounty),
           videos: []
