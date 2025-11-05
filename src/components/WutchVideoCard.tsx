@@ -30,6 +30,8 @@ import { UserBadges } from '@/components/UserBadges';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeleteWutchVideo } from '@/hooks/useDeleteWutchVideo';
+import { useActiveCampaign } from '@/hooks/useActiveCampaign';
+import { CampaignBadge } from '@/components/CampaignBadge';
 
 interface WutchVideoCardProps {
   video: {
@@ -81,6 +83,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
   const { user } = useAuth();
   const { isAdmin, isModerator } = useUserRoles(video.user_id);
   const { deleteWutchVideo, isDeleting } = useDeleteWutchVideo();
+  const { data: campaignData } = useActiveCampaign(video.id, 'wutch_video');
   
   const isOwner = user?.id === video.user_id;
   
@@ -242,7 +245,14 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
             </div>
           )}
           
-          {/* Premium badge */}
+          {/* Badges - Top Left */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+            {campaignData?.hasActiveCampaign && campaignData.rewardPerShare && (
+              <CampaignBadge rewardPerShare={campaignData.rewardPerShare} />
+            )}
+          </div>
+
+          {/* Premium badge - Top Right */}
           {video.is_premium && video.x402_price && (
             <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
               <Lock className="h-3 w-3" />

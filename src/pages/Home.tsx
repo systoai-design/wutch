@@ -391,7 +391,6 @@ const Home = () => {
                             <StreamCard 
                               stream={stream} 
                               hasBounty={stream.has_active_bounty} 
-                              hasShareCampaign={stream.has_active_share_campaign}
                             />
                           </div>
                         ))}
@@ -554,7 +553,6 @@ const Home = () => {
                       <StreamCard
                         stream={stream} 
                         hasBounty={stream.has_active_bounty} 
-                        hasShareCampaign={stream.has_active_share_campaign}
                       />
                     </div>
                   ))}

@@ -28,6 +28,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { useNavigate } from 'react-router-dom';
+import { useActiveCampaign } from '@/hooks/useActiveCampaign';
+import { CampaignBadge } from '@/components/CampaignBadge';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -53,6 +55,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
   const { isAdmin: isCurrentUserAdmin } = useAdmin();
   const { isAdmin, isModerator } = useUserRoles(short.user_id);
   const { deleteShortVideo, isDeleting } = useDeleteShortVideo();
+  const { data: campaignData } = useActiveCampaign(short.id, 'short_video');
 
   const isOwner = user?.id === short.user_id;
   const canDelete = isOwner || isCurrentUserAdmin;
@@ -194,6 +197,13 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
             </DropdownMenu>
           </div>
         )}
+
+        {/* Badges - Top Left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          {campaignData?.hasActiveCampaign && campaignData.rewardPerShare && (
+            <CampaignBadge rewardPerShare={campaignData.rewardPerShare} />
+          )}
+        </div>
 
         {/* Stats Overlay - Top Right */}
         <div className="absolute top-3 right-14 flex flex-col gap-2">

@@ -34,7 +34,8 @@ const Streams = () => {
       case 'recent':
         return endedStreams;
       case 'with-rewards':
-        return allStreams.filter(s => s.hasBounty || s.hasShareCampaign);
+        // Campaign data is now fetched by each card component
+        return allStreams.filter(s => s.hasBounty);
       case 'with-bounty':
         return allStreams.filter(s => s.hasBounty);
       case 'trending':
@@ -82,7 +83,6 @@ const Streams = () => {
                 key={stream.id} 
                 stream={stream} 
                 hasBounty={stream.hasBounty} 
-                hasShareCampaign={stream.hasShareCampaign}
               />
             ))}
           </div>
