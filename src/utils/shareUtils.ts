@@ -22,29 +22,9 @@ export const shareShortToTwitter = ({ id, title, creatorName, username, creatorS
     ? makeAbsoluteUrl(generateContentUrl('shorts', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/shorts?id=${id}`);
   
-  // Extract Twitter handle from URL
-  let twitterHandle = '';
-  if (creatorSocialLinks?.twitter) {
-    const match = creatorSocialLinks.twitter.match(/twitter\.com\/([^/?]+)/i) || 
-                  creatorSocialLinks.twitter.match(/x\.com\/([^/?]+)/i);
-    if (match) {
-      twitterHandle = match[1];
-    }
-  }
+  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
-  let text = `Check out "${title}" by ${creatorName} on Wutch! 🎬`;
-  
-  // Add social links to the tweet
-  if (twitterHandle) {
-    text += `\n\nFollow the creator: @${twitterHandle}`;
-  }
-  if (creatorSocialLinks?.website) {
-    text += `\n🌐 ${creatorSocialLinks.website}`;
-  }
-  
-  const hashtags = "Wutch,Web3,Crypto,Shorts";
-  
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
   window.open(twitterUrl, "_blank", "width=550,height=420");
 };
@@ -54,29 +34,9 @@ export const shareStreamToTwitter = ({ id, title, creatorName, username, creator
     ? makeAbsoluteUrl(generateContentUrl('stream', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/stream/${id}`);
   
-  // Extract Twitter handle from URL
-  let twitterHandle = '';
-  if (creatorSocialLinks?.twitter) {
-    const match = creatorSocialLinks.twitter.match(/twitter\.com\/([^/?]+)/i) || 
-                  creatorSocialLinks.twitter.match(/x\.com\/([^/?]+)/i);
-    if (match) {
-      twitterHandle = match[1];
-    }
-  }
+  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
-  let text = `Watch "${title}" by ${creatorName} live on Wutch! 🔴`;
-  
-  // Add social links to the tweet
-  if (twitterHandle) {
-    text += `\n\nFollow the creator: @${twitterHandle}`;
-  }
-  if (creatorSocialLinks?.website) {
-    text += `\n🌐 ${creatorSocialLinks.website}`;
-  }
-  
-  const hashtags = "Wutch,Web3,Crypto,Livestream";
-  
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
   window.open(twitterUrl, "_blank", "width=550,height=420");
 };
@@ -94,29 +54,9 @@ export const shareWutchVideoToTwitter = ({ id, title, creatorName, username, cre
     ? makeAbsoluteUrl(generateContentUrl('wutch', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/video/${id}`);
   
-  // Extract Twitter handle from URL
-  let twitterHandle = '';
-  if (creatorSocialLinks?.twitter) {
-    const match = creatorSocialLinks.twitter.match(/twitter\.com\/([^/?]+)/i) || 
-                  creatorSocialLinks.twitter.match(/x\.com\/([^/?]+)/i);
-    if (match) {
-      twitterHandle = match[1];
-    }
-  }
+  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
-  let text = `Watch "${title}" by ${creatorName} on Wutch! 📺`;
-  
-  // Add social links to the tweet
-  if (twitterHandle) {
-    text += `\n\nFollow the creator: @${twitterHandle}`;
-  }
-  if (creatorSocialLinks?.website) {
-    text += `\n🌐 ${creatorSocialLinks.website}`;
-  }
-  
-  const hashtags = "Wutch,Web3,Crypto,Video";
-  
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=${hashtags}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
   window.open(twitterUrl, "_blank", "width=550,height=420");
 };

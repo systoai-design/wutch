@@ -32,6 +32,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDeleteWutchVideo } from '@/hooks/useDeleteWutchVideo';
 import { useActiveCampaign } from '@/hooks/useActiveCampaign';
 import { CampaignBadge } from '@/components/CampaignBadge';
+import { EditWutchVideoDialog } from '@/components/EditWutchVideoDialog';
+import { Pencil } from 'lucide-react';
 
 interface WutchVideoCardProps {
   video: {
@@ -77,6 +79,7 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const CategoryIcon = video.category ? getCategoryIcon(video.category) : null;
@@ -181,6 +184,15 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEditDialog(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={(e) => {
@@ -321,6 +333,13 @@ export const WutchVideoCard = ({ video, className }: WutchVideoCardProps) => {
         </div>
       </div>
     </Link>
+
+    <EditWutchVideoDialog
+      video={video}
+      open={showEditDialog}
+      onOpenChange={setShowEditDialog}
+      onUpdate={() => window.location.reload()}
+    />
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
       <AlertDialogContent onClick={(e) => e.stopPropagation()}>

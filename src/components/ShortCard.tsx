@@ -30,6 +30,8 @@ import { useDeleteShortVideo } from '@/hooks/useDeleteShortVideo';
 import { useNavigate } from 'react-router-dom';
 import { useActiveCampaign } from '@/hooks/useActiveCampaign';
 import { CampaignBadge } from '@/components/CampaignBadge';
+import { EditShortVideoDialog } from '@/components/EditShortVideoDialog';
+import { Pencil } from 'lucide-react';
 
 type ShortVideo = Database['public']['Tables']['short_videos']['Row'] & {
   profiles?: Pick<Database['public']['Tables']['profiles']['Row'], 
@@ -48,6 +50,7 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
   const [isHovering, setIsHovering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const navigate = useNavigate();
@@ -183,6 +186,17 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {isOwner && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEditDialog(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={(e) => {
@@ -268,6 +282,13 @@ export function ShortCard({ short, commentCount = 0, onClick }: ShortCardProps) 
         </div>
       </div>
     </Card>
+
+    <EditShortVideoDialog
+      video={short}
+      open={showEditDialog}
+      onOpenChange={setShowEditDialog}
+      onUpdate={() => window.location.reload()}
+    />
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
       <AlertDialogContent>
