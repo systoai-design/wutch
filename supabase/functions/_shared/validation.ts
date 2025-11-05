@@ -28,7 +28,17 @@ export const donationValidationSchema = z.object({
   message: z.string().max(500, "Message too long").optional()
 });
 
-// Bounty validation schema
+// Wallet charge validation schema (for simple wallet-to-wallet transactions)
+export const walletChargeValidationSchema = z.object({
+  amount: z.number()
+    .positive("Amount must be positive")
+    .min(0.001, "Minimum transaction is 0.001 SOL")
+    .max(100, "Maximum transaction is 100 SOL"),
+  fromWalletAddress: solanaAddressSchema,
+  toWalletAddress: solanaAddressSchema
+});
+
+// Bounty validation schema (for bounty creation)
 export const bountyValidationSchema = z.object({
   amount: z.number()
     .positive("Amount must be positive")

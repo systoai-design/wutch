@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import * as web3 from "https://esm.sh/@solana/web3.js@1.98.4";
-import { validateInput, bountyValidationSchema } from "../_shared/validation.ts";
+import { validateInput, walletChargeValidationSchema } from "../_shared/validation.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
@@ -55,8 +55,8 @@ serve(async (req) => {
 
     const requestBody = await req.json();
     
-    // Validate input using Zod schema
-    const validatedData = validateInput(bountyValidationSchema, requestBody);
+    // Validate input using Zod schema (wallet charge only needs addresses and amount)
+    const validatedData = validateInput(walletChargeValidationSchema, requestBody);
     
     const { amount, fromWalletAddress, toWalletAddress } = validatedData;
 
