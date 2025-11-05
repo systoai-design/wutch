@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Share2, Wallet, Twitter, Trash2, AlertCircle, ChevronUp } from "lucide-react";
+import { Share2, Wallet, Twitter, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,9 +23,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ClaimShareRewards } from "./ClaimShareRewards";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -45,16 +46,19 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const [unclaimedEarnings, setUnclaimedEarnings] = useState(0);
   const [hasWallet, setHasWallet] = useState(false);
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
-  const [tweetUrl, setTweetUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [userTwitterHandle, setUserTwitterHandle] = useState<string | null>(null);
-  const [parsedTweetData, setParsedTweetData] = useState<{ tweetId: string; username: string; usedConnectedAccount: boolean } | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [verifyProgress, setVerifyProgress] = useState(0);
+  const [verifyMessage, setVerifyMessage] = useState("");
+  const [verificationComplete, setVerificationComplete] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+
+  const AUTO_VERIFY_MS = 10000; // 10 seconds
   const [creatorSocialLinks, setCreatorSocialLinks] = useState<any>(null);
   const { toast } = useToast();
   const { user, isGuest } = useAuth();
   const { isAdmin } = useAdmin();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const handleDeleteCampaign = async () => {
     if (!campaign) return;
@@ -156,266 +160,136 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     loadUserShares();
   }, [contentId, contentType, user]);
 
-  // Check if user has Twitter connected
+  // Reset verification state when dialog closes
   useEffect(() => {
-    if (user) {
-      supabase
-        .from('profiles')
-        .select('social_links')
-        .eq('id', user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.social_links) {
-            const socialLinks = data.social_links as any;
-            if (socialLinks.twitter) {
-              // Extract handle from URL like "https://twitter.com/tradesblessings" or "https://x.com/tradesblessings"
-              const match = socialLinks.twitter.match(/(?:twitter|x)\.com\/([^/?]+)/i);
-              if (match) {
-                setUserTwitterHandle(match[1].toLowerCase());
-              }
-            }
-          }
-        });
+    if (!showVerifyDialog) {
+      setIsVerifying(false);
+      setVerifyProgress(0);
+      setVerifyMessage("");
+      setVerificationComplete(false);
+      setVerificationSuccess(false);
     }
-  }, [user]);
+  }, [showVerifyDialog]);
 
-  // Extract tweet data from URL with resilient parsing
-  const extractTweetData = (url: string, connectedHandle: string | null): { tweetId: string; username: string; usedConnectedAccount: boolean } | null => {
-    try {
-      // Sanitize: trim whitespace and strip trailing punctuation like :,.;)]
-      const sanitized = url.trim().replace(/[\s:;.,)\]]+$/, '');
-      
-      // Pattern 1: Standard URL with username
-      // https://x.com/username/status/1986153595214176766
-      // https://twitter.com/username/status/1986153595214176766
-      // https://mobile.x.com/username/status/1986153595214176766
-      const standardRegex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/([^\/\s?#]+)\/status\/(\d{10,25})/i;
-      const standardMatch = sanitized.match(standardRegex);
-      
-      if (standardMatch) {
-        return {
-          username: standardMatch[1].toLowerCase(),
-          tweetId: standardMatch[2],
-          usedConnectedAccount: false
-        };
-      }
-      
-      // Pattern 2: Mobile/shortcut URLs without username
-      // https://x.com/i/status/1986153595214176766
-      // https://x.com/i/web/status/1986153595214176766
-      // https://twitter.com/i/status/1986153595214176766
-      const shortcutRegex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/i\/(?:web\/)?status\/(\d{10,25})/i;
-      const shortcutMatch = sanitized.match(shortcutRegex);
-      
-      if (shortcutMatch) {
-        if (!connectedHandle) {
-          return null; // Can't parse without connected account
-        }
-        return {
-          username: connectedHandle.toLowerCase(),
-          tweetId: shortcutMatch[1],
-          usedConnectedAccount: true
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // Update parsed data when URL changes
-  useEffect(() => {
-    if (tweetUrl.trim()) {
-      const sanitizedUrl = tweetUrl.trim().replace(/[\s:;.,)\]]+$/, '');
-      const parsed = extractTweetData(sanitizedUrl, userTwitterHandle);
-      setParsedTweetData(parsed);
-    } else {
-      setParsedTweetData(null);
-    }
-  }, [tweetUrl, userTwitterHandle]);
-
-  const handleVerifyShare = async () => {
-    // Validation checks
-    if (!tweetUrl.trim()) {
-      toast({
-        title: "Tweet URL Required",
-        description: "Please paste the URL of your shared tweet",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Please Sign In",
-        description: "You need to be signed in to verify shares",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if user has Twitter connected
-    if (!userTwitterHandle) {
-      toast({
-        title: "Twitter Not Connected",
-        description: "Please connect your Twitter account in your profile settings first",
-        variant: "destructive",
-      });
-      return;
-    }
+  const startAutoVerification = async (shareUrl: string) => {
+    if (!campaign) return;
 
     setIsVerifying(true);
+    setVerifyProgress(0);
+    setVerifyMessage("Checking post metadata...");
+    setVerificationComplete(false);
+    setVerificationSuccess(false);
 
-    try {
-      // Pre-flight check: Verify campaign is still active
-      const { data: currentCampaign } = await supabase
-        .from("sharing_campaigns")
-        .select("*")
-        .eq("id", campaign.id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (!currentCampaign) {
-        toast({
-          title: "Campaign Ended",
-          description: "This sharing campaign is no longer active",
-          variant: "destructive",
-        });
-        setIsVerifying(false);
-        return;
-      }
-
-      // Check if budget is sufficient
-      if (currentCampaign.spent_budget + currentCampaign.reward_per_share > currentCampaign.total_budget) {
-        toast({
-          title: "Campaign Budget Exhausted",
-          description: "This campaign has run out of budget",
-          variant: "destructive",
-        });
-        setIsVerifying(false);
-        return;
-      }
-
-      // Sanitize URL before parsing
-      const sanitizedUrl = tweetUrl.trim().replace(/[\s:;.,)\]]+$/, '');
-      
-      // Extract tweet data from URL
-      const tweetData = extractTweetData(sanitizedUrl, userTwitterHandle);
-      
-      if (!tweetData) {
-        toast({
-          title: "Invalid URL Format",
-          description: "Please use a valid Twitter/X post URL. Examples:\n• https://x.com/username/status/123...\n• https://x.com/i/status/123...\n• https://x.com/i/web/status/123...",
-          variant: "destructive",
-        });
-        setIsVerifying(false);
-        return;
-      }
-
-      // Verify the username matches the connected account
-      if (tweetData.username !== userTwitterHandle) {
-        toast({
-          title: "Tweet Author Mismatch",
-          description: `This tweet is from @${tweetData.username}, but your connected account is @${userTwitterHandle}. Please share using your connected account.`,
-          variant: "destructive",
-        });
-        setIsVerifying(false);
-        return;
-      }
-
-      // Insert share record with tweet ID
-      const { error } = await supabase
-        .from("user_shares")
-        .insert({
-          user_id: user.id,
-          campaign_id: campaign.id,
-          share_platform: "twitter",
-          reward_amount: campaign.reward_per_share,
-          share_url: sanitizedUrl,
-          tweet_id: tweetData.tweetId,
-          status: "verified",
-          twitter_handle: userTwitterHandle,
-          verified_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error("Share verification error:", error);
+    // Progress animation
+    const progressInterval = setInterval(() => {
+      setVerifyProgress((prev) => {
+        const next = prev + 2;
+        if (next >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
         
-        // Provide clear, specific error messages
-        if (error.code === "23505") {
-          // Unique constraint violation
-          if (error.message.includes("tweet_id") || error.message.includes("idx_user_shares_campaign_tweet")) {
+        // Update messages based on progress
+        if (next >= 60 && next < 90) {
+          setVerifyMessage("Checking eligibility...");
+        } else if (next >= 90) {
+          setVerifyMessage("Finalizing...");
+        }
+        
+        return next;
+      });
+    }, AUTO_VERIFY_MS / 50);
+
+    // Wait 10 seconds then verify
+    setTimeout(async () => {
+      clearInterval(progressInterval);
+      setVerifyProgress(100);
+      setVerifyMessage("Verifying...");
+
+      try {
+        const { data, error } = await supabase.functions.invoke('auto-verify-share', {
+          body: {
+            campaignId: campaign.id,
+            shareUrl,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.ok) {
+          setVerificationSuccess(true);
+          setVerifyMessage("Qualified! ✓");
+          toast({
+            title: "Success!",
+            description: "You can now claim your reward in the wallet section.",
+          });
+          
+          // Refresh data
+          queryClient.invalidateQueries({ queryKey: ['user-shares'] });
+          queryClient.invalidateQueries({ queryKey: ['user-earnings'] });
+          
+          setTimeout(() => {
+            setShowVerifyDialog(false);
+          }, 2000);
+        } else {
+          const errorCode = data?.code || 'unknown';
+          const errorMessage = data?.message || 'Something went wrong';
+
+          if (errorCode === 'already_shared') {
+            setVerificationSuccess(true);
+            setVerifyMessage("Already qualified! ✓");
             toast({
-              title: "Tweet Already Used",
-              description: "This tweet ID has already been used for this campaign. Please share again with a new post.",
-              variant: "destructive",
+              title: "Already Qualified",
+              description: "You're already qualified for this campaign.",
             });
+            setTimeout(() => setShowVerifyDialog(false), 2000);
           } else {
+            setVerificationSuccess(false);
+            setVerifyMessage(errorMessage);
             toast({
-              title: "Already Shared",
-              description: "You have already verified a share for this campaign with this Twitter account.",
+              title: "Verification Failed",
+              description: errorMessage,
               variant: "destructive",
             });
           }
-        } else if (error.message.includes("row-level security") || error.code === "42501") {
-          toast({
-            title: "Authentication Error",
-            description: "Please sign in again and retry",
-            variant: "destructive",
-          });
-        } else if (error.message.toLowerCase().includes("budget") || error.message.toLowerCase().includes("insufficient")) {
-          toast({
-            title: "Campaign Budget Exhausted",
-            description: "This campaign ran out of budget",
-            variant: "destructive",
-          });
-        } else if (error.message.toLowerCase().includes("max") || error.message.toLowerCase().includes("limit")) {
-          toast({
-            title: "Share Limit Reached",
-            description: "You've reached the maximum shares for this campaign",
-            variant: "destructive",
-          });
-        } else {
-          // Generic fallback
-          toast({
-            title: "Verification Failed",
-            description: "Failed to verify your share. Please try again or contact support.",
-            variant: "destructive",
-          });
         }
-      } else {
+      } catch (error: any) {
+        console.error('Auto-verify error:', error);
+        setVerificationSuccess(false);
+        setVerifyMessage("Something went wrong");
         toast({
-          title: "Share Verified! 🎉",
-          description: `You've earned ${campaign.reward_per_share} SOL!`,
+          title: "Error",
+          description: error?.message || "Failed to verify share",
+          variant: "destructive",
         });
-        
-        setShowVerifyDialog(false);
-        setTweetUrl("");
-
-        // Refresh user shares data
-        const { data: shares } = await supabase
-          .from("user_shares")
-          .select("reward_amount, is_claimed")
-          .eq("user_id", user.id)
-          .eq("campaign_id", campaign.id);
-
-        if (shares) {
-          setUserShares(shares.length);
-          const total = shares.reduce((sum, share) => sum + Number(share.reward_amount), 0);
-          const unclaimed = shares
-            .filter(share => !share.is_claimed)
-            .reduce((sum, share) => sum + Number(share.reward_amount), 0);
-          setTotalEarned(total);
-          setUnclaimedEarnings(unclaimed);
-        }
+      } finally {
+        setVerificationComplete(true);
+        setIsVerifying(false);
       }
-    } finally {
-      setIsVerifying(false);
+    }, AUTO_VERIFY_MS);
+  };
+
+
+  const handleShare = async () => {
+    if (!campaign) return;
+
+    const shareText = `Check out ${contentTitle} on Wutch! 🎥\n\n${contentUrl}\n\n#Wutch #ShareAndEarn`;
+    const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    
+    const newWindow = window.open(twitterIntentUrl, "_blank");
+    
+    setShowVerifyDialog(true);
+    startAutoVerification(twitterIntentUrl);
+
+    if (!newWindow) {
+      toast({
+        title: "Popup Blocked",
+        description: "Please allow popups to share on X. Verification will continue automatically.",
+      });
     }
   };
 
-  const handleShare = async () => {
+  const handleShareWithCheck = async () => {
     if (!user) {
       toast({
         title: "Login Required",
@@ -497,7 +371,9 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   if (isMobile) {
     return (
       <>
-        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <Drawer open={showVerifyDialog} onOpenChange={(open) => {
+          if (!isVerifying) setShowVerifyDialog(open);
+        }}>
           <DrawerTrigger asChild>
             <div className="fixed bottom-20 left-0 right-0 z-40 mx-4 bg-gradient-to-r from-primary/90 to-primary-glow/90 backdrop-blur-md rounded-xl shadow-lg border border-primary/20 p-3 cursor-pointer hover:scale-[1.02] transition-transform">
               <div className="flex items-center justify-between">
@@ -510,7 +386,6 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                     <p className="text-xs text-white/80">Earn {campaign.reward_per_share} SOL per share</p>
                   </div>
                 </div>
-                <ChevronUp className="h-5 w-5 text-white flex-shrink-0" />
               </div>
             </div>
           </DrawerTrigger>
@@ -600,83 +475,56 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
           </DrawerContent>
         </Drawer>
 
-        {/* Verification Dialog */}
-        <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-          <DialogContent>
+        {/* Auto-Verification Dialog for Mobile */}
+        <Dialog open={showVerifyDialog && isVerifying} onOpenChange={(open) => {
+          if (!isVerifying) setShowVerifyDialog(open);
+        }}>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Verify Your Share</DialogTitle>
+              <DialogTitle>
+                {verificationComplete 
+                  ? (verificationSuccess ? "Verification Complete!" : "Verification Failed")
+                  : "Verifying Your Share"
+                }
+              </DialogTitle>
               <DialogDescription>
-                Paste the URL of your Twitter/X post to verify and earn rewards.
+                {verificationComplete
+                  ? ""
+                  : "Please wait while we verify your share on X..."
+                }
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              {/* Show connection status */}
-              {userTwitterHandle ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="text-green-500">✓</span>
-                  Connected as @{userTwitterHandle}
-                </div>
-              ) : (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No Twitter account connected. Please add your Twitter in profile settings.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="tweet-url">Twitter/X Post URL</Label>
-                <Input
-                  id="tweet-url"
-                  placeholder="https://x.com/username/status/1234567890"
-                  value={tweetUrl}
-                  onChange={(e) => setTweetUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
-                  disabled={isVerifying || !userTwitterHandle}
-                />
-                {parsedTweetData ? (
-                  <div className="text-xs bg-muted p-2 rounded space-y-1">
-                    <p className="text-green-600 dark:text-green-400 font-medium">✓ URL parsed successfully</p>
-                    <p className="text-muted-foreground">
-                      Tweet ID: <span className="font-mono">{parsedTweetData.tweetId}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Author: <span className="font-medium">@{parsedTweetData.username}</span>
-                      {parsedTweetData.usedConnectedAccount && " (from your connected account)"}
-                    </p>
-                  </div>
-                ) : tweetUrl.trim() ? (
-                  <p className="text-xs text-destructive">
-                    Invalid URL format. Use: https://x.com/username/status/123... or https://x.com/i/status/123...
-                  </p>
-                ) : (
+            <div className="space-y-4 py-6">
+              <div className="flex flex-col items-center gap-4">
+                {!verificationComplete && (
+                  <>
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <Progress value={verifyProgress} className="w-full" />
+                  </>
+                )}
+                {verificationComplete && verificationSuccess && (
+                  <CheckCircle2 className="h-16 w-16 text-green-500" />
+                )}
+                {verificationComplete && !verificationSuccess && (
+                  <AlertCircle className="h-16 w-16 text-destructive" />
+                )}
+                <p className="text-center text-sm text-muted-foreground">
+                  {verifyMessage}
+                </p>
+                {verifyProgress > 0 && !verificationComplete && (
                   <p className="text-xs text-muted-foreground">
-                    Paste any Twitter/X post URL (with or without username)
+                    {Math.round(verifyProgress)}% complete
                   </p>
                 )}
               </div>
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowVerifyDialog(false);
-                  setTweetUrl("");
-                }}
-                disabled={isVerifying}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleVerifyShare}
-                disabled={isVerifying || !userTwitterHandle || !tweetUrl.trim()}
-              >
-                {isVerifying ? "Verifying..." : "Verify & Earn"}
-              </Button>
-            </div>
+            {verificationComplete && (
+              <DialogFooter>
+                <Button onClick={() => setShowVerifyDialog(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            )}
           </DialogContent>
         </Dialog>
       </>
@@ -762,83 +610,56 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
         )}
       </div>
 
-      {/* Verification Dialog */}
-      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="sm:max-w-md">
+      {/* Auto-Verification Dialog for Desktop */}
+      <Dialog open={showVerifyDialog} onOpenChange={(open) => {
+        if (!isVerifying) setShowVerifyDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Verify Your Share</DialogTitle>
+            <DialogTitle>
+              {verificationComplete 
+                ? (verificationSuccess ? "Verification Complete!" : "Verification Failed")
+                : "Verifying Your Share"
+              }
+            </DialogTitle>
             <DialogDescription>
-              Paste the URL of your Twitter/X post to verify and earn rewards.
+              {verificationComplete
+                ? ""
+                : "Please wait while we verify your share on X..."
+              }
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Show connection status */}
-            {userTwitterHandle ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="text-green-500">✓</span>
-                Connected as @{userTwitterHandle}
-              </div>
-            ) : (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No Twitter account connected. Please add your Twitter in profile settings.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="tweet-url-desktop">Twitter/X Post URL</Label>
-              <Input
-                id="tweet-url-desktop"
-                placeholder="https://x.com/username/status/1234567890"
-                value={tweetUrl}
-                onChange={(e) => setTweetUrl(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
-                disabled={isVerifying || !userTwitterHandle}
-              />
-              {parsedTweetData ? (
-                <div className="text-xs bg-muted p-2 rounded space-y-1">
-                  <p className="text-green-600 dark:text-green-400 font-medium">✓ URL parsed successfully</p>
-                  <p className="text-muted-foreground">
-                    Tweet ID: <span className="font-mono">{parsedTweetData.tweetId}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    Author: <span className="font-medium">@{parsedTweetData.username}</span>
-                    {parsedTweetData.usedConnectedAccount && " (from your connected account)"}
-                  </p>
-                </div>
-              ) : tweetUrl.trim() ? (
-                <p className="text-xs text-destructive">
-                  Invalid URL format. Use: https://x.com/username/status/123... or https://x.com/i/status/123...
-                </p>
-              ) : (
+          <div className="space-y-4 py-6">
+            <div className="flex flex-col items-center gap-4">
+              {!verificationComplete && (
+                <>
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <Progress value={verifyProgress} className="w-full" />
+                </>
+              )}
+              {verificationComplete && verificationSuccess && (
+                <CheckCircle2 className="h-16 w-16 text-green-500" />
+              )}
+              {verificationComplete && !verificationSuccess && (
+                <AlertCircle className="h-16 w-16 text-destructive" />
+              )}
+              <p className="text-center text-sm text-muted-foreground">
+                {verifyMessage}
+              </p>
+              {verifyProgress > 0 && !verificationComplete && (
                 <p className="text-xs text-muted-foreground">
-                  Paste any Twitter/X post URL (with or without username)
+                  {Math.round(verifyProgress)}% complete
                 </p>
               )}
             </div>
           </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowVerifyDialog(false);
-                setTweetUrl("");
-              }}
-              disabled={isVerifying}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleVerifyShare}
-              disabled={isVerifying || !userTwitterHandle || !tweetUrl.trim()}
-            >
-              {isVerifying ? "Verifying..." : "Verify & Earn"}
-            </Button>
-          </div>
+          {verificationComplete && (
+            <DialogFooter>
+              <Button onClick={() => setShowVerifyDialog(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </>
