@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.batch-optimize-videos]
 verify_jwt = true
+
+[functions.verify-share]
+verify_jwt = true
