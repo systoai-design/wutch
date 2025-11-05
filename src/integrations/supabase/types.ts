@@ -2325,6 +2325,7 @@ export type Database = {
           shared_at: string
           status: string
           transaction_signature: string | null
+          tweet_id: string | null
           twitter_handle: string | null
           user_id: string
           verified_at: string | null
@@ -2340,6 +2341,7 @@ export type Database = {
           shared_at?: string
           status?: string
           transaction_signature?: string | null
+          tweet_id?: string | null
           twitter_handle?: string | null
           user_id: string
           verified_at?: string | null
@@ -2355,6 +2357,7 @@ export type Database = {
           shared_at?: string
           status?: string
           transaction_signature?: string | null
+          tweet_id?: string | null
           twitter_handle?: string | null
           user_id?: string
           verified_at?: string | null

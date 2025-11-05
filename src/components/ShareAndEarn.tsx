@@ -45,8 +45,9 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const [unclaimedEarnings, setUnclaimedEarnings] = useState(0);
   const [hasWallet, setHasWallet] = useState(false);
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
-  const [twitterHandle, setTwitterHandle] = useState("");
+  const [tweetUrl, setTweetUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [userTwitterHandle, setUserTwitterHandle] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [creatorSocialLinks, setCreatorSocialLinks] = useState<any>(null);
   const { toast } = useToast();
@@ -154,11 +155,55 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     loadUserShares();
   }, [contentId, contentType, user]);
 
+  // Check if user has Twitter connected
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('social_links')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.social_links) {
+            const socialLinks = data.social_links as any;
+            if (socialLinks.twitter) {
+              // Extract handle from URL like "https://twitter.com/tradesblessings" or "https://x.com/tradesblessings"
+              const match = socialLinks.twitter.match(/(?:twitter|x)\.com\/([^/?]+)/i);
+              if (match) {
+                setUserTwitterHandle(match[1].toLowerCase());
+              }
+            }
+          }
+        });
+    }
+  }, [user]);
+
+  // Extract tweet data from URL
+  const extractTweetData = (url: string): { tweetId: string; username: string } | null => {
+    try {
+      // Match patterns like:
+      // https://x.com/tradesblessings/status/1986153595214176766
+      // https://twitter.com/tradesblessings/status/1986153595214176766
+      const regex = /(?:twitter|x)\.com\/([^/]+)\/status\/(\d+)/i;
+      const match = url.match(regex);
+      
+      if (!match) return null;
+      
+      return {
+        username: match[1].toLowerCase(),
+        tweetId: match[2]
+      };
+    } catch (error) {
+      return null;
+    }
+  };
+
   const handleVerifyShare = async () => {
-    if (!twitterHandle.trim()) {
+    // Validation checks
+    if (!tweetUrl.trim()) {
       toast({
-        title: "Twitter Handle Required",
-        description: "Please enter your Twitter/X handle",
+        title: "Tweet URL Required",
+        description: "Please paste the URL of your shared tweet",
         variant: "destructive",
       });
       return;
@@ -166,11 +211,44 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
 
     if (!user || !campaign) return;
 
+    // Check if user has Twitter connected
+    if (!userTwitterHandle) {
+      toast({
+        title: "Twitter Not Connected",
+        description: "Please connect your Twitter account in your profile settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsVerifying(true);
 
-    const cleanHandle = twitterHandle.replace("@", "").trim();
-
     try {
+      // Extract tweet data from URL
+      const tweetData = extractTweetData(tweetUrl);
+      
+      if (!tweetData) {
+        toast({
+          title: "Invalid URL",
+          description: "Please provide a valid Twitter/X post URL (e.g., https://x.com/username/status/123456)",
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Verify the username matches the connected account
+      if (tweetData.username !== userTwitterHandle) {
+        toast({
+          title: "Username Mismatch",
+          description: `The tweet is from @${tweetData.username} but your connected account is @${userTwitterHandle}`,
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Insert share record with tweet ID
       const { error } = await supabase
         .from("user_shares")
         .insert({
@@ -178,22 +256,33 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
           campaign_id: campaign.id,
           share_platform: "twitter",
           reward_amount: campaign.reward_per_share,
-          share_url: contentUrl,
+          share_url: tweetUrl,
+          tweet_id: tweetData.tweetId,
           status: "verified",
-          twitter_handle: cleanHandle,
+          twitter_handle: userTwitterHandle,
           verified_at: new Date().toISOString(),
         });
 
       if (error) {
+        // Check for duplicate tweet ID
         if (error.code === "23505") {
-          toast({
-            title: "Already Shared",
-            description: "This Twitter account has already shared this campaign.",
-            variant: "destructive",
-          });
+          if (error.message.includes("tweet_id")) {
+            toast({
+              title: "Tweet Already Used",
+              description: "This tweet has already been used to claim rewards. Please share again with a new post.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Already Shared",
+              description: "You have already shared this campaign from your account.",
+              variant: "destructive",
+            });
+          }
         } else {
+          console.error("Share verification error:", error);
           toast({
-            title: "Error",
+            title: "Verification Failed",
             description: "Failed to verify your share. Please try again.",
             variant: "destructive",
           });
@@ -205,8 +294,9 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
         });
         
         setShowVerifyDialog(false);
-        setTwitterHandle("");
+        setTweetUrl("");
 
+        // Refresh user shares data
         const { data: shares } = await supabase
           .from("user_shares")
           .select("reward_amount, is_claimed")
@@ -419,26 +509,57 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
             <DialogHeader>
               <DialogTitle>Verify Your Share</DialogTitle>
               <DialogDescription>
-                Enter your Twitter/X handle to verify and earn rewards.
+                Paste the URL of your Twitter/X post to verify and earn rewards.
               </DialogDescription>
             </DialogHeader>
+            
             <div className="space-y-4 py-4">
+              {/* Show connection status */}
+              {userTwitterHandle ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="text-green-500">✓</span>
+                  Connected as @{userTwitterHandle}
+                </div>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No Twitter account connected. Please add your Twitter in profile settings.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="twitterHandle">Twitter/X Handle</Label>
+                <Label htmlFor="tweet-url">Twitter/X Post URL</Label>
                 <Input
-                  id="twitterHandle"
-                  placeholder="@yourhandle"
-                  value={twitterHandle}
-                  onChange={(e) => setTwitterHandle(e.target.value)}
+                  id="tweet-url"
+                  placeholder="https://x.com/username/status/1234567890"
+                  value={tweetUrl}
+                  onChange={(e) => setTweetUrl(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
+                  disabled={isVerifying || !userTwitterHandle}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Example: https://x.com/tradesblessings/status/1986153595214176766
+                </p>
               </div>
             </div>
+
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowVerifyDialog(false)} disabled={isVerifying}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowVerifyDialog(false);
+                  setTweetUrl("");
+                }}
+                disabled={isVerifying}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleVerifyShare} disabled={isVerifying || !twitterHandle.trim()}>
+              <Button
+                onClick={handleVerifyShare}
+                disabled={isVerifying || !userTwitterHandle || !tweetUrl.trim()}
+              >
                 {isVerifying ? "Verifying..." : "Verify & Earn"}
               </Button>
             </div>
@@ -529,30 +650,61 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
 
       {/* Verification Dialog */}
       <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Verify Your Share</DialogTitle>
             <DialogDescription>
-              Enter your Twitter/X handle to verify and earn rewards.
+              Paste the URL of your Twitter/X post to verify and earn rewards.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          
+          <div className="space-y-4">
+            {/* Show connection status */}
+            {userTwitterHandle ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="text-green-500">✓</span>
+                Connected as @{userTwitterHandle}
+              </div>
+            ) : (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No Twitter account connected. Please add your Twitter in profile settings.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="twitterHandle">Twitter/X Handle</Label>
+              <Label htmlFor="tweet-url-desktop">Twitter/X Post URL</Label>
               <Input
-                id="twitterHandle"
-                placeholder="@yourhandle"
-                value={twitterHandle}
-                onChange={(e) => setTwitterHandle(e.target.value)}
+                id="tweet-url-desktop"
+                placeholder="https://x.com/username/status/1234567890"
+                value={tweetUrl}
+                onChange={(e) => setTweetUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
+                disabled={isVerifying || !userTwitterHandle}
               />
+              <p className="text-xs text-muted-foreground">
+                Example: https://x.com/tradesblessings/status/1986153595214176766
+              </p>
             </div>
           </div>
+
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowVerifyDialog(false)} disabled={isVerifying}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowVerifyDialog(false);
+                setTweetUrl("");
+              }}
+              disabled={isVerifying}
+            >
               Cancel
             </Button>
-            <Button onClick={handleVerifyShare} disabled={isVerifying || !twitterHandle.trim()}>
+            <Button
+              onClick={handleVerifyShare}
+              disabled={isVerifying || !userTwitterHandle || !tweetUrl.trim()}
+            >
               {isVerifying ? "Verifying..." : "Verify & Earn"}
             </Button>
           </div>
