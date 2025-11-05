@@ -431,12 +431,12 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     }
 
     const shareTexts = {
-      livestream: `Watch "${contentTitle}" live on Wutch! 🔴`,
-      short_video: `Check out "${contentTitle}" on Wutch! 🎬`,
-      wutch_video: `Watch "${contentTitle}" on Wutch! 📺`
+      livestream: `Wutch "${contentTitle}" live on Wutch! 🔴`,
+      short_video: `Wutch "${contentTitle}" on Wutch! 🎬`,
+      wutch_video: `Wutch "${contentTitle}" on Wutch! 📺`
     };
 
-    let text = `${shareTexts[contentType]} Earn crypto while watching!`;
+    let text = `${shareTexts[contentType]} Earn crypto while watching, turn your attention to crypto.`;
     
     // Add creator social links to the share
     if (twitterHandleText) {
