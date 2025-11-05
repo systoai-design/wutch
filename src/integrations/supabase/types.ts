@@ -3588,6 +3588,39 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_campaign_analytics: {
+        Args: { creator_user_id: string }
+        Returns: {
+          avg_reward_per_share: number
+          campaign_id: string
+          content_id: string
+          content_title: string
+          content_type: string
+          conversion_rate: number
+          created_at: string
+          is_active: boolean
+          pending_rewards: number
+          reward_per_share: number
+          spent_budget: number
+          total_budget: number
+          total_rewards_paid: number
+          total_shares: number
+          twitter_shares: number
+          unique_sharers: number
+        }[]
+      }
+      get_campaign_top_sharers: {
+        Args: { campaign_uuid: string; limit_count?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          last_share_at: string
+          total_earned: number
+          total_shares: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_most_donated_leaderboard: {
         Args: { limit_count?: number }
         Returns: {

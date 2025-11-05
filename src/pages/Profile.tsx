@@ -22,6 +22,7 @@ import { DonationSettings } from '@/components/DonationSettings';
 import { ProfileFinancialStats } from '@/components/ProfileFinancialStats';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { CreatorEarningsDashboard } from '@/components/CreatorEarningsDashboard';
+import { CampaignAnalyticsDashboard } from '@/components/CampaignAnalyticsDashboard';
 import { ImageViewer } from '@/components/ImageViewer';
 import { WalletStatusBadge } from '@/components/WalletStatusBadge';
 import { WalletEducationPanel } from '@/components/WalletEducationPanel';
@@ -684,6 +685,11 @@ const ProfilePage = () => {
                   Analytics
                 </TabsTrigger>
               )}
+              {isOwnProfile && (
+                <TabsTrigger value="campaign-analytics" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
+                  Campaign Analytics
+                </TabsTrigger>
+              )}
               <TabsTrigger value="about" className="snap-start first:ml-0 last:mr-0 text-xs md:text-sm whitespace-nowrap flex-shrink-0 min-w-max px-4 md:px-6">
                 About
               </TabsTrigger>
@@ -792,6 +798,12 @@ const ProfilePage = () => {
           {isOwnProfile && (
             <TabsContent value="analytics" className="mt-6">
               <ProfileAnalytics userId={profile.id} />
+            </TabsContent>
+          )}
+
+          {isOwnProfile && (
+            <TabsContent value="campaign-analytics" className="mt-6">
+              <CampaignAnalyticsDashboard userId={profile.id} />
             </TabsContent>
           )}
 
