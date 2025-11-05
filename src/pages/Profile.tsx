@@ -34,6 +34,7 @@ import { VerificationBadge } from '@/components/VerificationBadge';
 import { VerificationRequestDialog } from '@/components/VerificationRequestDialog';
 import { SubscribeButton } from '@/components/SubscribeButton';
 import { SubscriptionTierManager } from '@/components/SubscriptionTierManager';
+import { optimizeImage, imagePresets } from '@/utils/imageOptimization';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   verification_type?: string | null;
@@ -480,9 +481,10 @@ const ProfilePage = () => {
             onClick={() => handleViewImage(profile.banner_url || '', `${profile.username}'s banner`)}
           >
             <img 
-              src={profile.banner_url} 
+              src={optimizeImage(profile.banner_url, imagePresets.hero)} 
               alt="Profile banner" 
               className="w-full h-full object-cover"
+              key={profile.banner_url}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/10" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -501,7 +503,10 @@ const ProfilePage = () => {
               onClick={() => handleViewImage(profile.avatar_url || '', `${profile.username}'s avatar`)}
             >
               <Avatar className="h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 border-4 sm:border-6 border-background shadow-xl">
-                <AvatarImage src={profile.avatar_url || '/placeholder.svg'} />
+                <AvatarImage 
+                  src={profile.avatar_url ? optimizeImage(profile.avatar_url, imagePresets.avatar) : '/placeholder.svg'} 
+                  key={profile.avatar_url}
+                />
                 <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl">
                   {(profile.display_name || profile.username)[0].toUpperCase()}
                 </AvatarFallback>

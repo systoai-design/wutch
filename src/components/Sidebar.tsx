@@ -6,8 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { CATEGORIES } from '@/constants/categories';
 import { useEffect, useState } from 'react';
-import pumpFunLogo from '@/assets/pumpfun-logo.png';
-import wutchLogo from '@/assets/wutch-logo.png';
+import pumpFunLogo from '@/assets/pumpfun-logo.webp';
+import wutchLogo from '@/assets/wutch-logo.webp';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

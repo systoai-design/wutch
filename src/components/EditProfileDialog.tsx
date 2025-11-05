@@ -81,13 +81,26 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
     }
   };
 
+  const deleteOldFile = async (url: string | null, bucket: string) => {
+    if (!url) return;
+    try {
+      const path = url.split(`/storage/v1/object/public/${bucket}/`)[1];
+      if (path) {
+        await supabase.storage.from(bucket).remove([path]);
+      }
+    } catch (error) {
+      console.error('Error deleting old file:', error);
+    }
+  };
+
   const uploadFile = async (file: File, bucket: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${profile.id}/${Date.now()}.${fileExt}`;
+    const timestamp = Date.now();
+    const fileName = `${profile.id}/${timestamp}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(fileName, file, { upsert: true });
+      .upload(fileName, file, { upsert: false });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -123,6 +136,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
       // Upload avatar if selected
       if (avatarFile) {
+        await deleteOldFile(profile.avatar_url, 'avatars');
         const uploadedUrl = await uploadFile(avatarFile, 'avatars');
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;
@@ -133,6 +147,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
       // Upload banner if selected
       if (bannerFile) {
+        await deleteOldFile(profile.banner_url, 'banners');
         const uploadedUrl = await uploadFile(bannerFile, 'banners');
         if (uploadedUrl) {
           bannerUrl = uploadedUrl;
