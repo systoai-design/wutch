@@ -178,14 +178,19 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     }
   }, [user]);
 
-  // Extract tweet data from URL
+  // Extract tweet data from URL with resilient parsing
   const extractTweetData = (url: string): { tweetId: string; username: string } | null => {
     try {
+      // Sanitize: trim whitespace and strip trailing punctuation like :,.;)]
+      const sanitized = url.trim().replace(/[\s:;.,)\]]+$/, '');
+      
       // Match patterns like:
-      // https://x.com/tradesblessings/status/1986153595214176766
-      // https://twitter.com/tradesblessings/status/1986153595214176766
-      const regex = /(?:twitter|x)\.com\/([^/]+)\/status\/(\d+)/i;
-      const match = url.match(regex);
+      // https://x.com/username/status/1986153595214176766
+      // https://twitter.com/username/status/1986153595214176766
+      // https://mobile.x.com/username/status/1986153595214176766
+      // Support query params and trailing slashes
+      const regex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/([^\/\s?#]+)\/status\/(\d{10,25})/i;
+      const match = sanitized.match(regex);
       
       if (!match) return null;
       
@@ -209,7 +214,14 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
       return;
     }
 
-    if (!user || !campaign) return;
+    if (!user) {
+      toast({
+        title: "Please Sign In",
+        description: "You need to be signed in to verify shares",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Check if user has Twitter connected
     if (!userTwitterHandle) {
@@ -224,13 +236,45 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     setIsVerifying(true);
 
     try {
+      // Pre-flight check: Verify campaign is still active
+      const { data: currentCampaign } = await supabase
+        .from("sharing_campaigns")
+        .select("*")
+        .eq("id", campaign.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!currentCampaign) {
+        toast({
+          title: "Campaign Ended",
+          description: "This sharing campaign is no longer active",
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Check if budget is sufficient
+      if (currentCampaign.spent_budget + currentCampaign.reward_per_share > currentCampaign.total_budget) {
+        toast({
+          title: "Campaign Budget Exhausted",
+          description: "This campaign has run out of budget",
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Sanitize URL before parsing
+      const sanitizedUrl = tweetUrl.trim().replace(/[\s:;.,)\]]+$/, '');
+      
       // Extract tweet data from URL
-      const tweetData = extractTweetData(tweetUrl);
+      const tweetData = extractTweetData(sanitizedUrl);
       
       if (!tweetData) {
         toast({
           title: "Invalid URL",
-          description: "Please provide a valid Twitter/X post URL (e.g., https://x.com/username/status/123456)",
+          description: "Please provide a valid Twitter/X post URL (e.g., https://x.com/username/status/1234567890123456789)",
           variant: "destructive",
         });
         setIsVerifying(false);
@@ -256,7 +300,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
           campaign_id: campaign.id,
           share_platform: "twitter",
           reward_amount: campaign.reward_per_share,
-          share_url: tweetUrl,
+          share_url: sanitizedUrl,
           tweet_id: tweetData.tweetId,
           status: "verified",
           twitter_handle: userTwitterHandle,
@@ -264,26 +308,47 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
         });
 
       if (error) {
-        // Check for duplicate tweet ID
+        console.error("Share verification error:", error);
+        
+        // Provide clear, specific error messages
         if (error.code === "23505") {
-          if (error.message.includes("tweet_id")) {
+          // Unique constraint violation
+          if (error.message.includes("tweet_id") || error.message.includes("idx_user_shares_campaign_tweet")) {
             toast({
               title: "Tweet Already Used",
-              description: "This tweet has already been used to claim rewards. Please share again with a new post.",
+              description: "This tweet ID has already been used for this campaign. Please share again with a new post.",
               variant: "destructive",
             });
           } else {
             toast({
               title: "Already Shared",
-              description: "You have already shared this campaign from your account.",
+              description: "You have already verified a share for this campaign with this Twitter account.",
               variant: "destructive",
             });
           }
+        } else if (error.message.includes("row-level security") || error.code === "42501") {
+          toast({
+            title: "Authentication Error",
+            description: "Please sign in again and retry",
+            variant: "destructive",
+          });
+        } else if (error.message.toLowerCase().includes("budget") || error.message.toLowerCase().includes("insufficient")) {
+          toast({
+            title: "Campaign Budget Exhausted",
+            description: "This campaign ran out of budget",
+            variant: "destructive",
+          });
+        } else if (error.message.toLowerCase().includes("max") || error.message.toLowerCase().includes("limit")) {
+          toast({
+            title: "Share Limit Reached",
+            description: "You've reached the maximum shares for this campaign",
+            variant: "destructive",
+          });
         } else {
-          console.error("Share verification error:", error);
+          // Generic fallback
           toast({
             title: "Verification Failed",
-            description: "Failed to verify your share. Please try again.",
+            description: "Failed to verify your share. Please try again or contact support.",
             variant: "destructive",
           });
         }
@@ -540,7 +605,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                   disabled={isVerifying || !userTwitterHandle}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Example: https://x.com/tradesblessings/status/1986153595214176766
+                  Example: https://x.com/username/status/1234567890123456789
                 </p>
               </div>
             </div>
@@ -685,7 +750,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                 disabled={isVerifying || !userTwitterHandle}
               />
               <p className="text-xs text-muted-foreground">
-                Example: https://x.com/tradesblessings/status/1986153595214176766
+                Example: https://x.com/username/status/1234567890123456789
               </p>
             </div>
           </div>
