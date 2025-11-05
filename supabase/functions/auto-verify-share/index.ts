@@ -8,6 +8,7 @@ const corsHeaders = {
 interface RequestBody {
   campaignId: string;
   shareUrl?: string;
+  platform?: string;
 }
 
 Deno.serve(async (req) => {
@@ -40,7 +41,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { campaignId, shareUrl } = await req.json() as RequestBody;
+    const { campaignId, shareUrl, platform = 'twitter' } = await req.json() as RequestBody;
 
     if (!campaignId) {
       return new Response(
@@ -111,13 +112,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user's Twitter handle from profile
+    // Get user's connected social accounts
     const { data: profile } = await supabase
       .from('profiles')
       .select('social_links')
       .eq('id', user.id)
       .single();
 
+    const platformHandle = profile?.social_links?.[platform] || null;
     const twitterHandle = profile?.social_links?.twitter || null;
 
     // Insert verified share
@@ -126,13 +128,16 @@ Deno.serve(async (req) => {
       .insert({
         user_id: user.id,
         campaign_id: campaignId,
-        share_platform: 'twitter',
+        share_platform: platform,
         share_url: shareUrl || null,
-        tweet_id: null,
-        twitter_handle: twitterHandle,
+        platform_user_id: platformHandle,
+        post_id: null,
+        tweet_id: null, // Backward compat
+        twitter_handle: platform === 'twitter' ? twitterHandle : null, // Backward compat
         reward_amount: campaign.reward_per_share,
         status: 'verified',
         verified_at: new Date().toISOString(),
+        verification_method: 'auto',
       })
       .select()
       .single();

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,12 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Share2 } from 'lucide-react';
+import { Share2, Twitter, Facebook, Instagram } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { campaignSchema } from '@/utils/donationValidation';
 import { z } from 'zod';
+import { PLATFORM_NAMES } from '@/utils/platformUrlParsers';
 
 interface CreateSharingCampaignProps {
   contentId: string;
@@ -34,6 +36,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
     rewardPerShare: '0.001',
     totalBudget: '0.1',
     maxSharesPerUser: '5',
+    allowedPlatforms: ['twitter'] as string[],
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -168,6 +171,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
           platform_fee_amount: platformFee,
           escrow_transaction_signature: signature,
           is_active: true,
+          allowed_platforms: formData.allowedPlatforms,
         })
         .select()
         .single();
@@ -193,6 +197,7 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
         rewardPerShare: '0.001',
         totalBudget: '0.1',
         maxSharesPerUser: '5',
+        allowedPlatforms: ['twitter'],
       });
     } catch (error: any) {
       console.error('Error creating campaign:', error);
@@ -232,6 +237,42 @@ export const CreateSharingCampaign = ({ contentId, contentType, contentTitle }: 
         </DialogHeader>
 
         <form onSubmit={handleCreate} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Allowed Platforms</Label>
+            <div className="space-y-2">
+              {['twitter', 'facebook', 'instagram', 'tiktok'].map((platform) => (
+                <div key={platform} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={platform}
+                    checked={formData.allowedPlatforms.includes(platform)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setFormData({
+                          ...formData,
+                          allowedPlatforms: [...formData.allowedPlatforms, platform],
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          allowedPlatforms: formData.allowedPlatforms.filter((p) => p !== platform),
+                        });
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={platform}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {PLATFORM_NAMES[platform] || platform}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Select which platforms users can share on to earn rewards
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="reward">Reward per Share (SOL)</Label>
             <Input

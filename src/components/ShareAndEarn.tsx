@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Share2, Wallet, Twitter, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Share2, Wallet, Twitter, Trash2, Loader2, CheckCircle2, AlertCircle, Facebook, Instagram } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +34,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ClaimShareRewards } from "./ClaimShareRewards";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PLATFORM_NAMES, getPlatformShareIntent } from "@/utils/platformUrlParsers";
 
 interface ShareAndEarnProps {
   contentId: string;
@@ -51,6 +55,9 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const [verifyMessage, setVerifyMessage] = useState("");
   const [verificationComplete, setVerificationComplete] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState('twitter');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [shareUrlInput, setShareUrlInput] = useState('');
 
   const AUTO_VERIFY_MS = 10000; // 10 seconds
   const [creatorSocialLinks, setCreatorSocialLinks] = useState<any>(null);
@@ -171,7 +178,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
     }
   }, [showVerifyDialog]);
 
-  const startAutoVerification = async (shareUrl: string) => {
+  const startAutoVerification = async (shareUrl: string, platform: string = 'twitter') => {
     if (!campaign) return;
 
     setIsVerifying(true);
@@ -211,6 +218,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
           body: {
             campaignId: campaign.id,
             shareUrl,
+            platform,
           },
         });
 
@@ -273,20 +281,62 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const handleShare = async () => {
     if (!campaign) return;
 
+    const allowedPlatforms = campaign.allowed_platforms || ['twitter'];
+    const platform = selectedPlatform;
+
+    // Check if platform is allowed
+    if (!allowedPlatforms.includes(platform)) {
+      toast({
+        title: "Platform Not Allowed",
+        description: `This campaign doesn't accept shares on ${PLATFORM_NAMES[platform]}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Build share text
     const shareText = `Check out ${contentTitle} on Wutch! 🎥\n\n${contentUrl}\n\n#Wutch #ShareAndEarn`;
-    const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
     
-    const newWindow = window.open(twitterIntentUrl, "_blank");
+    // Get platform-specific share intent
+    const shareIntent = getPlatformShareIntent(platform, shareText, contentUrl);
+    
+    if (!shareIntent) {
+      // Platform requires mobile app (Instagram, TikTok)
+      setShowUrlInput(true);
+      toast({
+        title: "Share on Mobile",
+        description: `Please share this on ${PLATFORM_NAMES[platform]} using the mobile app, then paste the URL here.`,
+      });
+      return;
+    }
+    
+    // Open share intent
+    const newWindow = window.open(shareIntent, "_blank");
     
     setShowVerifyDialog(true);
-    startAutoVerification(twitterIntentUrl);
+    startAutoVerification(shareIntent, platform);
 
     if (!newWindow) {
       toast({
         title: "Popup Blocked",
-        description: "Please allow popups to share on X. Verification will continue automatically.",
+        description: "Please allow popups to share. Verification will continue automatically.",
       });
     }
+  };
+
+  const handleUrlSubmit = async () => {
+    if (!shareUrlInput.trim()) {
+      toast({
+        title: "URL Required",
+        description: "Please paste your share URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowUrlInput(false);
+    setShowVerifyDialog(true);
+    startAutoVerification(shareUrlInput, selectedPlatform);
   };
 
   const handleShareWithCheck = async () => {
@@ -454,13 +504,32 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                     />
                   )}
 
+                  {/* Platform Selector */}
+                  {campaign.allowed_platforms && campaign.allowed_platforms.length > 1 && (
+                    <div className="space-y-2">
+                      <Label>Choose Platform</Label>
+                      <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {campaign.allowed_platforms.map((platform: string) => (
+                            <SelectItem key={platform} value={platform}>
+                              {PLATFORM_NAMES[platform] || platform}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <Button 
                     onClick={handleShare} 
                     className="w-full"
                     disabled={!hasWallet || (campaign.max_shares_per_user && userShares >= campaign.max_shares_per_user)}
                   >
-                    <Twitter className="mr-2 h-4 w-4" />
-                    Share on Twitter/X
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share on {PLATFORM_NAMES[selectedPlatform] || 'Social Media'}
                   </Button>
 
                   {!hasWallet && (
@@ -525,6 +594,37 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                 </Button>
               </DialogFooter>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* URL Input Dialog for mobile-only platforms */}
+        <Dialog open={showUrlInput} onOpenChange={setShowUrlInput}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Paste Your Share URL</DialogTitle>
+              <DialogDescription>
+                After sharing on {PLATFORM_NAMES[selectedPlatform]}, paste the URL here to verify and earn your reward.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="share-url">Share URL</Label>
+                <Input
+                  id="share-url"
+                  placeholder="https://..."
+                  value={shareUrlInput}
+                  onChange={(e) => setShareUrlInput(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowUrlInput(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUrlSubmit}>
+                Verify Share
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </>
@@ -595,8 +695,8 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                 onClick={handleShare}
                 disabled={!hasWallet || (campaign.max_shares_per_user && userShares >= campaign.max_shares_per_user)}
               >
-                <Twitter className="mr-2 h-4 w-4" />
-                Share on X
+                <Share2 className="mr-2 h-4 w-4" />
+                Share on {PLATFORM_NAMES[selectedPlatform] || 'Social Media'}
               </Button>
             )}
           </div>

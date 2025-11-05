@@ -1853,6 +1853,8 @@ export type Database = {
       }
       sharing_campaigns: {
         Row: {
+          allowed_platforms: string[] | null
+          campaign_verification_method: string | null
           content_id: string
           content_type: string
           created_at: string
@@ -1863,12 +1865,15 @@ export type Database = {
           livestream_id: string | null
           max_shares_per_user: number | null
           platform_fee_amount: number
+          require_connected_account: boolean | null
           reward_per_share: number
           spent_budget: number
           total_budget: number
           updated_at: string
         }
         Insert: {
+          allowed_platforms?: string[] | null
+          campaign_verification_method?: string | null
           content_id?: string
           content_type?: string
           created_at?: string
@@ -1879,12 +1884,15 @@ export type Database = {
           livestream_id?: string | null
           max_shares_per_user?: number | null
           platform_fee_amount?: number
+          require_connected_account?: boolean | null
           reward_per_share?: number
           spent_budget?: number
           total_budget: number
           updated_at?: string
         }
         Update: {
+          allowed_platforms?: string[] | null
+          campaign_verification_method?: string | null
           content_id?: string
           content_type?: string
           created_at?: string
@@ -1895,6 +1903,7 @@ export type Database = {
           livestream_id?: string | null
           max_shares_per_user?: number | null
           platform_fee_amount?: number
+          require_connected_account?: boolean | null
           reward_per_share?: number
           spent_budget?: number
           total_budget?: number
@@ -2319,6 +2328,12 @@ export type Database = {
           id: string
           is_claimed: boolean
           paid_at: string | null
+          platform_user_id: string | null
+          post_id: string | null
+          proof_data: Json | null
+          requires_review: boolean | null
+          review_notes: string | null
+          reviewed_by: string | null
           reward_amount: number
           share_platform: string
           share_url: string
@@ -2328,6 +2343,7 @@ export type Database = {
           tweet_id: string | null
           twitter_handle: string | null
           user_id: string
+          verification_method: string | null
           verified_at: string | null
         }
         Insert: {
@@ -2335,6 +2351,12 @@ export type Database = {
           id?: string
           is_claimed?: boolean
           paid_at?: string | null
+          platform_user_id?: string | null
+          post_id?: string | null
+          proof_data?: Json | null
+          requires_review?: boolean | null
+          review_notes?: string | null
+          reviewed_by?: string | null
           reward_amount: number
           share_platform?: string
           share_url: string
@@ -2344,6 +2366,7 @@ export type Database = {
           tweet_id?: string | null
           twitter_handle?: string | null
           user_id: string
+          verification_method?: string | null
           verified_at?: string | null
         }
         Update: {
@@ -2351,6 +2374,12 @@ export type Database = {
           id?: string
           is_claimed?: boolean
           paid_at?: string | null
+          platform_user_id?: string | null
+          post_id?: string | null
+          proof_data?: Json | null
+          requires_review?: boolean | null
+          review_notes?: string | null
+          reviewed_by?: string | null
           reward_amount?: number
           share_platform?: string
           share_url?: string
@@ -2360,6 +2389,7 @@ export type Database = {
           tweet_id?: string | null
           twitter_handle?: string | null
           user_id?: string
+          verification_method?: string | null
           verified_at?: string | null
         }
         Relationships: [

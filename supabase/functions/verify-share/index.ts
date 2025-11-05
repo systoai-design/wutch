@@ -7,8 +7,9 @@ const corsHeaders = {
 
 interface VerifyShareRequest {
   campaignId: string;
-  tweetUrl: string;
-  expectedHandle: string;
+  shareUrl: string;
+  platform: string;
+  expectedHandle?: string;
 }
 
 interface VerifyShareResponse {
@@ -51,40 +52,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { campaignId, tweetUrl, expectedHandle }: VerifyShareRequest = await req.json();
+    const { campaignId, shareUrl, platform, expectedHandle }: VerifyShareRequest = await req.json();
 
-    console.log('Verifying share:', { userId: user.id, campaignId, tweetUrl, expectedHandle });
+    console.log('Verifying share:', { userId: user.id, campaignId, shareUrl, platform });
 
-    // Parse and sanitize the tweet URL
-    const sanitizedUrl = tweetUrl.trim().replace(/[\u200E\u200F]/g, '').replace(/\/$/, '');
+    // Import URL parser
+    const { parseShareUrl } = await import('./urlParsers.ts');
     
-    // Extract tweet ID and username
-    const standardMatch = sanitizedUrl.match(/(?:twitter\.com|x\.com)\/([^\/]+)\/status\/(\d+)/);
-    const shortcutMatch = sanitizedUrl.match(/(?:twitter\.com|x\.com)\/i(?:\/web)?\/status\/(\d+)/);
+    // Parse the share URL
+    const parsed = parseShareUrl(shareUrl, platform);
     
-    let tweetId: string | null = null;
-    let username: string | null = null;
-
-    if (standardMatch) {
-      username = standardMatch[1];
-      tweetId = standardMatch[2];
-    } else if (shortcutMatch) {
-      tweetId = shortcutMatch[1];
-      // Use expectedHandle from frontend (derived from connected account)
-      username = expectedHandle;
-    }
-
-    if (!tweetId || !username) {
-      console.error('Invalid URL format:', sanitizedUrl);
+    if (!parsed.isValid) {
+      console.error('Invalid URL format:', shareUrl, parsed.error);
       return new Response(
-        JSON.stringify({ ok: false, code: 'invalid_url', message: 'Invalid Twitter/X URL format' }),
+        JSON.stringify({ ok: false, code: 'invalid_url', message: parsed.error || 'Invalid share URL format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Parsed tweet:', { tweetId, username });
+    // If platform_user_id is missing but expectedHandle provided, use it
+    let platformUserId = parsed.platform_user_id || expectedHandle || null;
+    const postId = parsed.post_id;
 
-    // Get user's connected Twitter handle from profile
+    if (!postId) {
+      console.error('No post ID found:', shareUrl);
+      return new Response(
+        JSON.stringify({ ok: false, code: 'invalid_url', message: 'Could not extract post ID from URL' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Parsed share:', { postId, platformUserId, platform });
+
+    // Get user's connected social accounts from profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('social_links')
@@ -99,28 +99,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userTwitterHandle = profile.social_links?.twitter?.replace('@', '').toLowerCase();
+    // Get platform-specific handle
+    const connectedHandle = profile.social_links?.[platform]?.replace('@', '').toLowerCase();
     
-    if (!userTwitterHandle) {
-      console.error('No Twitter handle connected');
-      return new Response(
-        JSON.stringify({ ok: false, code: 'no_handle', message: 'No Twitter account connected' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Determine verification method
+    let verificationMethod = 'auto';
+    let requiresReview = false;
 
-    // Verify username matches connected account
-    const normalizedUsername = username.toLowerCase();
-    if (normalizedUsername !== userTwitterHandle) {
-      console.error('Author mismatch:', { normalizedUsername, userTwitterHandle });
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'author_mismatch', 
-          message: `This tweet is from @${username} but you're connected as @${userTwitterHandle}` 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (platformUserId && connectedHandle) {
+      // Verify username matches connected account
+      const normalizedUserId = platformUserId.toLowerCase();
+      if (normalizedUserId !== connectedHandle) {
+        console.error('Author mismatch:', { normalizedUserId, connectedHandle, platform });
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            code: 'author_mismatch', 
+            message: `This ${platform} post is from @${platformUserId} but you're connected as @${connectedHandle}` 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      verificationMethod = 'connected_account';
+    } else if (!connectedHandle && platformUserId) {
+      // Has username in URL but no connected account
+      verificationMethod = 'url_match';
+    } else {
+      // No way to verify ownership - mark for review
+      requiresReview = true;
+      verificationMethod = 'manual';
     }
 
     // Validate campaign status
@@ -174,43 +181,49 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check for duplicate by Twitter handle
-    const { data: existingByHandle, error: handleCheckError } = await supabase
-      .from('user_shares')
-      .select('id')
-      .eq('campaign_id', campaignId)
-      .eq('twitter_handle', userTwitterHandle)
-      .limit(1)
-      .maybeSingle();
+    // Check for duplicate by platform user ID
+    if (platformUserId) {
+      const { data: existingByUser } = await supabase
+        .from('user_shares')
+        .select('id')
+        .eq('campaign_id', campaignId)
+        .eq('share_platform', platform)
+        .eq('platform_user_id', platformUserId)
+        .limit(1)
+        .maybeSingle();
 
-    if (handleCheckError) {
-      console.error('Handle check error:', handleCheckError);
-    } else if (existingByHandle) {
-      console.error('Already shared by handle');
-      return new Response(
-        JSON.stringify({ ok: false, code: 'already_shared', message: 'You have already verified a share for this campaign' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (existingByUser) {
+        console.error('Already shared by user');
+        return new Response(
+          JSON.stringify({ ok: false, code: 'already_shared', message: 'You have already verified a share for this campaign' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // Check for duplicate by tweet ID
-    const { data: existingByTweet, error: tweetCheckError } = await supabase
-      .from('user_shares')
-      .select('id')
-      .eq('campaign_id', campaignId)
-      .eq('tweet_id', tweetId)
-      .limit(1)
-      .maybeSingle();
+    // Check for duplicate by post ID
+    if (postId) {
+      const { data: existingByPost } = await supabase
+        .from('user_shares')
+        .select('id')
+        .eq('campaign_id', campaignId)
+        .eq('share_platform', platform)
+        .eq('post_id', postId)
+        .limit(1)
+        .maybeSingle();
 
-    if (tweetCheckError) {
-      console.error('Tweet check error:', tweetCheckError);
-    } else if (existingByTweet) {
-      console.error('Tweet already used');
-      return new Response(
-        JSON.stringify({ ok: false, code: 'tweet_used', message: 'This tweet has already been used for this campaign' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (existingByPost) {
+        console.error('Post already used');
+        return new Response(
+          JSON.stringify({ ok: false, code: 'post_used', message: 'This post has already been used for this campaign' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
+
+    // Determine final status
+    const status = requiresReview ? 'pending_review' : 'verified';
+    const verifiedAt = requiresReview ? null : new Date().toISOString();
 
     // Insert the share
     const { data: share, error: insertError } = await supabase
@@ -218,13 +231,17 @@ Deno.serve(async (req) => {
       .insert({
         user_id: user.id,
         campaign_id: campaignId,
-        share_url: sanitizedUrl,
-        share_platform: 'twitter',
+        share_url: shareUrl.trim(),
+        share_platform: platform,
+        platform_user_id: platformUserId,
+        post_id: postId,
         reward_amount: campaign.reward_per_share,
-        status: 'verified',
-        verified_at: new Date().toISOString(),
-        twitter_handle: userTwitterHandle,
-        tweet_id: tweetId,
+        status,
+        verified_at: verifiedAt,
+        verification_method: verificationMethod,
+        requires_review: requiresReview,
+        twitter_handle: platform === 'twitter' ? platformUserId : null, // Backward compat
+        tweet_id: platform === 'twitter' ? postId : null, // Backward compat
       })
       .select()
       .single();
