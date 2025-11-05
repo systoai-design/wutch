@@ -22,7 +22,7 @@ export const shareShortToTwitter = ({ id, title, creatorName, username, creatorS
     ? makeAbsoluteUrl(generateContentUrl('shorts', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/shorts?id=${id}`);
   
-  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
+  const text = `Wutch "The First Platform to Reward even the Watchers" on Wutch! 📺 Earn crypto while watching, turn your attention to crypto.\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
@@ -34,7 +34,7 @@ export const shareStreamToTwitter = ({ id, title, creatorName, username, creator
     ? makeAbsoluteUrl(generateContentUrl('stream', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/stream/${id}`);
   
-  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
+  const text = `Wutch "The First Platform to Reward even the Watchers" on Wutch! 📺 Earn crypto while watching, turn your attention to crypto.\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
@@ -54,7 +54,7 @@ export const shareWutchVideoToTwitter = ({ id, title, creatorName, username, cre
     ? makeAbsoluteUrl(generateContentUrl('wutch', { id, title, profiles: { username } }))
     : makeAbsoluteUrl(`/video/${id}`);
   
-  const text = `"Wutch"\n\nThe First Platform to Reward even the Wutchers on Wutch! 📺 Earn crypto while watching!\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
+  const text = `Wutch "The First Platform to Reward even the Watchers" on Wutch! 📺 Earn crypto while watching, turn your attention to crypto.\n\nFollow the creator: @wutchdotfun\n\nWebsite: https://wutch.fun/`;
   
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   
