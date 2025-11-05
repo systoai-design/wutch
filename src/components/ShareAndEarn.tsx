@@ -48,6 +48,7 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   const [tweetUrl, setTweetUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [userTwitterHandle, setUserTwitterHandle] = useState<string | null>(null);
+  const [parsedTweetData, setParsedTweetData] = useState<{ tweetId: string; username: string; usedConnectedAccount: boolean } | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [creatorSocialLinks, setCreatorSocialLinks] = useState<any>(null);
   const { toast } = useToast();
@@ -179,29 +180,60 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
   }, [user]);
 
   // Extract tweet data from URL with resilient parsing
-  const extractTweetData = (url: string): { tweetId: string; username: string } | null => {
+  const extractTweetData = (url: string, connectedHandle: string | null): { tweetId: string; username: string; usedConnectedAccount: boolean } | null => {
     try {
       // Sanitize: trim whitespace and strip trailing punctuation like :,.;)]
       const sanitized = url.trim().replace(/[\s:;.,)\]]+$/, '');
       
-      // Match patterns like:
+      // Pattern 1: Standard URL with username
       // https://x.com/username/status/1986153595214176766
       // https://twitter.com/username/status/1986153595214176766
       // https://mobile.x.com/username/status/1986153595214176766
-      // Support query params and trailing slashes
-      const regex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/([^\/\s?#]+)\/status\/(\d{10,25})/i;
-      const match = sanitized.match(regex);
+      const standardRegex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/([^\/\s?#]+)\/status\/(\d{10,25})/i;
+      const standardMatch = sanitized.match(standardRegex);
       
-      if (!match) return null;
+      if (standardMatch) {
+        return {
+          username: standardMatch[1].toLowerCase(),
+          tweetId: standardMatch[2],
+          usedConnectedAccount: false
+        };
+      }
       
-      return {
-        username: match[1].toLowerCase(),
-        tweetId: match[2]
-      };
+      // Pattern 2: Mobile/shortcut URLs without username
+      // https://x.com/i/status/1986153595214176766
+      // https://x.com/i/web/status/1986153595214176766
+      // https://twitter.com/i/status/1986153595214176766
+      const shortcutRegex = /(?:^https?:\/\/)?(?:[a-z]+\.)?(?:twitter|x)\.com\/i\/(?:web\/)?status\/(\d{10,25})/i;
+      const shortcutMatch = sanitized.match(shortcutRegex);
+      
+      if (shortcutMatch) {
+        if (!connectedHandle) {
+          return null; // Can't parse without connected account
+        }
+        return {
+          username: connectedHandle.toLowerCase(),
+          tweetId: shortcutMatch[1],
+          usedConnectedAccount: true
+        };
+      }
+      
+      return null;
     } catch (error) {
       return null;
     }
   };
+
+  // Update parsed data when URL changes
+  useEffect(() => {
+    if (tweetUrl.trim()) {
+      const sanitizedUrl = tweetUrl.trim().replace(/[\s:;.,)\]]+$/, '');
+      const parsed = extractTweetData(sanitizedUrl, userTwitterHandle);
+      setParsedTweetData(parsed);
+    } else {
+      setParsedTweetData(null);
+    }
+  }, [tweetUrl, userTwitterHandle]);
 
   const handleVerifyShare = async () => {
     // Validation checks
@@ -269,12 +301,12 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
       const sanitizedUrl = tweetUrl.trim().replace(/[\s:;.,)\]]+$/, '');
       
       // Extract tweet data from URL
-      const tweetData = extractTweetData(sanitizedUrl);
+      const tweetData = extractTweetData(sanitizedUrl, userTwitterHandle);
       
       if (!tweetData) {
         toast({
-          title: "Invalid URL",
-          description: "Please provide a valid Twitter/X post URL (e.g., https://x.com/username/status/1234567890123456789)",
+          title: "Invalid URL Format",
+          description: "Please use a valid Twitter/X post URL. Examples:\n• https://x.com/username/status/123...\n• https://x.com/i/status/123...\n• https://x.com/i/web/status/123...",
           variant: "destructive",
         });
         setIsVerifying(false);
@@ -284,8 +316,8 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
       // Verify the username matches the connected account
       if (tweetData.username !== userTwitterHandle) {
         toast({
-          title: "Username Mismatch",
-          description: `The tweet is from @${tweetData.username} but your connected account is @${userTwitterHandle}`,
+          title: "Tweet Author Mismatch",
+          description: `This tweet is from @${tweetData.username}, but your connected account is @${userTwitterHandle}. Please share using your connected account.`,
           variant: "destructive",
         });
         setIsVerifying(false);
@@ -604,9 +636,26 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                   onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
                   disabled={isVerifying || !userTwitterHandle}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Example: https://x.com/username/status/1234567890123456789
-                </p>
+                {parsedTweetData ? (
+                  <div className="text-xs bg-muted p-2 rounded space-y-1">
+                    <p className="text-green-600 dark:text-green-400 font-medium">✓ URL parsed successfully</p>
+                    <p className="text-muted-foreground">
+                      Tweet ID: <span className="font-mono">{parsedTweetData.tweetId}</span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      Author: <span className="font-medium">@{parsedTweetData.username}</span>
+                      {parsedTweetData.usedConnectedAccount && " (from your connected account)"}
+                    </p>
+                  </div>
+                ) : tweetUrl.trim() ? (
+                  <p className="text-xs text-destructive">
+                    Invalid URL format. Use: https://x.com/username/status/123... or https://x.com/i/status/123...
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Paste any Twitter/X post URL (with or without username)
+                  </p>
+                )}
               </div>
             </div>
 
@@ -749,9 +798,26 @@ export function ShareAndEarn({ contentId, contentType, contentTitle, contentUrl 
                 onKeyDown={(e) => e.key === "Enter" && handleVerifyShare()}
                 disabled={isVerifying || !userTwitterHandle}
               />
-              <p className="text-xs text-muted-foreground">
-                Example: https://x.com/username/status/1234567890123456789
-              </p>
+              {parsedTweetData ? (
+                <div className="text-xs bg-muted p-2 rounded space-y-1">
+                  <p className="text-green-600 dark:text-green-400 font-medium">✓ URL parsed successfully</p>
+                  <p className="text-muted-foreground">
+                    Tweet ID: <span className="font-mono">{parsedTweetData.tweetId}</span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    Author: <span className="font-medium">@{parsedTweetData.username}</span>
+                    {parsedTweetData.usedConnectedAccount && " (from your connected account)"}
+                  </p>
+                </div>
+              ) : tweetUrl.trim() ? (
+                <p className="text-xs text-destructive">
+                  Invalid URL format. Use: https://x.com/username/status/123... or https://x.com/i/status/123...
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Paste any Twitter/X post URL (with or without username)
+                </p>
+              )}
             </div>
           </div>
 
