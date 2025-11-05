@@ -66,6 +66,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let requestBody: any;
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -89,7 +91,8 @@ serve(async (req) => {
       );
     }
 
-    const { payoutType, userId, walletAddress, campaignId, bountyId } = await req.json();
+    requestBody = await req.json();
+    const { payoutType, userId, walletAddress, campaignId, bountyId } = requestBody;
 
     // Security: verify requesting user matches userId
     if (user.id !== userId) {
@@ -333,11 +336,19 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('[UnifiedPayout] Error:', error);
+    console.error('[UnifiedPayout] Error stack:', error.stack);
+    console.error('[UnifiedPayout] Error details:', {
+      message: error.message,
+      payoutType: requestBody?.payoutType,
+      userId: requestBody?.userId,
+      campaignId: requestBody?.campaignId,
+      bountyId: requestBody?.bountyId,
+      walletAddress: requestBody?.walletAddress
+    });
 
     // Log failed transaction
     try {
-      const body = await req.json();
-      if (body.userId) {
+      if (requestBody?.userId) {
         const supabaseAdmin = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -346,12 +357,12 @@ serve(async (req) => {
         await supabaseAdmin
           .from('platform_transactions')
           .insert({
-            transaction_type: body.payoutType || 'share_reward',
-            seller_id: body.userId,
+            transaction_type: requestBody.payoutType || 'share_reward',
+            seller_id: requestBody.userId,
             gross_amount: 0,
             creator_amount: 0,
             platform_amount: 0,
-            seller_wallet: body.walletAddress,
+            seller_wallet: requestBody.walletAddress,
             status: 'failed',
             error_message: error.message,
           });

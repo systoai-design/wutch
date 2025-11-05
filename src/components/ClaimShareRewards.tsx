@@ -18,7 +18,14 @@ export function ClaimShareRewards({ campaignId, unclaimedAmount, onClaimSuccess 
   const { user } = useAuth();
 
   const handleClaim = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to claim rewards",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsClaiming(true);
 
@@ -31,7 +38,28 @@ export function ClaimShareRewards({ campaignId, unclaimedAmount, onClaimSuccess 
         .maybeSingle();
 
       if (walletError || !walletData?.wallet_address) {
-        throw new Error("Please connect your wallet first");
+        throw new Error("Please connect your wallet first to claim rewards");
+      }
+
+      // Verify there are actually unclaimed shares
+      const { data: shares, error: sharesError } = await supabase
+        .from("user_shares")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("campaign_id", campaignId)
+        .eq("is_claimed", false)
+        .eq("status", "verified");
+
+      if (sharesError) throw sharesError;
+
+      if (!shares || shares.length === 0) {
+        toast({
+          title: "No Shares Available",
+          description: "You don't have any verified shares to claim yet. Try sharing the content first!",
+          variant: "destructive",
+        });
+        setIsClaiming(false);
+        return;
       }
 
       // Call unified payout edge function
@@ -57,9 +85,23 @@ export function ClaimShareRewards({ campaignId, unclaimedAmount, onClaimSuccess 
       }
     } catch (error: any) {
       console.error("Error claiming rewards:", error);
+      
+      // Provide specific error messages
+      let errorMessage = error.message || "Could not claim rewards. Please try again.";
+      
+      if (errorMessage.includes("wallet")) {
+        errorMessage = "Please connect your wallet first to claim rewards";
+      } else if (errorMessage.includes("No unclaimed shares")) {
+        errorMessage = "No shares available to claim yet. Share the content to earn rewards!";
+      } else if (errorMessage.includes("Insufficient escrow")) {
+        errorMessage = "Platform is temporarily out of funds. Please try again later.";
+      } else if (errorMessage.includes("Hourly limit")) {
+        errorMessage = "You've reached your hourly claim limit. Please try again later.";
+      }
+      
       toast({
         title: "Claim Failed",
-        description: error.message || "Could not claim rewards. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
