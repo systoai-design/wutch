@@ -106,7 +106,7 @@ const Home = () => {
       };
 
       // Fetch all data in parallel for better performance
-      const [liveResult, shortsResult, wutchResult, profilesResult, upcomingResult, endedResult] = await Promise.all([
+      const [liveResult, shortsResult, wutchResult, profilesResult, upcomingResult, endedResult, campaignsResult] = await Promise.all([
         // Live streams
         buildQuery(supabase
           .from('livestreams')
@@ -124,8 +124,7 @@ const Home = () => {
         .from('short_videos')
         .select(`
           *,
-          profiles!short_videos_user_id_fkey(username, display_name, avatar_url),
-          sharing_campaigns!content_id(id, is_active, content_type)
+          profiles!short_videos_user_id_fkey(username, display_name, avatar_url)
         `)
         .order('created_at', { ascending: false })
         .limit(15)),
@@ -134,8 +133,7 @@ const Home = () => {
         buildQuery(supabase
           .from('wutch_videos')
           .select(`
-            id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status,
-            sharing_campaigns!content_id(id, is_active, content_type)
+            id, title, thumbnail_url, video_url, duration, view_count, like_count, created_at, category, user_id, status
           `)
           .eq('status', 'published')
           .order('created_at', { ascending: false })
@@ -165,7 +163,14 @@ const Home = () => {
           `)
           .eq('status', 'ended')
           .order('ended_at', { ascending: false })
-          .limit(12))
+          .limit(12)),
+        
+        // Fetch campaigns for shorts and wutch videos
+        supabase
+          .from('sharing_campaigns')
+          .select('id, content_id, content_type, is_active, reward_per_share')
+          .in('content_type', ['short_video', 'wutch_video'])
+          .eq('is_active', true)
       ]);
 
       const liveData = liveResult.data;
@@ -186,15 +191,19 @@ const Home = () => {
       });
 
       const shortsData = shortsResult.data;
+      const campaignsData = campaignsResult.data || [];
+      
+      // Create campaigns map for efficient lookup
+      const campaignsMap = new Map(
+        campaignsData.map(c => [c.content_id, c])
+      );
       
       // Process shorts with campaign data
       const processedShortsData = (shortsData || []).map(short => {
-        const activeCampaigns = (short.sharing_campaigns as any[] || []).filter(
-          (c: any) => c.is_active && c.content_type === 'short_video'
-        );
+        const campaign = campaignsMap.get(short.id);
         return {
           ...short,
-          has_active_campaign: activeCampaigns.length > 0,
+          has_active_campaign: !!campaign && campaign.content_type === 'short_video',
         };
       });
       
@@ -208,9 +217,7 @@ const Home = () => {
       // Map wutch videos with profiles and campaign data
       const wutchWithProfiles = wutchData.map((video) => {
         const profile = profilesMap.get(video.user_id);
-        const activeCampaigns = (video.sharing_campaigns as any[] || []).filter(
-          (c: any) => c.is_active && c.content_type === 'wutch_video'
-        );
+        const campaign = campaignsMap.get(video.id);
         return { 
           ...video,
           profiles: profile ? {
@@ -218,7 +225,7 @@ const Home = () => {
             display_name: profile.display_name,
             avatar_url: profile.avatar_url
           } : undefined,
-          has_active_campaign: activeCampaigns.length > 0,
+          has_active_campaign: !!campaign && campaign.content_type === 'wutch_video',
         };
       });
 
