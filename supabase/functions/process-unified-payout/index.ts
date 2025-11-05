@@ -1,11 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "npm:@solana/web3.js@1.98.4";
+import bs58 from "npm:bs58@5.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Load escrow wallet key - supports both JSON array and base58 formats
+function loadEscrowKey(rawKey: string): Keypair {
+  try {
+    // Try JSON array format first (e.g., "[1,2,3,...]")
+    if (rawKey.trim().startsWith('[')) {
+      const parsed = JSON.parse(rawKey);
+      return Keypair.fromSecretKey(Uint8Array.from(parsed));
+    }
+    
+    // Try base58 format (most common)
+    const decoded = bs58.decode(rawKey);
+    return Keypair.fromSecretKey(decoded);
+  } catch (error) {
+    throw new Error('Invalid ESCROW_WALLET_PRIVATE_KEY format. Must be base58 string or JSON array.');
+  }
+}
 
 // Security validation
 async function validatePayoutSecurity(
@@ -195,18 +213,41 @@ serve(async (req) => {
     // Load escrow wallet
     const escrowPrivateKey = Deno.env.get('ESCROW_WALLET_PRIVATE_KEY');
     if (!escrowPrivateKey) {
-      throw new Error('Escrow wallet not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Payout temporarily unavailable. Please try again later.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const escrowWallet = Keypair.fromSecretKey(
-      Uint8Array.from(JSON.parse(escrowPrivateKey))
-    );
+    let escrowWallet: Keypair;
+    try {
+      escrowWallet = loadEscrowKey(escrowPrivateKey);
+      const escrowPubkey = escrowWallet.publicKey.toString();
+      console.log(`[UnifiedPayout] Using escrow wallet: ${escrowPubkey}`);
+    } catch (error: any) {
+      console.error('[UnifiedPayout] Escrow key loading error:', error.message);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Payout temporarily unavailable (escrow misconfiguration). Please try again later.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const recipientPubkey = new PublicKey(walletAddress);
+    // Validate recipient wallet address
+    let recipientPubkey: PublicKey;
+    try {
+      recipientPubkey = new PublicKey(walletAddress);
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid wallet address format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const lamports = Math.floor(totalAmount * LAMPORTS_PER_SOL);
 
     // Check balance
     const escrowBalance = await connection.getBalance(escrowWallet.publicKey);
+    console.log(`[UnifiedPayout] Escrow balance: ${(escrowBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+    
     if (escrowBalance < lamports) {
       throw new Error(`Insufficient escrow funds. Need ${totalAmount} SOL, have ${(escrowBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
     }
