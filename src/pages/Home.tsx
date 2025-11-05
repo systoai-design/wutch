@@ -331,7 +331,11 @@ const Home = () => {
         return { streams: upcomingStreams, videos: [] };
       case 'all':
       default:
-        return { streams: [], videos: [] };
+        // Show all content: live streams, shorts, and wutch videos
+        return { 
+          streams: liveStreams, 
+          videos: [...shorts, ...wutchVideos] 
+        };
     }
   };
 
