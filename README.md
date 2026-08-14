@@ -1,4 +1,8 @@
-# Welcome to Wutch Repo
+# Wutch
+
+Earn SOLANA for watching, creating, and sharing videos.
+
+Built and maintained by [Systo AI](https://systo-ai.com).
 
 ## Project info
 
